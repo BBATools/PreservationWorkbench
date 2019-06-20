@@ -1,0 +1,17 @@
+# Ignore directories and files
+_DATA/*
+bin/*
+
+# exceptions to above rule
+!_DATA/.gitkeep 
+!bin/PWB/*
+
+# Ignore invisible files
+.*
+
+# Ignore logs
+*.log
+
+# Include files
+!.gitignore
+
