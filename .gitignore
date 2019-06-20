@@ -2,12 +2,14 @@
 _DATA/*
 bin/*
 
+
 # exceptions to above rule
 !_DATA/.gitkeep 
-!bin/PWB/*
+!bin/PWB/
 
-# Ignore invisible files
-.*
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
 
 # Ignore logs
 *.log
