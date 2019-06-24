@@ -1,0 +1,716 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.8.0_212" class="java.beans.XMLDecoder">
+ <object class="java.util.ArrayList">
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
+    <void property="macros">
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="appendResult">
+        <boolean>true</boolean>
+       </void>
+       <void property="name">
+        <string>Export to Disk (alt. 1)</string>
+       </void>
+       <void property="text">
+        <string>-- Export Database Schema/Files
+-- TODO: Bytt ut wb gui for input med tkinter el
+
+-- New log-file
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;;
+
+-- Define variables --
+-- WbVarDef SystemName=$[?SystemName];
+-- WbVarDef DatabaseName=$[?DatabaseName]; 
+-- WbVarDef DatabaseSchema=$[?DatabaseSchema];
+-- WbVarDef _PathToDocumentsDirectory1=$[?_PathToDocumentsDirectory1];
+-- WbVarDef _PathToDocumentsDirectory2=$[?_PathToDocumentsDirectory2];
+-- WbVarDef _PathToDocumentsDirectory3=$[?_PathToDocumentsDirectory3];
+-- WbVarDef _PathToDocumentsDirectory4=$[?_PathToDocumentsDirectory4];
+----------------------
+
+-- Check connection
+WbConfirm -ifDefined=DatabaseSchema -message=&quot;Is database connection profile correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
+
+-- Fix arguments
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k SystemName -v &quot;$[SystemName]&quot;&apos;;
+WbVarDef -contentFile=tmp/SystemName -variable=SystemName;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k DatabaseName -v &quot;$[DatabaseName]&quot;&apos;;
+WbVarDef -contentFile=tmp/DatabaseName -variable=DatabaseName;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k DatabaseSchema -v &quot;$[DatabaseSchema]&quot;&apos;;
+WbVarDef -contentFile=tmp/DatabaseSchema -variable=DatabaseSchema;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k _PathToDocumentsDirectory1 -v &quot;$[_PathToDocumentsDirectory1]&quot;&apos;;
+WbVarDef -contentFile=tmp/_PathToDocumentsDirectory1 -variable=_PathToDocumentsDirectory1;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k _PathToDocumentsDirectory2 -v &quot;$[_PathToDocumentsDirectory2]&quot;&apos;;
+WbVarDef -contentFile=tmp/_PathToDocumentsDirectory2 -variable=_PathToDocumentsDirectory2;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k _PathToDocumentsDirectory3 -v &quot;$[_PathToDocumentsDirectory3]&quot;&apos;;
+WbVarDef -contentFile=tmp/_PathToDocumentsDirectory3 -variable=_PathToDocumentsDirectory3;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k _PathToDocumentsDirectory4 -v &quot;$[_PathToDocumentsDirectory4]&quot;&apos;;
+WbVarDef -contentFile=tmp/_PathToDocumentsDirectory4 -variable=_PathToDocumentsDirectory4;
+------------------
+
+-- create base directories
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/sip_paths.py --system &quot;$[SystemName]&quot; --database &quot;$[DatabaseName]&quot; --schema &quot;$[DatabaseSchema]&quot;&apos;;
+WbVarDef -contentFile=tmp/SubSystemName -variable=SubSystemName;
+
+-- Test med generert connection heller enn wbconfirm over
+-- generate connection string
+-- WbVarDef TargetCon=&apos;username=,password=,url=jdbc:h2:../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName]/documentation/code/$[databaseName]_$[databaseSchema]&apos;;
+
+-- Create schemareport --
+WbInclude -ifDefined=DatabaseSchema -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
+
+-- Export to tsv -----
+-- TODO: Vil virke også med LONG RAW på oracle (bug i oracle dbdriver) hvis det feltet  er listet sist i tabellen -&gt; fikse auto hvordan?
+-- TODO: Long raw med innhold ble i et tilfelle til helt tommme filer på disk med kode under
+WbExport -ifDefined=DatabaseSchema
+-type=text
+-schema=$[DatabaseSchema]
+-types=TABLE,SYNONYM
+-sourceTable=*
+-outputdir=../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName]/content/data
+-createDir=true
+-continueOnError=false
+-encoding=UTF8                
+-header=true                  
+-decimal=&apos;.&apos;                  
+-maxDigits=0                  -- export as many decimals as possible
+-lineEnding=crlf        
+-clobAsFile=true              -- export huge text fields as separate files
+-blobType=file                -- export binary fields as separate files
+-delimiter=\t                 -- tab-separated  
+-replaceExpression=&apos;(\n|\r\n|\r|\t|^$)&apos; -replaceWith=&apos; &apos;
+-nullString=&apos; &apos;
+-showProgress=10000;  
+
+-- Create archives from directories  --
+WbSysExec -ifDefined=_PathToDocumentsDirectory1 -program=&quot;python3&quot; -argument=&apos;PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory1]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos;;
+WbSysExec -ifDefined=_PathToDocumentsDirectory2 -program=&quot;python3&quot; -argument=&apos;PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory2]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos;;
+WbSysExec -ifDefined=_PathToDocumentsDirectory3 -program=&quot;python3&quot; -argument=&apos;PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory3]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos;;
+WbSysExec -ifDefined=_PathToDocumentsDirectory4 -program=&quot;python3&quot; -argument=&apos;PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory4]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos;;
+
+-- Open subsystem directory --
+WbSysOpen ../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName];
+------------------------------
+
+-- Save log
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/copy_log.py -p &quot;../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName]/documentation/export.log&quot;&apos;;
+
+
+
+
+</string>
+       </void>
+       <void property="tooltip">
+        <string>XML/TSV-export</string>
+       </void>
+      </object>
+     </void>
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="name">
+        <string>Export to local database (alt. 2)</string>
+       </void>
+       <void property="sortOrder">
+        <int>1</int>
+       </void>
+       <void property="text">
+        <string>-- Copy data to H2 database under code-folder --
+--  WbCopy  
+--  -ifDefined=DatabaseSchema
+--  -sourceSchema=$[DatabaseSchema]
+--  -targetConnection=$[TargetCon]
+--  -mode=INSERT
+--  -commitEvery=10000
+--  -ignoreIdentityColumns=false
+--  -continueOnError=false
+--  -showProgress=10000
+--  -targetSchema=PUBLIC
+--  -createTarget=true;
+-------------------------------------------------</string>
+       </void>
+       <void property="tooltip">
+        <string>XML/H2-export</string>
+       </void>
+       <void property="visibleInPopup">
+        <boolean>false</boolean>
+       </void>
+      </object>
+     </void>
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="appendResult">
+        <boolean>true</boolean>
+       </void>
+       <void property="name">
+        <string>Create System Data Package</string>
+       </void>
+       <void property="sortOrder">
+        <int>2</int>
+       </void>
+       <void property="text">
+        <string>-- Create System Data Package
+
+-- Define variables --
+-- WbVarDef SystemName=$[?SystemName];
+----------------------
+
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k SystemName -v &quot;$[SystemName]&quot;&apos;;
+WbVarDef -contentFile=tmp/SystemName -variable=SystemName;
+
+-- Create archive from extracted data --
+WbSysExec -ifDefined=SystemName -program=&quot;python3&quot; -argument=&apos;PWB/wim_capture.py -p &quot;../_DATA/$[SystemName]&quot; -s &quot;$[SystemName]&quot; -dp true&apos;;
+-----------------------------------------
+
+-- Create checksum for archive --
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/md5sum.py --path &quot;../_DATA/$[SystemName].wim&quot;&apos;;
+----------------------------------
+
+-- Delete archived directory -- 
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/del_dir.py --path &quot;../_DATA/$[SystemName]&quot;&apos;;
+-------------------------------
+
+-- Open data directory --
+WbSysOpen ../_DATA;
+-------------------------
+
+</string>
+       </void>
+       <void property="tooltip">
+        <string>Package all data and generate checksum</string>
+       </void>
+      </object>
+     </void>
+    </void>
+    <void property="name">
+     <string>EXTRACT</string>
+    </void>
+    <void property="tooltip">
+     <string>Testet på Windows + Linux</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup" id="MacroGroup1">
+    <void property="macros">
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="appendResult">
+        <boolean>true</boolean>
+       </void>
+       <void property="name">
+        <string>Verify Checksum</string>
+       </void>
+       <void property="text">
+        <string>-- Verify Checksum
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/md5sum_check.py&apos;;
+
+</string>
+       </void>
+       <void property="tooltip">
+        <string>Verify data is unchanged</string>
+       </void>
+      </object>
+     </void>
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="name">
+        <string>Make Copies</string>
+       </void>
+       <void property="sortOrder">
+        <int>1</int>
+       </void>
+       <void property="text">
+        <string>-- Make Copies
+
+-- Define variables --
+-- WbVarDef SystemName=$[?SystemName];
+-- WbVarDef LocalWorkCopy=$[?LocalWorkCopy];
+-- WbVarDef RemoteBackup=$[?RemoteBackup]; 
+----------------------
+
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_copy.py -s &quot;$[SystemName]&quot; -l &quot;$[LocalWorkCopy]&quot; -r &quot;$[RemoteBackup]&quot;&apos;;</string>
+       </void>
+       <void property="tooltip">
+        <string>Copy data to processing folder and backup</string>
+       </void>
+      </object>
+     </void>
+    </void>
+    <void property="name">
+     <string>VERIFY</string>
+    </void>
+    <void property="sortOrder">
+     <int>1</int>
+    </void>
+    <void property="tooltip">
+     <string>Testet på Windows + Linux</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup" id="MacroGroup2">
+    <void property="macros">
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="name">
+        <string>File</string>
+       </void>
+       <void property="text">
+        <string>-- Dispose: -&gt; TODO
+-- WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_mount.py&apos;; WbVarDef  -contentFile=tmp/wim_info -variable=wim_info; 											-- Choose/mount wim-file 	
+-- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;; 																				-- Clear log-file
+-- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/meta_process.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Normalize metadata and generate sql		
+-- WbInclude -ifDefined=wim_info -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false;										-- Generate DDL and web-report from sql
+-- WbSysExec -ifDefined=wim_info  -program=&quot;python3&quot; -argument=&apos;PWB/meta_check.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Generate sql for testing metadata
+-- WbInclude -ifDefined=wim_info -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;											-- Generate schemas and import metadata (5 db-engines)
+-- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/wim_umount.py --wim &quot;$[wim_info]&quot; --log &quot;system_process_metadata.log&quot;&apos;; -- Save log/unmount wim image</string>
+       </void>
+       <void property="tooltip">
+        <string>dispos...</string>
+       </void>
+      </object>
+     </void>
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="name">
+        <string>Directory</string>
+       </void>
+       <void property="sortOrder">
+        <int>1</int>
+       </void>
+       <void property="text">
+        <string>-- TODO: Ha avhuking for om også undermapper skal kasseres
+
+-- Dispose: -&gt; TODO
+-- WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_mount.py&apos;; WbVarDef  -contentFile=tmp/wim_info -variable=wim_info; 											-- Choose/mount wim-file 	
+-- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;; 																				-- Clear log-file
+-- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/meta_process.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Normalize metadata and generate sql		
+-- WbInclude -ifDefined=wim_info -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false;										-- Generate DDL and web-report from sql
+-- WbSysExec -ifDefined=wim_info  -program=&quot;python3&quot; -argument=&apos;PWB/meta_check.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Generate sql for testing metadata
+-- WbInclude -ifDefined=wim_info -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;											-- Generate schemas and import metadata (5 db-engines)
+-- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/wim_umount.py --wim &quot;$[wim_info]&quot; --log &quot;system_process_metadata.log&quot;&apos;; -- Save log/unmount wim image</string>
+       </void>
+       <void property="tooltip">
+        <string>dispos...</string>
+       </void>
+      </object>
+     </void>
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="name">
+        <string>Table</string>
+       </void>
+       <void property="sortOrder">
+        <int>2</int>
+       </void>
+       <void property="text">
+        <string>-- Dispose: -&gt; TODO
+-- WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_mount.py&apos;; WbVarDef  -contentFile=tmp/wim_info -variable=wim_info; 											-- Choose/mount wim-file 	
+-- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;; 																				-- Clear log-file
+-- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/meta_process.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Normalize metadata and generate sql		
+-- WbInclude -ifDefined=wim_info -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false;										-- Generate DDL and web-report from sql
+-- WbSysExec -ifDefined=wim_info  -program=&quot;python3&quot; -argument=&apos;PWB/meta_check.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Generate sql for testing metadata
+-- WbInclude -ifDefined=wim_info -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;											-- Generate schemas and import metadata (5 db-engines)
+-- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/wim_umount.py --wim &quot;$[wim_info]&quot; --log &quot;system_process_metadata.log&quot;&apos;; -- Save log/unmount wim image</string>
+       </void>
+       <void property="tooltip">
+        <string>dispos...</string>
+       </void>
+      </object>
+     </void>
+    </void>
+    <void property="name">
+     <string>DISPOSE</string>
+    </void>
+    <void property="sortOrder">
+     <int>2</int>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup" id="MacroGroup3">
+    <void property="macros">
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="name">
+        <string>Files</string>
+       </void>
+       <void property="text">
+        <string>-- Process files:
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_mount.py&apos;; WbVarDef  -contentFile=tmp/wim_info -variable=wim_info; 																	-- Choose/mount wim-file 	
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;; 																										-- Clear log-file
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/file_process.py --wim &quot;$[wim_info]&quot; --pre True&apos;; 																		-- Fix directories and generate sql if needed
+WbVarDef  -contentFile=tmp/file_process.sql -variable=sql_proc; 																																										-- Check if sql has been generated
+WbInclude -ifDefined=sql_proc -file=tmp/file_process.sql -displayResult=false -verbose=false -continueOnError=false; 																-- Run generated sql (if generated true)
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/file_process.py --wim &quot;$[wim_info]&quot; --pre False&apos;; 																	-- Fix directories post sql-run
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/file_check.py --wim &quot;$[wim_info]&quot;&apos;; 																								-- Virus check and metadata extract
+-- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/file_convert.py --wim &quot;$[wim_info]&quot;&apos;;																						-- Convert files
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/wim_umount.py --wim &quot;$[wim_info]&quot; --proc &quot;file&quot; --log &quot;system_process_files.log&quot;&apos;; 	-- Save log/unmount wim image
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/cleanup.py --wim &quot;$[wim_info]&quot; --proc &quot;file&quot;&apos;; 																										-- Clean up
+
+
+
+</string>
+       </void>
+       <void property="tooltip">
+        <string>Normalize documents</string>
+       </void>
+      </object>
+     </void>
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="name">
+        <string>Metadata</string>
+       </void>
+       <void property="sortOrder">
+        <int>1</int>
+       </void>
+       <void property="text">
+        <string>-- Process metadata:
+WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_mount.py&apos;; WbVarDef  -contentFile=tmp/wim_info -variable=wim_info; 																		-- Choose/mount wim-file 	
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;; 																											-- Clear log-file
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/meta_process.py --wim &quot;$[wim_info]&quot;&apos;;																									-- Normalize metadata and generate sql		
+WbInclude -ifDefined=wim_info -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false;																	-- Generate DDL and web-report from sql
+WbSysExec -ifDefined=wim_info  -program=&quot;python3&quot; -argument=&apos;PWB/meta_check.py --wim &quot;$[wim_info]&quot;&apos;;																									-- Generate sql for testing metadata
+WbInclude -ifDefined=wim_info -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;																		-- Generate schemas and import metadata (5 db-engines)
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/wim_umount.py --wim &quot;$[wim_info]&quot; --proc &quot;meta&quot; --log &quot;system_process_metadata.log&quot;&apos;; -- Save log/unmount wim image
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/cleanup.py --wim &quot;$[wim_info]&quot; --proc &quot;meta&quot;&apos;; 																											-- Clean up</string>
+       </void>
+       <void property="tooltip">
+        <string>Normalize metadata</string>
+       </void>
+      </object>
+     </void>
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="name">
+        <string>Metadata_original</string>
+       </void>
+       <void property="sortOrder">
+        <int>2</int>
+       </void>
+       <void property="text">
+        <string>-- Extract Database Copy and process data
+-- Define variables --
+-- WbVarDef SubSystemPath=$[?SubSystemPath];
+
+-- Generate db-url ---
+WbSysExec basename &apos;$[SubSystemPath]&apos; &gt; ~/bin/sql_workbench/tmp/tmp.txt;
+WbSysExec sed -i &apos;1s;^;jdbc:h2:$[SubSystemPath]/documentation/code/;&apos; ~/bin/sql_workbench/tmp/tmp.txt;
+WbVarDef -contentFile=bin/sql_workbench/tmp/tmp.txt -variable=db;
+WbEcho $[db];
+-- Fix illegal names -
+WbSysExec sed -i &apos;s:&lt;column-name&gt;NOTNULL&lt;/column-name&gt;:&lt;column-name&gt;NOTNULL_&lt;/column-name&gt; &lt;!-- renamed from illegal name &quot;NOTNULL&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml;     
+WbSysExec sed -i &apos;s:&lt;column name=&quot;NOTNULL&quot; direction=&quot;ASC&quot;/&gt;:&lt;column name=&quot;NOTNULL_&quot; direction=&quot;ASC&quot;/&gt; &lt;!-- renamed from illegal name &quot;NOTNULL&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml; 
+WbSysExec sed -i &apos;s:&lt;column-name&gt;SYSTEM&lt;/column-name&gt;:&lt;column-name&gt;SYSTEM_&lt;/column-name&gt; &lt;!-- renamed from illegal name &quot;SYSTEM&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml; 
+WbSysExec sed -i &apos;s:&lt;column name=&quot;SYSTEM&quot; direction=&quot;ASC&quot;/&gt;:&lt;column name=&quot;SYSTEM_&quot; direction=&quot;ASC&quot;/&gt; &lt;!-- renamed from illegal name &quot;SYSTEM&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml; 
+WbSysExec sed -i &apos;s:&lt;column-name&gt;FUNCTION&lt;/column-name&gt;:&lt;column-name&gt;FUNCTION_&lt;/column-name&gt; &lt;!-- renamed from illegal name &quot;FUNCTION&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml;    
+WbSysExec sed -i &apos;s:&lt;column name=&quot;FUNCTION&quot; direction=&quot;ASC&quot;/&gt;:&lt;column name=&quot;FUNCTION_&quot; direction=&quot;ASC&quot;/&gt; &lt;!-- renamed from illegal name &quot;FUNCTION&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml; 
+WbSysExec sed -i &apos;s:&lt;column-name&gt;STORED&lt;/column-name&gt;:&lt;column-name&gt;STORED_&lt;/column-name&gt; &lt;!-- renamed from illegal name &quot;STORED&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml;    
+WbSysExec sed -i &apos;s:&lt;column name=&quot;STORED&quot; direction=&quot;ASC&quot;/&gt;:&lt;column name=&quot;STORED_&quot; direction=&quot;ASC&quot;/&gt; &lt;!-- renamed from illegal name &quot;STORED&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml; 
+-- Generate HTML -----
+WbXslt 
+-inputfile=$[SubSystemPath]/header/metadata.xml
+-stylesheet=bin/sql_workbench/xslt/wbreport2html.xslt
+-xsltOutput=$[SubSystemPath]/header/metadata.html;
+-- Generate DDL ------
+WbXslt 
+-inputfile=$[SubSystemPath]/header/metadata.xml
+-stylesheet=bin/sql_workbench/xslt/metadata2ddl.xslt
+-xsltOutput=$[SubSystemPath]/documentation/code/ddl.sql;
+-- Connect to db -----
+WbConnect
+-url=$[db]
+-password=&apos;&apos;;
+-- Fix illegal column names -
+WbVarDef illegalFields=&quot;&apos;NOTNULL&apos;,&apos;SYSTEM&apos;,&apos;FUNCTION&apos;,&apos;STORED&apos;&quot;;
+WbVarDef illegalCount=@&quot;SELECT COUNT(TABLE_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = &apos;PUBLIC&apos; AND COLUMN_NAME in ($[illegalFields]);&quot;;
+WbVarDef fixColumns=@&quot;SELECT GROUP_CONCAT(&apos;ALTER TABLE &apos; || TABLE_NAME  || &apos; ALTER COLUMN &apos; || COLUMN_NAME || &apos; RENAME TO &apos; || COLUMN_NAME || &apos;_;&apos;) FROM (
+                      SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                      WHERE TABLE_SCHEMA = &apos;PUBLIC&apos;
+                      AND COLUMN_NAME in ($[illegalFields]))&quot;;                                           
+WbSysExec basename &apos;$[fixColumns]&apos; &gt; ~/bin/sql_workbench/tmp/tmp.sql;
+WbVarDef fixColumns=&apos;&apos;;
+WbSysExec sed -i &apos;s/\,/\n/g&apos; ~/bin/sql_workbench/tmp/tmp.sql;
+WbInclude -file=bin/sql_workbench/tmp/tmp.sql -displayResult=false -verbose=false -continueOnError=true;
+COMMIT;
+WbSysExec rm bin/sql_workbench/tmp/tmp.sql;
+
+-- Export to tsv -----
+WbExport
+-type=text
+-schema=PUBLIC
+-types=TABLE
+-sourceTable=*
+-outputdir=$[SubSystemPath]/content/data
+-createDir=true
+-continueOnError=false
+-encoding=UTF8                
+-header=true                  
+-decimal=&apos;.&apos;                  
+-maxDigits=0                  -- export as many decimasl as possible
+-lineEnding=crlf        
+-clobAsFile=true              -- export huge text fields as separate files
+-blobType=file                -- export binary fields as separate files
+-delimiter=\t                 -- tab-separated  
+-replaceExpression=&apos;(\n|\r\n|\r|\t)&apos; -replaceWith=&apos; &apos;
+-showProgress=10000;   
+-- Create schemareport from local copy of database --
+WbSchemaReport 
+-file=$[SubSystemPath]/documentation/code/metadata_dbcopy.xml
+-schemas=PUBLIC
+-includeProcedures=true
+-includeTriggers=true
+-writeFullSource=true;
+-----------------------------------------------------
+WbDisconnect;
+-- Create directory for lobs if not exists --      
+WbSysExec mkdir -p $[SubSystemPath]/content/data_documents 2&gt;/dev/null; 
+---------------------------------------------
+-- Move extracted *lobs into their own directory --
+WbSysExec mv &apos;$[SubSystemPath]/content/data/&apos;*.data $[SubSystemPath]/content/data_documents 2&gt;/dev/null; 
+---------------------------------------------------
+-- Remove directory for lobs if empty --
+WbSysExec rmdir $[SubSystemPath]/content/data_documents/ 2&gt;/dev/null; 
+-- HSQLDB 2.4 -------- 
+WbConnect -url=&quot;jdbc:hsqldb:mem:HSQLDB_test&quot; -password=&quot;&quot;; 
+WbInclude -file=$[SubSystemPath]/documentation/code/ddl.sql -displayResult=true -verbose=true -continueOnError=false;
+WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=PUBLIC -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
+WbDisconnect;
+-- H2 1.4 ------------
+-- Import with SQL Workbench/J (all tables):
+WbConnect -url=&quot;jdbc:h2:mem:H2_test&quot; -password=&quot;&quot;;
+WbInclude -file=$[SubSystemPath]/documentation/code/ddl.sql -displayResult=true -verbose=true -continueOnError=false;
+WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=PUBLIC -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
+WbDisconnect;
+-- MySQL 8.0 ---------    
+WbConnect -url=&quot;jdbc:mysql://localhost:3306&quot; -username=&quot;root&quot; -password=&quot;bba&quot; -driverjar=&quot;bin/mysql-connector-java-8.0.13.jar&quot; -driver=com.mysql.cj.jdbc.Driver;
+DROP DATABASE IF EXISTS MySQL_test; CREATE DATABASE MySQL_test; USE MySQL_test;
+WbInclude -file=$[SubSystemPath]/documentation/code/ddl.sql -displayResult=true -verbose=true -continueOnError=false;
+-- Import with SQL Workbench/J (all tables):
+WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=&quot;&quot; -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
+WbDisconnect;
+-- PostgreSQL 12 -----
+WbSysExec cp $[SubSystemPath]/documentation/code/ddl.sql $[SubSystemPath]/documentation/code/pg_ora_ddl.sql;
+WbSysExec sed -i &apos;s: datetime: timestamp:g&apos; $[SubSystemPath]/documentation/code/pg_ora_ddl.sql;
+WbConnect -url=&quot;jdbc:postgresql://localhost:5432/&quot; -username=&quot;postgres&quot; -password=&quot;bba&quot;; 
+DROP SCHEMA IF EXISTS PostgreSQL_test CASCADE; COMMIT; CREATE SCHEMA PostgreSQL_test; COMMIT; SET search_path TO PostgreSQL_test;
+WbInclude -file=$[SubSystemPath]/documentation/code/pg_ora_ddl.sql -displayResult=true -verbose=true -continueOnError=false;
+COMMIT;
+-- Import with SQL Workbench/J (all tables):
+WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=PostgreSQL_test -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
+WbDisconnect;
+-- Oracle 12 --------- 
+WbSysExec cp $[SubSystemPath]/documentation/code/ddl.sql $[SubSystemPath]/documentation/code/pg_ora_ddl.sql;
+WbSysExec sed -i &apos;s: datetime: timestamp:g&apos; $[SubSystemPath]/documentation/code/pg_ora_ddl.sql; 
+WbSysExec echo \
+&apos;BEGIN 
+  FOR cur_rec IN (SELECT object_name, object_type 
+                  FROM   user_objects
+                  WHERE  object_type IN (&apos;\&apos;&apos;TABLE&apos;\&apos;&apos;,&apos;\&apos;&apos;VIEW&apos;\&apos;&apos;,&apos;\&apos;&apos;SEQUENCE&apos;\&apos;&apos;)) LOOP
+    BEGIN
+      IF cur_rec.object_type = &apos;\&apos;&apos;TABLE&apos;\&apos;&apos; THEN
+        EXECUTE IMMEDIATE &apos;\&apos;&apos;DROP &apos;\&apos;&apos; || cur_rec.object_type || &apos;\&apos;&apos; &quot;&apos;\&apos;&apos; || cur_rec.object_name || &apos;\&apos;&apos;&quot; CASCADE CONSTRAINTS&apos;\&apos;&apos;;
+      ELSE
+        EXECUTE IMMEDIATE &apos;\&apos;&apos;DROP &apos;\&apos;&apos; || cur_rec.object_type || &apos;\&apos;&apos; &quot;&apos;\&apos;&apos; || cur_rec.object_name || &apos;\&apos;&apos;&quot;&apos;\&apos;&apos;;
+      END IF;
+    EXCEPTION
+      WHEN OTHERS THEN
+        DBMS_OUTPUT.put_line(&apos;\&apos;&apos;FAILED: DROP &apos;\&apos;&apos; || cur_rec.object_type || &apos;\&apos;&apos; &quot;&apos;\&apos;&apos; || cur_rec.object_name || &apos;\&apos;&apos;&quot;&apos;\&apos;&apos;);
+    END;
+  END LOOP;
+  COMMIT;
+END;&apos; &gt; bin/sql_workbench/tmp/ora_reset.sql;
+WbConnect -url=&quot;jdbc:oracle:thin:@oradb29i.srv.bergenkom.no:21525/INNPROD&quot; -username=&quot;INNSYN_TEST2&quot; -password=&quot;historie&quot;;
+WbInclude -file=bin/sql_workbench/tmp/ora_reset.sql -displayResult=true -verbose=true -continueOnError=false;
+WbInclude -file=$[SubSystemPath]/documentation/code/pg_ora_ddl.sql -displayResult=true -verbose=true -continueOnError=false;
+COMMIT;
+-- Import with SQL Workbench/J (all tables):
+-- WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=INNSYN_TEST2 -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
+WbDisconnect;
+WbSysExec rm bin/sql_workbench/tmp/ora_reset.sql;
+-- SQLite 3.21 ------- 
+WbConnect -url=&quot;jdbc:sqlite::memory:&quot; -username=&quot;&quot; -password=&quot;&quot; -driverjar=&quot;bin/sqlite-jdbc-3.21.0.1.jar&quot; -driver=org.sqlite.JDBC;
+WbInclude -file=$[SubSystemPath]/documentation/code/ddl.sql -displayResult=true -verbose=true -continueOnError=false;
+-- Import with SQL Workbench/J (all tables):
+-- WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema= -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
+WbDisconnect;
+-- MSSQLServer 2019 --
+WbConnect -url=&quot;jdbc:sqlserver://localhost\SQLEXPRESS:1433&quot; -username=&quot;sa&quot; -password=&quot;Hp3tusen1&quot; -autocommit=true;
+DROP DATABASE IF EXISTS MSSQLServer_test; CREATE DATABASE MSSQLServer_test; USE MSSQLServer_test;
+WbInclude -file=$[SubSystemPath]/documentation/code/ddl.sql -displayResult=true -verbose=true -continueOnError=false;
+WbDisconnect;
+WbConnect -url=&quot;jdbc:sqlserver://localhost\SQLEXPRESS:1433&quot; -username=&quot;sa&quot; -password=&quot;Hp3tusen1&quot; -autocommit=false;
+USE MSSQLServer_test;
+-- Import with SQL Workbench/J (all tables):
+-- WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=dbo -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
+WbDisconnect;
+----------------------
+
+
+
+
+
+
+</string>
+       </void>
+       <void property="visibleInMenu">
+        <boolean>false</boolean>
+       </void>
+      </object>
+     </void>
+    </void>
+    <void property="name">
+     <string>PROCESS</string>
+    </void>
+    <void property="sortOrder">
+     <int>3</int>
+    </void>
+    <void property="tooltip">
+     <string>Kun testet på Linux</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup" id="MacroGroup4">
+    <void property="macros">
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="name">
+        <string>Create EAD</string>
+       </void>
+       <void property="text">
+        <string>-- TODO
+</string>
+       </void>
+      </object>
+     </void>
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="name">
+        <string>Create EAC</string>
+       </void>
+       <void property="sortOrder">
+        <int>1</int>
+       </void>
+       <void property="text">
+        <string>-- TODO</string>
+       </void>
+      </object>
+     </void>
+    </void>
+    <void property="name">
+     <string>Finalize SIP</string>
+    </void>
+    <void property="sortOrder">
+     <int>4</int>
+    </void>
+    <void property="visibleInMenu">
+     <boolean>false</boolean>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup" id="MacroGroup5">
+    <void property="macros">
+     <void method="add">
+      <object class="workbench.sql.macros.MacroDefinition">
+       <void property="appendResult">
+        <boolean>true</boolean>
+       </void>
+       <void property="name">
+        <string>MD5sum File</string>
+       </void>
+       <void property="text">
+        <string>-- Define variables --
+-- WbVarDef Filepath=$[?Filepath];
+----------------------
+
+-- TODO: Bytt ut med python-variant under
+-- Show checksum for file --
+WbSysExec ..\md5\md5.exe $[Filepath];
+----------------------------
+</string>
+       </void>
+      </object>
+     </void>
+    </void>
+    <void property="name">
+     <string>File Operations</string>
+    </void>
+    <void property="sortOrder">
+     <int>5</int>
+    </void>
+    <void property="visibleInMenu">
+     <boolean>false</boolean>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup">
+    <void property="name">
+     <string>H2</string>
+    </void>
+    <void property="sortOrder">
+     <int>6</int>
+    </void>
+    <void property="visibleInMenu">
+     <boolean>false</boolean>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup">
+    <void property="name">
+     <string>SQL Server</string>
+    </void>
+    <void property="sortOrder">
+     <int>7</int>
+    </void>
+    <void property="visibleInMenu">
+     <boolean>false</boolean>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup">
+    <void property="name">
+     <string>Oracle</string>
+    </void>
+    <void property="sortOrder">
+     <int>8</int>
+    </void>
+    <void property="visibleInMenu">
+     <boolean>false</boolean>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup">
+    <void property="name">
+     <string>MySQL</string>
+    </void>
+    <void property="sortOrder">
+     <int>9</int>
+    </void>
+    <void property="visibleInMenu">
+     <boolean>false</boolean>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup">
+    <void property="name">
+     <string>PostgreSQL</string>
+    </void>
+    <void property="sortOrder">
+     <int>10</int>
+    </void>
+    <void property="visibleInMenu">
+     <boolean>false</boolean>
+    </void>
+   </object>
+  </void>
+ </object>
+</java>
