@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<java version="1.8.0_212" class="java.beans.XMLDecoder">
+<java version="11.0.3" class="java.beans.XMLDecoder">
  <object class="java.util.ArrayList">
   <void method="add">
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
@@ -17,7 +17,7 @@
 -- TODO: Bytt ut wb gui for input med tkinter el
 
 -- New log-file
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/clear_file.py -f &quot;../tmp/PWB.log&quot;&apos; -dir=&apos;python&apos;;
 
 -- Define variables --
 -- WbVarDef SystemName=$[?SystemName];
@@ -33,24 +33,24 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quo
 WbConfirm -ifDefined=DatabaseSchema -message=&quot;Is database connection profile correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
 
 -- Fix arguments
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k SystemName -v &quot;$[SystemName]&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k SystemName -v &quot;$[SystemName]&quot;&apos; -dir=&apos;python&apos;;
 WbVarDef -contentFile=tmp/SystemName -variable=SystemName;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k DatabaseName -v &quot;$[DatabaseName]&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k DatabaseName -v &quot;$[DatabaseName]&quot;&apos; -dir=&apos;python&apos;;
 WbVarDef -contentFile=tmp/DatabaseName -variable=DatabaseName;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k DatabaseSchema -v &quot;$[DatabaseSchema]&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k DatabaseSchema -v &quot;$[DatabaseSchema]&quot;&apos; -dir=&apos;python&apos;;
 WbVarDef -contentFile=tmp/DatabaseSchema -variable=DatabaseSchema;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k _PathToDocumentsDirectory1 -v &quot;$[_PathToDocumentsDirectory1]&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k _PathToDocumentsDirectory1 -v &quot;$[_PathToDocumentsDirectory1]&quot;&apos; -dir=&apos;python&apos;;
 WbVarDef -contentFile=tmp/_PathToDocumentsDirectory1 -variable=_PathToDocumentsDirectory1;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k _PathToDocumentsDirectory2 -v &quot;$[_PathToDocumentsDirectory2]&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k _PathToDocumentsDirectory2 -v &quot;$[_PathToDocumentsDirectory2]&quot;&apos; -dir=&apos;python&apos;;
 WbVarDef -contentFile=tmp/_PathToDocumentsDirectory2 -variable=_PathToDocumentsDirectory2;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k _PathToDocumentsDirectory3 -v &quot;$[_PathToDocumentsDirectory3]&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k _PathToDocumentsDirectory3 -v &quot;$[_PathToDocumentsDirectory3]&quot;&apos; -dir=&apos;python&apos;;
 WbVarDef -contentFile=tmp/_PathToDocumentsDirectory3 -variable=_PathToDocumentsDirectory3;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k _PathToDocumentsDirectory4 -v &quot;$[_PathToDocumentsDirectory4]&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k _PathToDocumentsDirectory4 -v &quot;$[_PathToDocumentsDirectory4]&quot;&apos; -dir=&apos;python&apos;;
 WbVarDef -contentFile=tmp/_PathToDocumentsDirectory4 -variable=_PathToDocumentsDirectory4;
 ------------------
 
 -- create base directories
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/sip_paths.py --system &quot;$[SystemName]&quot; --database &quot;$[DatabaseName]&quot; --schema &quot;$[DatabaseSchema]&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/sip_paths.py --system &quot;$[SystemName]&quot; --database &quot;$[DatabaseName]&quot; --schema &quot;$[DatabaseSchema]&quot;&apos; -dir=&apos;python&apos;;
 WbVarDef -contentFile=tmp/SubSystemName -variable=SubSystemName;
 
 -- Test med generert connection heller enn wbconfirm over
@@ -84,17 +84,17 @@ WbExport -ifDefined=DatabaseSchema
 -showProgress=10000;  
 
 -- Create archives from directories  --
-WbSysExec -ifDefined=_PathToDocumentsDirectory1 -program=&quot;python3&quot; -argument=&apos;PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory1]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos;;
-WbSysExec -ifDefined=_PathToDocumentsDirectory2 -program=&quot;python3&quot; -argument=&apos;PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory2]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos;;
-WbSysExec -ifDefined=_PathToDocumentsDirectory3 -program=&quot;python3&quot; -argument=&apos;PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory3]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos;;
-WbSysExec -ifDefined=_PathToDocumentsDirectory4 -program=&quot;python3&quot; -argument=&apos;PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory4]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos;;
+WbSysExec -ifDefined=_PathToDocumentsDirectory1 -program=&quot;python3&quot; -argument=&apos;../PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory1]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos; -dir=&apos;python&apos;;
+WbSysExec -ifDefined=_PathToDocumentsDirectory2 -program=&quot;python3&quot; -argument=&apos;../PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory2]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos; -dir=&apos;python&apos;;
+WbSysExec -ifDefined=_PathToDocumentsDirectory3 -program=&quot;python3&quot; -argument=&apos;../PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory3]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos; -dir=&apos;python&apos;;
+WbSysExec -ifDefined=_PathToDocumentsDirectory4 -program=&quot;python3&quot; -argument=&apos;../PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory4]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos; -dir=&apos;python&apos;;
 
 -- Open subsystem directory --
 WbSysOpen ../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName];
 ------------------------------
 
 -- Save log
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/copy_log.py -p &quot;../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName]/documentation/export.log&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/copy_log.py -p &quot;../../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName]/documentation/export.log&quot;&apos; -dir=&apos;python&apos;;
 
 
 
@@ -155,26 +155,24 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/copy_log.py -p &quot;
 -- WbVarDef SystemName=$[?SystemName];
 ----------------------
 
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/save_args.py -k SystemName -v &quot;$[SystemName]&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k SystemName -v &quot;$[SystemName]&quot;&apos; -dir=&apos;python&apos;;
 WbVarDef -contentFile=tmp/SystemName -variable=SystemName;
 
 -- Create archive from extracted data --
-WbSysExec -ifDefined=SystemName -program=&quot;python3&quot; -argument=&apos;PWB/wim_capture.py -p &quot;../_DATA/$[SystemName]&quot; -s &quot;$[SystemName]&quot; -dp true&apos;;
+WbSysExec -ifDefined=SystemName -program=&quot;python3&quot; -argument=&apos;../PWB/wim_capture.py -p &quot;../../_DATA/$[SystemName]&quot; -s &quot;$[SystemName]&quot; -dp true&apos; -dir=&apos;python&apos;;
 -----------------------------------------
 
 -- Create checksum for archive --
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/md5sum.py --path &quot;../_DATA/$[SystemName].wim&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/md5sum.py --path &quot;../../_DATA/$[SystemName].wim&quot;&apos; -dir=&apos;python&apos;;
 ----------------------------------
 
 -- Delete archived directory -- 
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/del_dir.py --path &quot;../_DATA/$[SystemName]&quot;&apos;;
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/del_dir.py --path &quot;../../_DATA/$[SystemName]&quot;&apos; -dir=&apos;python&apos;;
 -------------------------------
 
 -- Open data directory --
 WbSysOpen ../_DATA;
--------------------------
-
-</string>
+-------------------------</string>
        </void>
        <void property="tooltip">
         <string>Package all data and generate checksum</string>
@@ -203,8 +201,7 @@ WbSysOpen ../_DATA;
        </void>
        <void property="text">
         <string>-- Verify Checksum
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/md5sum_check.py&apos;;
-
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/md5sum_check.py&apos; -dir=&apos;python&apos;;
 </string>
        </void>
        <void property="tooltip">
@@ -213,7 +210,7 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/md5sum_check.py&apos;
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="name">
         <string>Make Copies</string>
        </void>
@@ -229,11 +226,14 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/md5sum_check.py&apos;
 -- WbVarDef RemoteBackup=$[?RemoteBackup]; 
 ----------------------
 
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_copy.py -s &quot;$[SystemName]&quot; -l &quot;$[LocalWorkCopy]&quot; -r &quot;$[RemoteBackup]&quot;&apos;;</string>
+WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/wim_copy.py -s &quot;$[SystemName]&quot; -l &quot;$[LocalWorkCopy]&quot; -r &quot;$[RemoteBackup]&quot;&apos; -dir=&apos;python&apos;;
+
+</string>
        </void>
        <void property="tooltip">
         <string>Copy data to processing folder and backup</string>
        </void>
+       <void id="Boolean0" method="isAppendResult"/>
       </object>
      </void>
     </void>
@@ -556,7 +556,7 @@ WbDisconnect;
 </string>
        </void>
        <void property="visibleInMenu">
-        <boolean>false</boolean>
+        <object idref="Boolean0"/>
        </void>
       </object>
      </void>
@@ -643,7 +643,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -656,7 +656,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>6</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -669,7 +669,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>7</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -682,7 +682,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>8</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -695,7 +695,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>9</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -708,7 +708,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>10</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
