@@ -4,6 +4,7 @@ import os
 import subprocess
 import pathlib
 
+# TODO: Path som arg ?
 
 def md5sum(filename, blocksize=65536):
     hash = hashlib.md5()
@@ -31,23 +32,15 @@ if os.name == "posix":
             pass
         exit()
 else:
-    import tkinter
-    from tkinter import ttk, messagebox
-    from tkinter.filedialog import askopenfilename
-    root = tkinter.Tk()
-    root.overrideredirect(1)
-    root.withdraw()
-
-    filepath = askopenfilename(initialdir="../_DATA",
-                               filetypes=("Wim Archive", "*.wim"),
-                               title="Choose a file."
-                               )
-
+    import win32ui
+    file_open = win32ui.CreateFileDialog(1, ".wim", "", 0, "Wim Archives (*.wim)|*.wim|All Files (*.*)|*.*|")
+    file_open.SetOFNInitialDir('D:') # TODO: Hent path fra relative path til _DATA
+    file_open.DoModal()
+    filepath = file_open.GetPathName()	
     file_ext = pathlib.Path(filepath).suffix
     if file_ext != ".wim":
-        messagebox.showinfo("Error", "Not a valid wim archive.")
-    root.destroy()
-    exit()
+    	win32ui.MessageBox("Not a valid wim archive.", "Error")
+    	exit()
 
 file = open(os.path.splitext(filepath)[0]+'_md5sum.txt', "r")
 mount_dir = os.path.splitext(filepath)[0] + '_mount'
@@ -69,10 +62,4 @@ if os.name == "posix":
         pass
     exit()
 else:
-    import tkinter
-    from tkinter import ttk, messagebox
-    root = tkinter.Tk()
-    root.overrideredirect(1)
-    root.withdraw()
-    messagebox.showinfo(box_arg, message)
-    root.destroy()
+	win32ui.MessageBox(message, box_arg)

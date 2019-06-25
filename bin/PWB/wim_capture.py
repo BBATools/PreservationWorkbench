@@ -21,10 +21,10 @@ subsystem = args.subsystem
 dp = args.datapackage
 
 if dp:
-    new_path = "../_DATA/" + sys_name + ".wim"
+    new_path = "../../_DATA/" + sys_name + ".wim"
 else:
     uniq = 1
-    new_base_path = "../_DATA/" + sys_name + \
+    new_base_path = "../../_DATA/" + sys_name + \
         "/content/sub_systems/" + subsystem + "/content/documents"
     new_path = new_base_path + "/%s%d%s" % ("dir", uniq, ".wim")
 
@@ -32,7 +32,7 @@ else:
         new_path = new_base_path + "/%s%d%s" % ("dir", uniq, ".wim")
         uniq += 1
 
-wim_cmd = r"PWB\wimlib-imagex capture "
+wim_cmd = r"..\PWB\wimlib-imagex capture "
 if os.name == "posix":
     wim_cmd = "wimcapture "
 subprocess.run(wim_cmd + path + " " + new_path +

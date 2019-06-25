@@ -3,8 +3,6 @@ import pathlib
 import os
 import argparse
 import subprocess
-# TODO: Legg denne inn på win (teste denne som alternativ førs: https://pydantic-docs.helpmanual.io/)
-import cerberus
 
 parser = argparse.ArgumentParser()
 # Default is None:
@@ -16,15 +14,9 @@ args = parser.parse_args()
 system = args.system
 database = args.database
 schema = args.schema
-basepath = '../_DATA/'
+basepath = '../../_DATA/'
 subsystem_path = None
-subsystem_file = os.path.abspath("tmp/SubSystemName")
-
-v_schema = {'non_empty_string': {'type': 'string', 'minlength': 1}}
-v = cerberus.Validator(v_schema)
-system_arg = {'non_empty_string': system}
-db_args = {'non_empty_string': schema, 'non_empty_string': database}
-
+subsystem_file = os.path.abspath("../tmp/SubSystemName")
 
 def unique_dir(directory):
     counter = 0
@@ -36,14 +28,14 @@ def unique_dir(directory):
 
 
 open(subsystem_file, 'w').close()
-if v(system_arg):
+if len(system.strip()) > 0:
     pathlib.Path(basepath + system +
                  '/administrative_metadata/').mkdir(parents=True, exist_ok=True)
     pathlib.Path(basepath + system +
                  '/descriptive_metadata/').mkdir(parents=True, exist_ok=True)
     pathlib.Path(basepath + system +
                  '/content/documentation/').mkdir(parents=True, exist_ok=True)
-    if v(db_args):
+    if len(schema.strip()) > 0 and len(database.strip()) > 0:
         subsystem_path = basepath + system + \
             '/content/sub_systems/' + database + '_' + schema
     else:
