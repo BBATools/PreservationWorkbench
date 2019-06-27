@@ -210,7 +210,7 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/md5sum_check.py&ap
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>Make Copies</string>
        </void>
@@ -233,7 +233,6 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/wim_copy.py -s &qu
        <void property="tooltip">
         <string>Copy data to processing folder and backup</string>
        </void>
-       <void id="Boolean0" method="isAppendResult"/>
       </object>
      </void>
     </void>
@@ -252,7 +251,7 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/wim_copy.py -s &qu
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup2">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="name">
         <string>File</string>
        </void>
@@ -269,10 +268,11 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/wim_copy.py -s &qu
        <void property="tooltip">
         <string>dispos...</string>
        </void>
+       <void id="Boolean0" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition1">
        <void property="name">
         <string>Directory</string>
        </void>
@@ -294,6 +294,7 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/wim_copy.py -s &qu
        <void property="tooltip">
         <string>dispos...</string>
        </void>
+       <void id="Boolean1" method="isVisibleInMenu"/>
       </object>
      </void>
      <void method="add">
@@ -617,7 +618,7 @@ WbDisconnect;
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
-        <boolean>true</boolean>
+        <object idref="Boolean1"/>
        </void>
        <void property="name">
         <string>MD5sum File</string>
@@ -643,7 +644,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>

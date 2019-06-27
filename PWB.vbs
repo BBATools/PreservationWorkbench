@@ -6,6 +6,17 @@ wbpath = Left(WScript.ScriptFullName, Len(WScript.ScriptFullName) - Len(WScript.
 WshShell.CurrentDirectory = wbpath
 javaPath = wbpath & "jre\bin\javaw.exe"
 
+pyExeFile="tmp\pyexe"
+pwbPathFile="tmp\pwbpath" 
+Set objFile = FSO.CreateTextFile(pyExeFile,True)
+' objFile.Write chr(34) & wbpath & "python\python3" & chr(34) & vbCrLf
+objFile.Write chr(34) & wbpath & "python\python3" & chr(34)
+objFile.Close
+Set objFile = FSO.CreateTextFile(pwbPathFile,True)
+' objFile.Write chr(34) & wbpath & "PWB\" & chr(34) & vbCrLf
+objFile.Write chr(34) & wbpath & "PWB\"
+objFile.Close
+
 set args = WScript.Arguments
 
 jarpath = wbpath & "sqlworkbench.jar" 
