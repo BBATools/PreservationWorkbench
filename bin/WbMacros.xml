@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<java version="11.0.3" class="java.beans.XMLDecoder">
+<java version="1.8.0_222" class="java.beans.XMLDecoder">
  <object class="java.util.ArrayList">
   <void method="add">
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
@@ -251,7 +251,7 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/wim_copy.py -s &qu
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup2">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>File</string>
        </void>
@@ -268,11 +268,10 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/wim_copy.py -s &qu
        <void property="tooltip">
         <string>dispos...</string>
        </void>
-       <void id="Boolean0" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition1">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>Directory</string>
        </void>
@@ -294,7 +293,6 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/wim_copy.py -s &qu
        <void property="tooltip">
         <string>dispos...</string>
        </void>
-       <void id="Boolean1" method="isVisibleInMenu"/>
       </object>
      </void>
      <void method="add">
@@ -557,7 +555,7 @@ WbDisconnect;
 </string>
        </void>
        <void property="visibleInMenu">
-        <object idref="Boolean0"/>
+        <boolean>false</boolean>
        </void>
       </object>
      </void>
@@ -618,7 +616,7 @@ WbDisconnect;
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
-        <object idref="Boolean1"/>
+        <boolean>true</boolean>
        </void>
        <void property="name">
         <string>MD5sum File</string>
@@ -657,7 +655,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>6</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -670,7 +668,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>7</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -683,7 +681,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>8</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -696,7 +694,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>9</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -709,7 +707,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>10</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
