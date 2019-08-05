@@ -6,8 +6,9 @@ if os.name == "posix":
     # TODO: Finn fix for gtk "feilmelding" i annet script (trigget av zenity)
     from zenipy import file_selection
 
+tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
 config = SafeConfigParser()
-conf_file = "pwb.ini"
+conf_file = tmp_dir + "/pwb.ini"
 config.read(conf_file)
 
 
@@ -50,23 +51,23 @@ def clear(btn):
 
 
 def add_dir(btn):
-    # TODO: Legg inn sjekk på at har en filbane før legges til i list (får opp None når cancel på dialogbox nå)
     if os.name == "posix":
         path = file_selection(directory=True)
     else:
         path = app.directoryBox()
 
-    app.setEntry("dir_path", path)
-    dir_path = app.getEntry("dir_path")
-    app.clearEntry("dir_path")
+    if path:
+        app.setEntry("dir_path", path)
+        dir_path = app.getEntry("dir_path")
+        app.clearEntry("dir_path")
 
-    dir_paths = app.getAllListItems("Directories")
-    duplicate = False
-    for path in dir_paths:
-        if path == dir_path:
-            duplicate = True
-    if not duplicate:
-        app.addListItem("Directories", dir_path)
+        dir_paths = app.getAllListItems("Directories")
+        duplicate = False
+        for path in dir_paths:
+            if path == dir_path:
+                duplicate = True
+        if not duplicate:
+            app.addListItem("Directories", dir_path)
 
 
 # TODO: Hvordan midtstille tittel uten space først?
