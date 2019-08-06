@@ -1,6 +1,8 @@
 #!/bin/sh
 
 SCRIPT_PATH="$(dirname "$(readlink -f "$0")")"/bin
+> $SCRIPT_PATH/tmp/pypath
+echo -n $SCRIPT_PATH"/PWB/" > $SCRIPT_PATH/tmp/pwbpath
 
 JAVACMD="java"
 
