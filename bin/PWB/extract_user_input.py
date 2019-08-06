@@ -1,15 +1,18 @@
+#! python3
+
 from configparser import SafeConfigParser
 from appJar import gui
 import os
+
+config = SafeConfigParser()
+tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
+conf_file = tmp_dir + "/pwb.ini"
+config.read(conf_file)
+
 if os.name == "posix":
     from ttkthemes import ThemedTk
     # TODO: Finn fix for gtk "feilmelding" i annet script (trigget av zenity)
     from zenipy import file_selection
-
-tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
-config = SafeConfigParser()
-conf_file = tmp_dir + "/pwb.ini"
-config.read(conf_file)
 
 
 def add_config_section(s, section_name):
@@ -18,8 +21,12 @@ def add_config_section(s, section_name):
 
 
 def submit(btn):
-    sys_name = app.getEntry("sys_name")
+    data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
+    add_config_section(config, 'ENV')
+    config.set('ENV', 'data_dir', data_dir)
+    
     add_config_section(config, 'SYSTEM')
+    sys_name = app.getEntry("sys_name")
     config.set('SYSTEM', 'sys_name', sys_name)
 
     add_config_section(config, 'DATABASE')
@@ -32,7 +39,7 @@ def submit(btn):
     i = 1
     paths = {}
     for path in dir_paths:
-        paths["path" + str(i)] = path
+        paths["dir" + str(i)] = path
         i += 1
     add_config_section(config, 'DOCUMENTS')
     for key in paths.keys():
@@ -40,6 +47,9 @@ def submit(btn):
 
     with open(conf_file, "w+") as configfile:
         config.write(configfile)
+
+    # Clear log file:
+    open(tmp_dir + "/PWB.log", 'w').close()
 
     app.stop()
 

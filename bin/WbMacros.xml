@@ -13,53 +13,23 @@
         <string>Export to Disk (alt. 1)</string>
        </void>
        <void property="text">
-        <string>-- Export Database Schema/Files
--- TODO: Bytt ut wb gui for input med tkinter el
+        <string>-- EXPORT DATABASE SCHEMA/FILES --
 
--- New log-file
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/clear_file.py -f &quot;../tmp/PWB.log&quot;&apos; -dir=&apos;python&apos;;
-
--- Define variables --
--- WbVarDef SystemName=$[?SystemName];
--- WbVarDef DatabaseName=$[?DatabaseName]; 
--- WbVarDef DatabaseSchema=$[?DatabaseSchema];
--- WbVarDef _PathToDocumentsDirectory1=$[?_PathToDocumentsDirectory1];
--- WbVarDef _PathToDocumentsDirectory2=$[?_PathToDocumentsDirectory2];
--- WbVarDef _PathToDocumentsDirectory3=$[?_PathToDocumentsDirectory3];
--- WbVarDef _PathToDocumentsDirectory4=$[?_PathToDocumentsDirectory4];
-----------------------
-
--- Check connection
-WbConfirm -ifDefined=DatabaseSchema -message=&quot;Is database connection profile correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
-
--- Fix arguments
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k SystemName -v &quot;$[SystemName]&quot;&apos; -dir=&apos;python&apos;;
-WbVarDef -contentFile=tmp/SystemName -variable=SystemName;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k DatabaseName -v &quot;$[DatabaseName]&quot;&apos; -dir=&apos;python&apos;;
-WbVarDef -contentFile=tmp/DatabaseName -variable=DatabaseName;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k DatabaseSchema -v &quot;$[DatabaseSchema]&quot;&apos; -dir=&apos;python&apos;;
-WbVarDef -contentFile=tmp/DatabaseSchema -variable=DatabaseSchema;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k _PathToDocumentsDirectory1 -v &quot;$[_PathToDocumentsDirectory1]&quot;&apos; -dir=&apos;python&apos;;
-WbVarDef -contentFile=tmp/_PathToDocumentsDirectory1 -variable=_PathToDocumentsDirectory1;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k _PathToDocumentsDirectory2 -v &quot;$[_PathToDocumentsDirectory2]&quot;&apos; -dir=&apos;python&apos;;
-WbVarDef -contentFile=tmp/_PathToDocumentsDirectory2 -variable=_PathToDocumentsDirectory2;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k _PathToDocumentsDirectory3 -v &quot;$[_PathToDocumentsDirectory3]&quot;&apos; -dir=&apos;python&apos;;
-WbVarDef -contentFile=tmp/_PathToDocumentsDirectory3 -variable=_PathToDocumentsDirectory3;
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k _PathToDocumentsDirectory4 -v &quot;$[_PathToDocumentsDirectory4]&quot;&apos; -dir=&apos;python&apos;;
-WbVarDef -contentFile=tmp/_PathToDocumentsDirectory4 -variable=_PathToDocumentsDirectory4;
-------------------
-
--- create base directories
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/sip_paths.py --system &quot;$[SystemName]&quot; --database &quot;$[DatabaseName]&quot; --schema &quot;$[DatabaseSchema]&quot;&apos; -dir=&apos;python&apos;;
+-- Variables from start script --
+WbVarDef -contentFile=tmp/pypath -variable=pypath;
+WbVarDef -contentFile=tmp/pwbpath -variable=pwbpath;
+-- User input --
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]extract_user_input.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
+-- create base directories --
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
+-- Variables from user input -- 
 WbVarDef -contentFile=tmp/SubSystemName -variable=SubSystemName;
-
--- Test med generert connection heller enn wbconfirm over
--- generate connection string
--- WbVarDef TargetCon=&apos;username=,password=,url=jdbc:h2:../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName]/documentation/code/$[databaseName]_$[databaseSchema]&apos;;
-
+WbVarDef -contentFile=tmp/DatabaseSchema -variable=DatabaseSchema;
+WbVarDef -contentFile=tmp/SystemName -variable=SystemName;
+-- Check connection --
+WbConfirm -ifDefined=DatabaseSchema -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
 -- Create schemareport --
 WbInclude -ifDefined=DatabaseSchema -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
-
 -- Export to tsv -----
 -- TODO: Vil virke også med LONG RAW på oracle (bug i oracle dbdriver) hvis det feltet  er listet sist i tabellen -&gt; fikse auto hvordan?
 -- TODO: Long raw med innhold ble i et tilfelle til helt tommme filer på disk med kode under
@@ -82,24 +52,11 @@ WbExport -ifDefined=DatabaseSchema
 -replaceExpression=&apos;(\n|\r\n|\r|\t|^$)&apos; -replaceWith=&apos; &apos;
 -nullString=&apos; &apos;
 -showProgress=10000;  
-
 -- Create archives from directories  --
-WbSysExec -ifDefined=_PathToDocumentsDirectory1 -program=&quot;python3&quot; -argument=&apos;../PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory1]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos; -dir=&apos;python&apos;;
-WbSysExec -ifDefined=_PathToDocumentsDirectory2 -program=&quot;python3&quot; -argument=&apos;../PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory2]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos; -dir=&apos;python&apos;;
-WbSysExec -ifDefined=_PathToDocumentsDirectory3 -program=&quot;python3&quot; -argument=&apos;../PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory3]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos; -dir=&apos;python&apos;;
-WbSysExec -ifDefined=_PathToDocumentsDirectory4 -program=&quot;python3&quot; -argument=&apos;../PWB/wim_capture.py -p &quot;$[_PathToDocumentsDirectory4]&quot; -s &quot;$[SystemName]&quot; -b &quot;$[SubSystemName]&quot;&apos; -dir=&apos;python&apos;;
-
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
 -- Open subsystem directory --
 WbSysOpen ../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName];
-------------------------------
-
--- Save log
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/copy_log.py -p &quot;../../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName]/documentation/export.log&quot;&apos; -dir=&apos;python&apos;;
-
-
-
-
-</string>
+------------------------------</string>
        </void>
        <void property="tooltip">
         <string>XML/TSV-export</string>
@@ -115,7 +72,8 @@ WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/copy_log.py -p &qu
         <int>1</int>
        </void>
        <void property="text">
-        <string>-- Copy data to H2 database under code-folder --
+        <string>-- WbVarDef TargetCon=&apos;username=,password=,url=jdbc:h2:../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName]/documentation/code/$[databaseName]_$[databaseSchema]&apos;;
+-- Copy data to H2 database under code-folder --
 --  WbCopy  
 --  -ifDefined=DatabaseSchema
 --  -sourceSchema=$[DatabaseSchema]
