@@ -7,14 +7,18 @@ WshShell.CurrentDirectory = wbpath
 javaPath = wbpath & "jre\bin\javaw.exe"
 
 pyPathFile="tmp\pypath"
-pwbPathFile="tmp\pwbpath" 
 Set objFile = FSO.CreateTextFile(pyPathFile,True)
-' objFile.Write chr(34) & wbpath & "python\python3" & chr(34) & vbCrLf
 objFile.Write wbpath & "python\" 
 objFile.Close
+
+pwbPathFile="tmp\pwbpath" 
 Set objFile = FSO.CreateTextFile(pwbPathFile,True)
-' objFile.Write chr(34) & wbpath & "PWB\" & chr(34) & vbCrLf
 objFile.Write wbpath & "PWB\"
+objFile.Close
+
+configFile="tmp\pwb.ini"
+Set objFile = FSO.CreateTextFile(configFile,True)
+objFile.Write ""
 objFile.Close
 
 set args = WScript.Arguments
