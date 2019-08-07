@@ -4,7 +4,6 @@ import os
 import subprocess
 import pathlib
 
-# TODO: Path som arg ?
 
 def md5sum(filename, blocksize=65536):
     hash = hashlib.md5()

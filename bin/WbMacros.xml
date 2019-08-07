@@ -107,30 +107,15 @@ WbSysOpen ../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName];
         <int>2</int>
        </void>
        <void property="text">
-        <string>-- Create System Data Package
+        <string>- CREATE SYSTEM DATA PACKAGE -- 
 
--- Define variables --
--- WbVarDef SystemName=$[?SystemName];
-----------------------
-
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/save_args.py -k SystemName -v &quot;$[SystemName]&quot;&apos; -dir=&apos;python&apos;;
-WbVarDef -contentFile=tmp/SystemName -variable=SystemName;
-
+-- Variables from start script --
+WbVarDef -contentFile=tmp/pypath -variable=pypath;
+WbVarDef -contentFile=tmp/pwbpath -variable=pwbpath;
 -- Create archive from extracted data --
-WbSysExec -ifDefined=SystemName -program=&quot;python3&quot; -argument=&apos;../PWB/wim_capture.py -p &quot;../../_DATA/$[SystemName]&quot; -s &quot;$[SystemName]&quot; -dp true&apos; -dir=&apos;python&apos;;
------------------------------------------
-
--- Create checksum for archive --
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/md5sum.py --path &quot;../../_DATA/$[SystemName].wim&quot;&apos; -dir=&apos;python&apos;;
-----------------------------------
-
--- Delete archived directory -- 
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/del_dir.py --path &quot;../../_DATA/$[SystemName]&quot;&apos; -dir=&apos;python&apos;;
--------------------------------
-
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]create_data_package.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
 -- Open data directory --
-WbSysOpen ../_DATA;
--------------------------</string>
+WbSysOpen ../_DATA;</string>
        </void>
        <void property="tooltip">
         <string>Package all data and generate checksum</string>
