@@ -62,7 +62,6 @@ if len(sys_name) > 0:
         config.write(configfile, space_around_delimiters=False)
 else:
     msg = "'Illegal or missing values in user input'"
-    # WAIT: Bruk zenipy og appjar heller?
     if os.name == "posix":
         try:
             subprocess.call("zenity --error --text=" + msg + " 2> >(grep -v 'GtkDialog' >&2)",
@@ -71,7 +70,7 @@ else:
             pass
         exit()
     else:
-        import tkinter
+        import tkinter # WAIT: Bruke appjar heller her?
         from tkinter import ttk, messagebox
         root = tkinter.Tk()
         root.overrideredirect(1)

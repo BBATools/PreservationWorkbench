@@ -3,20 +3,13 @@
 from configparser import SafeConfigParser
 from appJar import gui
 import os
+if os.name == "posix":
+    from ttkthemes import ThemedTk
+    # TODO: Bruk zenity direkte med subprocess heller -> fjerner gtk fm samt færre begrensninger
+    from zenipy import file_selection
 
 # WAIT: Legg inn meny for å velge connection profiles definert i WbProfiles.xml
 # WAIT: Lag sjekkboks for å velge om eksport til fil eller h2
-
-config = SafeConfigParser()
-tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
-conf_file = tmp_dir + "/pwb.ini"
-config.read(conf_file)
-
-if os.name == "posix":
-    from ttkthemes import ThemedTk
-    # TODO: Finn fix for gtk "feilmelding" i annet script (trigget av zenity)
-    from zenipy import file_selection
-
 
 def add_config_section(s, section_name):
     if not s.has_section(section_name):
@@ -82,58 +75,65 @@ def add_dir(btn):
         if not duplicate:
             app.addListItem("Directories", dir_path)
 
+if __name__== "__main__":
+    config = SafeConfigParser()
+    tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
+    conf_file = tmp_dir + "/pwb.ini"
+    config.read(conf_file)
 
-# TODO: Hvordan midtstille tittel uten space først?
-app = gui('         System Details:', useTtk=True, colspan=5)
-app.setSize("400x470")
-app.setLocation("CENTER")
-app.setStretch("column")
+    app = gui('         System Details', useTtk=True, colspan=5)
+    # TODO: Hvordan midtstille tittel uten space først?
+    app.setSize("400x470")
+    app.setLocation("CENTER")
+    app.setStretch("column")
 
-if os.name == "posix":
-    app.setTtkTheme('scidmint')
-else:
-    app.setTtkTheme("winnative")
+    if os.name == "posix":
+        app.setTtkTheme('scidmint')
+    else:
+        app.setTtkTheme("winnative")
 
-app.addLabel("l1", "System Name:", 0, 0)
-app.addEntry("sys_name", 1, 0)
-app.setFocus("sys_name")
+    app.addLabel("l1", "System Name:", 0, 0)
+    app.addEntry("sys_name", 1, 0)
+    app.setFocus("sys_name")
 
-app.addLabel("l2", "Database Name:", 2, 0)
-app.addEntry("db_name", 3, 0)
+    app.addLabel("l2", "Database Name:", 2, 0)
+    app.addEntry("db_name", 3, 0)
 
-app.addLabel("l3", "Database Schema:", 4, 0)
-app.addEntry("db_schema", 5, 0)
+    app.addLabel("l3", "Database Schema:", 4, 0)
+    app.addEntry("db_schema", 5, 0)
 
-app.addLabel("l4", "Documents:", 6, 0)
-app.setSticky("new")
-app.addEntry("dir_path", 7, 0, 5)
-app.setSticky("ne")
-app.addButton("Directory", add_dir, 7, 4, 1)
+    app.addLabel("l4", "Documents:", 6, 0)
+    app.setSticky("new")
+    app.addEntry("dir_path", 7, 0, 5)
+    app.setSticky("ne")
+    app.addButton("Directory", add_dir, 7, 4, 1)
 
-app.setSticky("new")
-app.addLabel("l5", "Directories:", 8, 0)
-app.addListBox("Directories", row=9, rowspan=6)
+    app.setSticky("new")
+    app.addLabel("l5", "Directories:", 8, 0)
+    app.addListBox("Directories", row=9, rowspan=6)
 
-app.setEntryDefault("sys_name", "System Name")
-app.setEntryDefault("db_name", "Database Name")
-app.setEntryDefault("db_schema", "Database Schema")
-app.setEntryDefault("dir_path", "-- enter a directory --")
+    app.setEntryDefault("sys_name", "System Name")
+    app.setEntryDefault("db_name", "Database Name")
+    app.setEntryDefault("db_schema", "Database Schema")
+    app.setEntryDefault("dir_path", "-- enter a directory --")
 
-# WAIT: Splitt ut som egen funksjon:
-if os.path.exists(conf_file):
-    config.remove_section("DOCUMENTS")
-    if config.has_option('SYSTEM', 'sys_name'):
-        conf_sys_name = config.get('SYSTEM', 'sys_name')
-        if not conf_sys_name == '':
-            app.setEntry("sys_name", conf_sys_name)
-    if config.has_option('DATABASE', 'db_name'):
-        conf_db_name = config.get('DATABASE', 'db_name')
-        if not conf_db_name == '':
-            app.setEntry("db_name", conf_db_name)
-    if config.has_option('DATABASE', 'db_schema'):
-        conf_db_schema = config.get('DATABASE', 'db_schema')
-        if not conf_db_schema == '':
-            app.setEntry("db_schema", conf_db_schema)
+    # WAIT: Splitt ut som egen funksjon:
+    if os.path.exists(conf_file):
+        config.remove_section("DOCUMENTS")
+        if config.has_option('SYSTEM', 'sys_name'):
+            conf_sys_name = config.get('SYSTEM', 'sys_name')
+            if not conf_sys_name == '':
+                app.setEntry("sys_name", conf_sys_name)
+        if config.has_option('DATABASE', 'db_name'):
+            conf_db_name = config.get('DATABASE', 'db_name')
+            if not conf_db_name == '':
+                app.setEntry("db_name", conf_db_name)
+        if config.has_option('DATABASE', 'db_schema'):
+            conf_db_schema = config.get('DATABASE', 'db_schema')
+            if not conf_db_schema == '':
+                app.setEntry("db_schema", conf_db_schema)
 
-app.addButtons(["Submit", "Clear"], [submit, clear], row=16)
-app.go()
+    app.addButtons(["Submit", "Clear"], [submit, clear], row=16)
+    app.go()
+
+
