@@ -59,14 +59,7 @@ if len(sys_name.strip()) > 0:
     subsys_name = subsystem_path.split('/')[-1]
     config.set('SYSTEM', 'subsys_name', subsys_name)
     with open(conf_file, "w+") as configfile:
-        config.write(configfile)
-
-    with open(system_file, "w+") as f: 
-        f.write(sys_name)
-    with open(subsystem_file, "w+") as f: 
-        f.write(subsys_name)
-    with open(schema_file, "w+") as f: 
-        f.write(schema)
+        config.write(configfile, space_around_delimiters=False)
 else:
     msg = "'Illegal or missing values in user input'"
     if os.name == "posix":

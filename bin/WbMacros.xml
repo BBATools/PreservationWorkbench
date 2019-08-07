@@ -22,23 +22,21 @@ WbVarDef -contentFile=tmp/pwbpath -variable=pwbpath;
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]extract_user_input.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
 -- create base directories --
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
--- Variables from user input -- 
-WbVarDef -contentFile=tmp/SubSystemName -variable=SubSystemName;
-WbVarDef -contentFile=tmp/DatabaseSchema -variable=DatabaseSchema;
-WbVarDef -contentFile=tmp/SystemName -variable=SystemName;
+-- Variables from config-file -- 
+WbVarDef -file=tmp/pwb.ini;
 -- Check connection --
-WbConfirm -ifDefined=DatabaseSchema -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
+WbConfirm -ifDefined=db_schema -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
 -- Create schemareport --
-WbInclude -ifDefined=DatabaseSchema -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
+WbInclude -ifDefined=db_schema -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
 -- Export to tsv -----
 -- TODO: Vil virke også med LONG RAW på oracle (bug i oracle dbdriver) hvis det feltet  er listet sist i tabellen -&gt; fikse auto hvordan?
 -- TODO: Long raw med innhold ble i et tilfelle til helt tommme filer på disk med kode under
-WbExport -ifDefined=DatabaseSchema
+WbExport -ifDefined=db_schema
 -type=text
--schema=$[DatabaseSchema]
+-schema=$[db_schema]
 -types=TABLE,SYNONYM
 -sourceTable=*
--outputdir=../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName]/content/data
+-outputdir=../_DATA/$[sys_name]/content/sub_systems/$[subsys_name]/content/data
 -createDir=true
 -continueOnError=false
 -encoding=UTF8                
@@ -54,9 +52,9 @@ WbExport -ifDefined=DatabaseSchema
 -showProgress=10000;  
 -- Create archives from directories  --
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
--- Open subsystem directory --
-WbSysOpen ../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName];
-------------------------------</string>
+-- Done --
+WbMessage Done!;
+</string>
        </void>
        <void property="tooltip">
         <string>XML/TSV-export</string>
@@ -107,15 +105,15 @@ WbSysOpen ../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName];
         <int>2</int>
        </void>
        <void property="text">
-        <string>- CREATE SYSTEM DATA PACKAGE -- 
+        <string>-- CREATE SYSTEM DATA PACKAGE -- 
 
 -- Variables from start script --
 WbVarDef -contentFile=tmp/pypath -variable=pypath;
 WbVarDef -contentFile=tmp/pwbpath -variable=pwbpath;
 -- Create archive from extracted data --
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]create_data_package.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
--- Open data directory --
-WbSysOpen ../_DATA;</string>
+-- Done --
+WbMessage Done!;</string>
        </void>
        <void property="tooltip">
         <string>Package all data and generate checksum</string>

@@ -46,7 +46,7 @@ def submit(btn):
         config.set('DOCUMENTS', key, paths[key])
 
     with open(conf_file, "w+") as configfile:
-        config.write(configfile)
+        config.write(configfile, space_around_delimiters=False)
 
     # Clear log file:
     open(tmp_dir + "/PWB.log", 'w').close()

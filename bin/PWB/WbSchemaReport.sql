@@ -1,7 +1,7 @@
 
 WbSchemaReport 
--file=../../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName]/header/metadata.xml
--schemas=$[DatabaseSchema] 
+-file=../../_DATA/$[sys_name]/content/sub_systems/$[subsys_name]/header/metadata.xml
+-schemas=$[db_schema] 
 -types=SYNONYM,TABLE,VIEW
 -includeProcedures=true
 -includeTriggers=true
