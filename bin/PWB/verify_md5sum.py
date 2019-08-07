@@ -1,8 +1,5 @@
 #! python3
-import hashlib
-import os
-import subprocess
-import pathlib
+import hashlib, os, subprocess, pathlib
 
 
 def md5sum(filename, blocksize=65536):
@@ -18,6 +15,7 @@ if os.name == "posix":
     try:
         filepath = subprocess.check_output(
             # WAIT: Husk valgt mappe til neste gang og bruk som default under. Samme for tkinter-variant under
+            # WAIT: Endre til zenipy?
             "zenity --file-selection --filename=../_DATA/ 2> >(grep -v 'GtkDialog' >&2)", shell=True, executable='/bin/bash').decode("utf-8").strip()
     except subprocess.CalledProcessError:
         pass
@@ -31,15 +29,23 @@ if os.name == "posix":
             pass
         exit()
 else:
-    import win32ui
-    file_open = win32ui.CreateFileDialog(1, ".wim", "", 0, "Wim Archives (*.wim)|*.wim|All Files (*.*)|*.*|")
-    file_open.SetOFNInitialDir('D:') # TODO: Hent path fra relative path til _DATA
-    file_open.DoModal()
-    filepath = file_open.GetPathName()	
+    import tkinter # WAIT: Endre til appjar?
+    from tkinter import ttk, messagebox
+    from tkinter.filedialog import askopenfilename
+    root = tkinter.Tk()
+    root.overrideredirect(1)
+    root.withdraw()
+
+    filepath = askopenfilename(initialdir="../_DATA",
+                               filetypes=("Wim Archive", "*.wim"),
+                               title="Choose a file."
+                               )
+
     file_ext = pathlib.Path(filepath).suffix
     if file_ext != ".wim":
-    	win32ui.MessageBox("Not a valid wim archive.", "Error")
-    	exit()
+        messagebox.showinfo("Error", "Not a valid wim archive.")
+    root.destroy()
+    exit()
 
 file = open(os.path.splitext(filepath)[0]+'_md5sum.txt', "r")
 mount_dir = os.path.splitext(filepath)[0] + '_mount'
@@ -61,4 +67,10 @@ if os.name == "posix":
         pass
     exit()
 else:
-	win32ui.MessageBox(message, box_arg)
+    import tkinter
+    from tkinter import ttk, messagebox
+    root = tkinter.Tk()
+    root.overrideredirect(1)
+    root.withdraw()
+    messagebox.showinfo(box_arg, message)
+    root.destroy()

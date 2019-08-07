@@ -29,8 +29,7 @@ WbConfirm -ifDefined=db_schema -message=&quot;Is database connection correct?&qu
 -- Create schemareport --
 WbInclude -ifDefined=db_schema -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
 -- Export to tsv -----
--- TODO: Vil virke også med LONG RAW på oracle (bug i oracle dbdriver) hvis det feltet  er listet sist i tabellen -&gt; fikse auto hvordan?
--- TODO: Long raw med innhold ble i et tilfelle til helt tommme filer på disk med kode under
+-- TODO: Vil virke også med LONG RAW på oracle (bug i oracle jdbc-driver) hvis det feltet  er listet sist i tabellen -&gt; fikse auto hvordan?
 WbExport -ifDefined=db_schema
 -type=text
 -schema=$[db_schema]
@@ -51,7 +50,7 @@ WbExport -ifDefined=db_schema
 -nullString=&apos; &apos;
 -showProgress=10000;  
 -- Create archives from directories  --
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
+WbSysExec -ifDefined=dir1 -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
 -- Done --
 WbMessage Done!;
 </string>
@@ -141,8 +140,13 @@ WbMessage Done!;</string>
         <string>Verify Checksum</string>
        </void>
        <void property="text">
-        <string>-- Verify Checksum
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/md5sum_check.py&apos; -dir=&apos;python&apos;;
+        <string>-- VERIFY CHECKSUM --
+
+-- Variables from start script --
+WbVarDef -contentFile=tmp/pypath -variable=pypath;
+WbVarDef -contentFile=tmp/pwbpath -variable=pwbpath;
+-- md5sum check --
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]verify_md5sum.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
 </string>
        </void>
        <void property="tooltip">

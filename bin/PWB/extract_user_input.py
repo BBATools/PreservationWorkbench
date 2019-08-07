@@ -4,6 +4,9 @@ from configparser import SafeConfigParser
 from appJar import gui
 import os
 
+# WAIT: Legg inn meny for å velge connection profiles definert i WbProfiles.xml
+# WAIT: Lag sjekkboks for å velge om eksport til fil eller h2
+
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
 conf_file = tmp_dir + "/pwb.ini"
@@ -91,8 +94,6 @@ if os.name == "posix":
 else:
     app.setTtkTheme("winnative")
 
-# WAIT: Lag sjekkboks for å velge om eksport til fil eller h2
-
 app.addLabel("l1", "System Name:", 0, 0)
 app.addEntry("sys_name", 1, 0)
 app.setFocus("sys_name")
@@ -135,5 +136,4 @@ if os.path.exists(conf_file):
             app.setEntry("db_schema", conf_db_schema)
 
 app.addButtons(["Submit", "Clear"], [submit, clear], row=16)
-
 app.go()

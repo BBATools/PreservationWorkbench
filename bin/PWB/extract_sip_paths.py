@@ -33,14 +33,14 @@ def unique_dir(directory):
 
 open(subsystem_file, 'w').close()
 open(schema_file, 'w').close()
-if len(sys_name.strip()) > 0:
+if len(sys_name) > 0:
     pathlib.Path(basepath + sys_name +
                  '/administrative_metadata/').mkdir(parents=True, exist_ok=True)
     pathlib.Path(basepath + sys_name +
                  '/descriptive_metadata/').mkdir(parents=True, exist_ok=True)
     pathlib.Path(basepath + sys_name +
                  '/content/documentation/').mkdir(parents=True, exist_ok=True)
-    if len(schema.strip()) > 0 and len(database.strip()) > 0:
+    if len(schema) > 0 and len(database) > 0:
         subsystem_path = basepath + sys_name + \
             '/content/sub_systems/' + database + '_' + schema
     else:
@@ -62,6 +62,7 @@ if len(sys_name.strip()) > 0:
         config.write(configfile, space_around_delimiters=False)
 else:
     msg = "'Illegal or missing values in user input'"
+    # WAIT: Bruk zenipy og appjar heller?
     if os.name == "posix":
         try:
             subprocess.call("zenity --error --text=" + msg + " 2> >(grep -v 'GtkDialog' >&2)",
