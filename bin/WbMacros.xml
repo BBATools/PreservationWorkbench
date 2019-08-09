@@ -164,7 +164,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_m
 -- Read env variables from config-file -- 
 WbVarDef -file=tmp/pwb.ini;
 -- md5sum check --
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_copies.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_make_copies.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 
 </string>
        </void>

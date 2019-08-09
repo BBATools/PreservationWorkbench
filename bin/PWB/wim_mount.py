@@ -31,7 +31,7 @@ else:
     root = tkinter.Tk()
     root.overrideredirect(1)
     root.withdraw()
-    messagebox.showinfo("Info", "Only supported on PWLinux")
+    messagebox.showinfo("Info", "Only supported on Arkimint")
     # WAIT: Også sjekk på om PWLinux og ikke annen Linux
     root.destroy()
     exit()

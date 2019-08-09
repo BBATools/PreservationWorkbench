@@ -15,14 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import shutil, os, time, sys, datetime
+import shutil, os, time, sys, datetime, subprocess, pathlib
 from configparser import SafeConfigParser
 from appJar import gui
 from extract_user_input import add_config_section
 if os.name == "posix":
     from ttkthemes import ThemedTk
     # TODO: Bruk zenity direkte med subprocess heller -> fjerner gtk fm samt færre begrensninger
-    from zenipy import file_selection
+    #from zenipy import file_selection
+
+# WAIT: Splitt ut zenity kode som egen def 
 
 def percentage(part, whole):
   return 100 * float(part)/float(whole)
@@ -74,20 +76,30 @@ def dummy(success):
 
 
 def submit(btn):   
-    wim_path = app.getEntry("wim_path")                                                
+    wim_source_path = app.getEntry("wim_path")                                                
+    wim_filename = os.path.basename(wim_source_path) 
+    md5sum_source_path = os.path.splitext(wim_source_path)[0] + "_md5sum.txt"
+    md5sum_filename = os.path.basename(md5sum_source_path) 
+ 
     dir_paths = app.getAllListItems("Directories")
-    #wim_size = os.path.getsize(wim_path)
-    #source_dir = os.path.dirname(wim_path) 
-
-    # file_path = os.path.dirname(wim_path)   
-    filename = os.path.basename(wim_path) 
-    # md5sum_path = os.path.splitext(wim_path)[0] + "_md5sum.txt"
-    # md5sum_filename = os.path.basename(md5sum_path)
-    # fileFilter = (filename,md5sum_filename)  
     for path in dir_paths:
-        dest_path = path + "/" + filename
-        app.setMeter("progressBar", 0)
-        app.threadCallback(copy,dummy,wim_path,dest_path,progress)
+        md5sum_dest_path = path + "/" + md5sum_filename
+        wim_dest_path = path + "/" + wim_filename
+        if os.path.isfile(md5sum_dest_path) or os.path.isfile(wim_dest_path):
+            if os.name == "posix":
+                try:
+                    subprocess.call("zenity --error --text='File already exists.' 2> >(grep -v 'GtkDialog' >&2)",
+                                    shell=True, executable='/bin/bash')
+                    break
+                except subprocess.CalledProcessError:
+                    pass
+            else:
+                app.errorBox("title","File already exists.")
+        else:
+            shutil.copyfile(md5sum_source_path, md5sum_dest_path)
+            app.setMeter("progressBar", 0)
+            app.threadCallback(copy,dummy,wim_source_path,wim_dest_path,progress)
+
 
 def clear(btn):
     app.clearAllEntries()
@@ -96,20 +108,34 @@ def clear(btn):
 
 
 def add_file(btn):
-    # WAIT: Legg inn filtrering til ext wim -> må bruke zenity direkte da for posix-variant
+    data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
+    # WAIT: Legg inn filtrering til ext wim
     if os.name == "posix":
-        path = file_selection(filename="*.wim")
+        try:
+            path = subprocess.check_output(
+                "zenity --file-selection --filename=" + data_dir + " 2> >(grep -v 'GtkDialog' >&2)", shell=True, executable='/bin/bash').decode("utf-8").strip()
+        except subprocess.CalledProcessError:
+            pass
     else:
         path = app.openBox()
-
-    if path:
+        # TODO: Legg inn rette valg: .openBox(title=None, dirName=None, fileTypes=None, asFile=False, parent=None, multiple=False, mode='r')
+    
+    file_ext = pathlib.Path(path).suffix
+    if file_ext != ".wim":
+        if os.name == "posix":
+            try:
+                subprocess.call("zenity --error --text='Not a valid wim archive.' 2> >(grep -v 'GtkDialog' >&2)",
+                                shell=True, executable='/bin/bash')
+            except subprocess.CalledProcessError:
+                pass
+        else:
+            app.errorBox("Error","File already exists.")
+    else:
         app.setEntry("wim_path", path)
 
 def add_dir(btn):
-    if os.name == "posix":
-        path = file_selection(directory=True)
-    else:
-        path = app.directoryBox()
+    # TODO: Legg inn at bruker zenity når posix
+    path = app.directoryBox()
 
     if path:
         app.setEntry("dir_path", path)
