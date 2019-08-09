@@ -53,7 +53,7 @@ def progress(pos, total, elapsed):
     else:
         app.setMeter("progressBar", percentage(pos, total))
 
-def dummy():
+def dummy(success):
     pass
 
 

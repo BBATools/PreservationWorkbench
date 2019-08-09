@@ -1,9 +1,17 @@
 #!/bin/sh
 
 SCRIPT_PATH="$(dirname "$(readlink -f "$0")")"/bin
-> $SCRIPT_PATH/tmp/pwb.ini
-> $SCRIPT_PATH/tmp/pypath
-echo -n $SCRIPT_PATH"/PWB/" > $SCRIPT_PATH/tmp/pwbpath
+echo "[ENV]
+py_path=
+os=posix
+pwb_path="$SCRIPT_PATH"/PWB/" > $SCRIPT_PATH/tmp/pwb.ini
+
+
+
+#echo -n $SCRIPT_PATH"/PWB/" > $SCRIPT_PATH/tmp/pwb.ini
+#> $SCRIPT_PATH/tmp/pwb.ini
+#> $SCRIPT_PATH/tmp/pypath
+#echo -n $SCRIPT_PATH"/PWB/" > $SCRIPT_PATH/tmp/pwbpath
 
 JAVACMD="java"
 

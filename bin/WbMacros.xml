@@ -15,14 +15,13 @@
        <void property="text">
         <string>-- EXPORT DATABASE SCHEMA/FILES --
 
--- Variables from start script --
-WbVarDef -contentFile=tmp/pypath -variable=pypath;
-WbVarDef -contentFile=tmp/pwbpath -variable=pwbpath;
+-- Read env variables from config-file -- 
+WbVarDef -file=tmp/pwb.ini;
 -- User input --
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]extract_user_input.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_user_input.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- create base directories --
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
--- Variables from config-file -- 
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+-- Read user variables from config-file -- 
 WbVarDef -file=tmp/pwb.ini;
 -- Check connection --
 WbConfirm -ifDefined=db_schema -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
@@ -106,11 +105,10 @@ WbMessage Done!;
        <void property="text">
         <string>-- CREATE SYSTEM DATA PACKAGE -- 
 
--- Variables from start script --
-WbVarDef -contentFile=tmp/pypath -variable=pypath;
-WbVarDef -contentFile=tmp/pwbpath -variable=pwbpath;
+-- Read env variables from config-file -- 
+WbVarDef -file=tmp/pwb.ini;
 -- Create archive from extracted data --
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]create_data_package.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]create_data_package.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Done --
 WbMessage Done!;</string>
        </void>
@@ -142,12 +140,10 @@ WbMessage Done!;</string>
        <void property="text">
         <string>-- VERIFY CHECKSUM --
 
--- Variables from start script --
-WbVarDef -contentFile=tmp/pypath -variable=pypath;
-WbVarDef -contentFile=tmp/pwbpath -variable=pwbpath;
+-- Read env variables from config-file -- 
+WbVarDef -file=tmp/pwb.ini;
 -- md5sum check --
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]verify_md5sum.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
-</string>
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_md5sum.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;</string>
        </void>
        <void property="tooltip">
         <string>Verify data is unchanged</string>
@@ -163,15 +159,12 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]verify_md
         <int>1</int>
        </void>
        <void property="text">
-        <string>-- Make Copies
+        <string>-- MAKE COPIES --
 
--- Define variables --
--- WbVarDef SystemName=$[?SystemName];
--- WbVarDef LocalWorkCopy=$[?LocalWorkCopy];
--- WbVarDef RemoteBackup=$[?RemoteBackup]; 
-----------------------
-
-WbSysExec -program=&quot;python3&quot; -argument=&apos;../PWB/wim_copy.py -s &quot;$[SystemName]&quot; -l &quot;$[LocalWorkCopy]&quot; -r &quot;$[RemoteBackup]&quot;&apos; -dir=&apos;python&apos;;
+-- Read env variables from config-file -- 
+WbVarDef -file=tmp/pwb.ini;
+-- md5sum check --
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_copies.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 
 </string>
        </void>

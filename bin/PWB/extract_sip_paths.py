@@ -18,9 +18,6 @@ if config.has_option('DATABASE', 'db_schema'):
     schema = config.get('DATABASE', 'db_schema')
 
 subsystem_path = None
-subsystem_file = tmp_dir + "/SubSystemName"
-schema_file = tmp_dir + "/DatabaseSchema"
-system_file = tmp_dir + "/SystemName"
 
 def unique_dir(directory):
     counter = 0
@@ -30,9 +27,6 @@ def unique_dir(directory):
         if not path.exists():
             return path
 
-
-open(subsystem_file, 'w').close()
-open(schema_file, 'w').close()
 if len(sys_name) > 0:
     pathlib.Path(basepath + sys_name +
                  '/administrative_metadata/').mkdir(parents=True, exist_ok=True)

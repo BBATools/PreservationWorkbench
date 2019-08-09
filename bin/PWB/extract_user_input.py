@@ -75,6 +75,9 @@ def add_dir(btn):
         if not duplicate:
             app.addListItem("Directories", dir_path)
 
+def quit(btn):
+    app.stop()
+
 if __name__== "__main__":
     config = SafeConfigParser()
     tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
@@ -133,7 +136,7 @@ if __name__== "__main__":
             if not conf_db_schema == '':
                 app.setEntry("db_schema", conf_db_schema)
 
-    app.addButtons(["Submit", "Clear"], [submit, clear], row=16)
+    app.addButtons(["Submit", "Clear ", " Quit "], [submit, clear, quit], row=16)
     app.go()
 
 
