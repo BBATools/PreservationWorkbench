@@ -194,14 +194,9 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_m
         <string>File</string>
        </void>
        <void property="text">
-        <string>-- Dispose: -&gt; TODO
--- WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_mount.py&apos;; WbVarDef  -contentFile=tmp/wim_info -variable=wim_info; 											-- Choose/mount wim-file 	
--- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;; 																				-- Clear log-file
--- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/meta_process.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Normalize metadata and generate sql		
--- WbInclude -ifDefined=wim_info -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false;										-- Generate DDL and web-report from sql
--- WbSysExec -ifDefined=wim_info  -program=&quot;python3&quot; -argument=&apos;PWB/meta_check.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Generate sql for testing metadata
--- WbInclude -ifDefined=wim_info -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;											-- Generate schemas and import metadata (5 db-engines)
--- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/wim_umount.py --wim &quot;$[wim_info]&quot; --log &quot;system_process_metadata.log&quot;&apos;; -- Save log/unmount wim image</string>
+        <string>
+WbMessage &quot;Not implemented yet&quot;;
+</string>
        </void>
        <void property="tooltip">
         <string>dispos...</string>
@@ -218,15 +213,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_m
        </void>
        <void property="text">
         <string>-- TODO: Ha avhuking for om også undermapper skal kasseres
-
--- Dispose: -&gt; TODO
--- WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_mount.py&apos;; WbVarDef  -contentFile=tmp/wim_info -variable=wim_info; 											-- Choose/mount wim-file 	
--- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;; 																				-- Clear log-file
--- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/meta_process.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Normalize metadata and generate sql		
--- WbInclude -ifDefined=wim_info -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false;										-- Generate DDL and web-report from sql
--- WbSysExec -ifDefined=wim_info  -program=&quot;python3&quot; -argument=&apos;PWB/meta_check.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Generate sql for testing metadata
--- WbInclude -ifDefined=wim_info -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;											-- Generate schemas and import metadata (5 db-engines)
--- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/wim_umount.py --wim &quot;$[wim_info]&quot; --log &quot;system_process_metadata.log&quot;&apos;; -- Save log/unmount wim image</string>
+WbMessage &quot;Not implemented yet&quot;;</string>
        </void>
        <void property="tooltip">
         <string>dispos...</string>
@@ -242,14 +229,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_m
         <int>2</int>
        </void>
        <void property="text">
-        <string>-- Dispose: -&gt; TODO
--- WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_mount.py&apos;; WbVarDef  -contentFile=tmp/wim_info -variable=wim_info; 											-- Choose/mount wim-file 	
--- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;; 																				-- Clear log-file
--- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/meta_process.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Normalize metadata and generate sql		
--- WbInclude -ifDefined=wim_info -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false;										-- Generate DDL and web-report from sql
--- WbSysExec -ifDefined=wim_info  -program=&quot;python3&quot; -argument=&apos;PWB/meta_check.py --wim &quot;$[wim_info]&quot;&apos;;																		-- Generate sql for testing metadata
--- WbInclude -ifDefined=wim_info -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;											-- Generate schemas and import metadata (5 db-engines)
--- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/wim_umount.py --wim &quot;$[wim_info]&quot; --log &quot;system_process_metadata.log&quot;&apos;; -- Save log/unmount wim image</string>
+        <string>WbMessage &quot;Not implemented yet&quot;;</string>
        </void>
        <void property="tooltip">
         <string>dispos...</string>
@@ -277,10 +257,10 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_m
         <string>-- Process files:
 WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_mount.py&apos;; WbVarDef  -contentFile=tmp/wim_info -variable=wim_info; 																	-- Choose/mount wim-file 	
 WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;; 																										-- Clear log-file
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/file_process.py --wim &quot;$[wim_info]&quot; --pre True&apos;; 																		-- Fix directories and generate sql if needed
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/process_files.py --wim &quot;$[wim_info]&quot; --pre True&apos;; 																		-- Fix directories and generate sql if needed
 WbVarDef  -contentFile=tmp/file_process.sql -variable=sql_proc; 																																										-- Check if sql has been generated
 WbInclude -ifDefined=sql_proc -file=tmp/file_process.sql -displayResult=false -verbose=false -continueOnError=false; 																-- Run generated sql (if generated true)
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/file_process.py --wim &quot;$[wim_info]&quot; --pre False&apos;; 																	-- Fix directories post sql-run
+WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/process_files.py --wim &quot;$[wim_info]&quot; --pre False&apos;; 																	-- Fix directories post sql-run
 WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/file_check.py --wim &quot;$[wim_info]&quot;&apos;; 																								-- Virus check and metadata extract
 -- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/file_convert.py --wim &quot;$[wim_info]&quot;&apos;;																						-- Convert files
 WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/wim_umount.py --wim &quot;$[wim_info]&quot; --proc &quot;file&quot; --log &quot;system_process_files.log&quot;&apos;; 	-- Save log/unmount wim image

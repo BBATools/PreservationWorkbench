@@ -106,36 +106,40 @@ def clear(btn):
     app.clearAllTextAreas()
     app.clearAllListBoxes()
 
-
-def add_file(btn):
-    data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
-    # WAIT: Legg inn filtrering til ext wim
+def add_wim_file(data_dir):
+    path = None
+    title = "Choose File"
     if os.name == "posix":
         try:
             path = subprocess.check_output(
-                "zenity --file-selection --filename=" + data_dir + " 2> >(grep -v 'GtkDialog' >&2)", shell=True, executable='/bin/bash').decode("utf-8").strip()
+                "zenity --file-selection  --title='" + title + "' --file-filter='WIM archives (wim) | *.wim' --filename=" + data_dir + "/ 2> >(grep -v 'GtkDialog' >&2)", 
+                shell=True, executable='/bin/bash').decode("utf-8").strip()
         except subprocess.CalledProcessError:
             pass
     else:
-        path = app.openBox()
-        # TODO: Legg inn rette valg: .openBox(title=None, dirName=None, fileTypes=None, asFile=False, parent=None, multiple=False, mode='r')
-    
-    file_ext = pathlib.Path(path).suffix
-    if file_ext != ".wim":
-        if os.name == "posix":
-            try:
-                subprocess.call("zenity --error --text='Not a valid wim archive.' 2> >(grep -v 'GtkDialog' >&2)",
-                                shell=True, executable='/bin/bash')
-            except subprocess.CalledProcessError:
-                pass
-        else:
-            app.errorBox("Error","File already exists.")
-    else:
+        path = app.openBox(title, data_dir,[("WIM archives", "*.wim")])
+
+    return path
+
+
+def app_add_file(btn):
+    data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
+    path = add_wim_file(data_dir)  
+    if path:
         app.setEntry("wim_path", path)
 
-def add_dir(btn):
-    # TODO: Legg inn at bruker zenity når posix
-    path = app.directoryBox()
+
+def app_add_dir(btn):
+    title = "Choose Directory"
+    path = None
+    if os.name == "posix":
+        try:
+            path = subprocess.check_output("zenity --file-selection --directory --title='" + title + "' 2> >(grep -v 'GtkDialog' >&2)", 
+            shell=True, executable='/bin/bash').decode("utf-8").strip()
+        except subprocess.CalledProcessError:
+            pass
+    else:
+        path = app.directoryBox(title)
 
     if path:
         app.setEntry("dir_path", path)
@@ -173,7 +177,7 @@ if __name__== "__main__":
     app.addLabel("l0", "Choose wim-file:", 0, 0)
     app.addEntry("wim_path", 1, 0, 5)
     app.setSticky("ne")
-    app.addButton("    File     ", add_file, 1, 4, 1)
+    app.addButton("    File     ", app_add_file, 1, 4, 1)
 
     app.setSticky("new")
     app.addLabel("l1", "Add locations to copy to:", 2, 0)
@@ -181,7 +185,7 @@ if __name__== "__main__":
     app.setSticky("new")
     app.addEntry("dir_path", 3, 0, 5)
     app.setSticky("ne")
-    app.addButton("Directory", add_dir, 3, 4, 1)
+    app.addButton("Directory", app_add_dir, 3, 4, 1)
 
     app.setSticky("new")
     app.addLabel("l5", "Directories:", 4, 0)
