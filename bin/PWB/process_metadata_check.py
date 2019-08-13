@@ -135,7 +135,7 @@ for folder in subfolders:
             'WbConnect -url="jdbc:oracle:thin:@127.0.1.1:1521/XE" -username="oracle_test" -password="oracle_test";',
             "WbSysExec touch '" + ora_done + "';",
             "WbVarDef -contentFile='" + ora_done + "' -variable=ora_done;",
-            "WbInclude -ifNotDefined=ora_done -file='PWB/ora_schema_reset.sql' -displayResult=true -verbose=true -continueOnError=false;",
+            "WbInclude -ifNotDefined=ora_done -file='../PWB/ora_schema_reset.sql' -displayResult=true -verbose=true -continueOnError=false;",
             "WbInclude -ifNotDefined=ora_done -file='"
             + oracle_ddl
             + "' -displayResult=true -verbose=true -continueOnError=false;",
@@ -144,13 +144,13 @@ for folder in subfolders:
             + sub_systems_path
             + folder
             + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=oracle_test -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
-            "WbInclude -ifNotDefined=ora_done -file='PWB/ora_schema_reset.sql' -displayResult=true -verbose=true -continueOnError=false;",
+            "WbInclude -ifNotDefined=ora_done -file='../PWB/ora_schema_reset.sql' -displayResult=true -verbose=true -continueOnError=false;",
             "WbSysExec echo 'done' > '" + ora_done + "';",
             "WbDisconnect;",
             "\n",
             "-- SQL Server 2019",
             "WbDisconnect;",
-            'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="Hp3tusen1" -autocommit=true;',
+            'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
             "DROP DATABASE IF EXISTS MSSQLServer_test; CREATE DATABASE MSSQLServer_test;",
             "WbDisconnect;",
             'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=MSSQLServer_test" -username="sa" -password="Hp3tusen1" -autocommit=false;',
@@ -165,7 +165,7 @@ for folder in subfolders:
             + folder
             + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=dbo -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
             "WbDisconnect;",
-            'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="Hp3tusen1" -autocommit=true;',
+            'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
             "DROP DATABASE IF EXISTS MSSQLServer_test;",
             "WbSysExec echo 'done' > '" + ms_done + "';",
             "WbDisconnect;",
