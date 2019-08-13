@@ -19,22 +19,6 @@ import subprocess, os, pathlib, glob, shutil, json, csv, sys
 from configparser import SafeConfigParser
 import pandas as pd
 
-config = SafeConfigParser()
-tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
-conf_file = tmp_dir + "/pwb.ini"
-config.read(conf_file)
-data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
-wim_file = config.get('ENV', 'wim_path')
-in_dir = os.path.dirname(wim_file) + "/"
-sys_name = os.path.splitext(os.path.basename(wim_file))[0]
-mount_dir = data_dir + "/" + sys_name + "_mount"
-sav_file = "/tmp/savscan_result.txt"
-av_done_file = mount_dir + "/content/documentation/av_done"
-meta_done_file = mount_dir + "/content/documentation/meta_done"
-viruses = False
-sub_systems_path = mount_dir + "/content/sub_systems"
-tika_path = "~/bin/tika/tika-app-1.20.jar"
-
 def flatten_folder(destination, tsv_log = None):
     all_files = []
     first_loop_pass = True
@@ -82,6 +66,26 @@ def reduce_item(key, value):
     # Base Condition
     else:
         reduced_item[to_string(key)] = to_string(value)
+        
+
+config = SafeConfigParser()
+tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
+conf_file = tmp_dir + "/pwb.ini"
+config.read(conf_file)
+data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
+wim_file = config.get('ENV', 'wim_path')
+in_dir = os.path.dirname(wim_file) + "/"
+sys_name = os.path.splitext(os.path.basename(wim_file))[0]
+mount_dir = data_dir + "/" + sys_name + "_mount"
+sav_file = "/tmp/savscan_result.txt"
+av_done_file = mount_dir + "/content/documentation/av_done"
+meta_done_file = mount_dir + "/content/documentation/meta_done"
+viruses = False
+sub_systems_path = mount_dir + "/content/sub_systems"
+tika_path = "~/bin/tika/tika-app-1.20.jar"
+
+if not wim_file:
+    exit()
 
 if not os.path.isfile(av_done_file):
     subprocess.run('echo "Checking for viruses...."', shell=True)
@@ -214,6 +218,7 @@ if not os.path.isfile(meta_done_file):
                     inplace=True,
                 )
                 df.to_csv(header_file, index=False, sep="\t")
+                # TODO: Aktiver linjer under igjen når feil over fikset 
                 if os.path.isfile(header_file):
                     shutil.rmtree(tmp_folder)
 
