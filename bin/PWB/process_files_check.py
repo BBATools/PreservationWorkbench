@@ -1,17 +1,33 @@
 #! python3
-import subprocess, os, argparse, pathlib, glob, shutil, json, csv, sys
+
+# Copyright (C) 2019 Morten Eek
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import subprocess, os, pathlib, glob, shutil, json, csv, sys
+from configparser import SafeConfigParser
 import pandas as pd
 
-# TODO: Legg inn sjekk på om wim-fil er mountet og msgbox og sys.exit hvis ikke
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--wim", "-w", help="set wim path")
-args = parser.parse_args()
-
-wim_file = args.wim
+config = SafeConfigParser()
+tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
+conf_file = tmp_dir + "/pwb.ini"
+config.read(conf_file)
+data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
+wim_file = config.get('ENV', 'wim_path')
 in_dir = os.path.dirname(wim_file) + "/"
 sys_name = os.path.splitext(os.path.basename(wim_file))[0]
-mount_dir = os.path.abspath("../_DATA/" + sys_name + "_mount")
+mount_dir = data_dir + "/" + sys_name + "_mount"
 sav_file = "/tmp/savscan_result.txt"
 av_done_file = mount_dir + "/content/documentation/av_done"
 meta_done_file = mount_dir + "/content/documentation/meta_done"
@@ -198,7 +214,6 @@ if not os.path.isfile(meta_done_file):
                     inplace=True,
                 )
                 df.to_csv(header_file, index=False, sep="\t")
-                # TODO: Aktiver linjer under igjen når feil over fikset 
                 if os.path.isfile(header_file):
                     shutil.rmtree(tmp_folder)
 

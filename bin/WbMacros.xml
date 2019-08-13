@@ -49,7 +49,8 @@ WbExport -ifDefined=db_schema
 -nullString=&apos; &apos;
 -showProgress=10000;  
 -- Create archives from directories  --
-WbSysExec -ifDefined=dir1 -program=&apos;python3&apos; -argument=&apos;&quot;$[pwbpath]extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[pypath]&quot;;
+WbSysExec -ifDefined=dir1 -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+
 -- Done --
 WbMessage Done!;
 </string>
@@ -254,21 +255,28 @@ WbMessage &quot;Not implemented yet&quot;;</string>
         <string>Files</string>
        </void>
        <void property="text">
-        <string>-- Process files:
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_mount.py&apos;; WbVarDef  -contentFile=tmp/wim_info -variable=wim_info; 																	-- Choose/mount wim-file 	
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;; 																										-- Clear log-file
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/process_files.py --wim &quot;$[wim_info]&quot; --pre True&apos;; 																		-- Fix directories and generate sql if needed
-WbVarDef  -contentFile=tmp/file_process.sql -variable=sql_proc; 																																										-- Check if sql has been generated
-WbInclude -ifDefined=sql_proc -file=tmp/file_process.sql -displayResult=false -verbose=false -continueOnError=false; 																-- Run generated sql (if generated true)
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/process_files.py --wim &quot;$[wim_info]&quot; --pre False&apos;; 																	-- Fix directories post sql-run
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/file_check.py --wim &quot;$[wim_info]&quot;&apos;; 																								-- Virus check and metadata extract
--- WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/file_convert.py --wim &quot;$[wim_info]&quot;&apos;;																						-- Convert files
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/wim_umount.py --wim &quot;$[wim_info]&quot; --proc &quot;file&quot; --log &quot;system_process_files.log&quot;&apos;; 	-- Save log/unmount wim image
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/cleanup.py --wim &quot;$[wim_info]&quot; --proc &quot;file&quot;&apos;; 																										-- Clean up
+        <string>-- PROCESS FILES:
 
-
-
-</string>
+-- Read env variables from config-file -- 
+WbVarDef -file=tmp/pwb.ini;
+-- Fix directories and generate sql if needed
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_files_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+-- Read env variables from config-file -- 
+WbVarDef -file=tmp/pwb.ini;
+-- Run generated sql (if sql_proc variable exists in config file)																																									
+WbInclude -ifDefined=sql_proc -file=tmp/file_process.sql -displayResult=false -verbose=false -continueOnError=false; 																
+-- Fix directories post sql-run
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_files_post.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+-- Virus check and metadata extract															
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_files_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+-- Convert files			
+-- WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_files_convert.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+-- Save log/unmount wim image																			
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+-- Clean up																	
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
+-- Done --
+WbMessage Done!;</string>
        </void>
        <void property="tooltip">
         <string>Normalize documents</string>

@@ -15,38 +15,45 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess, os, pathlib, glob, shutil, sys
+import subprocess, os, pathlib, glob, sys
 from configparser import SafeConfigParser
 from verify_make_copies import add_wim_file
 from extract_user_input import add_config_section
+from appJar import gui
 
 # TODO: Endre så en logg pr subsystem heller
 
 if os.name != "posix":
-    from appJar import gui
     app = gui(useTtk=True)
     app.setLocation("CENTER")
     app.setTtkTheme("winnative")
     app.errorBox("Error","Only supported on Arkimint")
     sys.exit()
 
-# TODO: Legg inn clear_file.py type funksjonalitet her
-
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
 conf_file = tmp_dir + "/pwb.ini"
-
-#config.read(conf_file)
+config.read(conf_file)
 data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
 filepath = add_wim_file(data_dir)  
-if not filepath:
+if filepath:
+    add_config_section(config, 'ENV')
+    config.set('ENV', 'wim_path', filepath)
+    config.set('ENV', 'log_file', "system_process_files.log")
+    config.set('ENV', 'process', "file")
+    with open(conf_file, "w+") as configfile:
+        config.write(configfile, space_around_delimiters=False)
+else:
     sys.exit()
-    
+
 sql_file = tmp_dir + "/file_process.sql"
 in_dir = os.path.dirname(filepath) + "/"
 sys_name = os.path.splitext(os.path.basename(filepath))[0]
 mount_dir = data_dir + "/" + sys_name + "_mount"
 av_done_file = in_dir + sys_name + "_av_done"
+
+ # Clear log file:
+open(tmp_dir + "/PWB.log", 'w').close()
 
 pathlib.Path(mount_dir).mkdir(parents=True, exist_ok=True)
 if len(os.listdir(mount_dir)) == 0:
@@ -119,8 +126,9 @@ for folder in subfolders:
                 file.write("\n".join(sql))
             
             add_config_section(config, 'DATABASE')
-            db_name = app.getEntry("sql_proc")
             config.set('DATABASE', 'sql_proc', "True")
+            with open(conf_file, "w+") as configfile:
+                config.write(configfile, space_around_delimiters=False)
 
         # Remove empty folders
         if os.path.exists(docs_folder):
