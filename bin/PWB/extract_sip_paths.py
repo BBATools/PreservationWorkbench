@@ -17,6 +17,15 @@
 
 from configparser import SafeConfigParser
 import pathlib, os, subprocess
+from verify_md5sum import pwb_message
+
+def unique_dir(directory):
+    counter = 0
+    while True:
+        counter += 1
+        path = pathlib.Path(directory + str(counter))
+        if not path.exists():
+            return path
 
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
@@ -33,14 +42,7 @@ if config.has_option('DATABASE', 'db_schema'):
     schema = config.get('DATABASE', 'db_schema')
 
 subsystem_path = None
-
-def unique_dir(directory):
-    counter = 0
-    while True:
-        counter += 1
-        path = pathlib.Path(directory + str(counter))
-        if not path.exists():
-            return path
+db_args = ""
 
 if len(sys_name) > 0:
     pathlib.Path(basepath + sys_name +
@@ -52,6 +54,7 @@ if len(sys_name) > 0:
     if len(schema) > 0 and len(database) > 0:
         subsystem_path = basepath + sys_name + \
             '/content/sub_systems/' + database + '_' + schema
+        db_args = "ok"
     else:
         subsystem_path = str(unique_dir(basepath + sys_name + '/content/sub_systems/' +
                                         sys_name))
@@ -67,23 +70,9 @@ if len(sys_name) > 0:
 
     subsys_name = subsystem_path.split('/')[-1]
     config.set('SYSTEM', 'subsys_name', subsys_name)
-    with open(conf_file, "w+") as configfile:
-        config.write(configfile, space_around_delimiters=False)
 else:
-    msg = "'Illegal or missing values in user input'"
-    if os.name == "posix":
-        try:
-            subprocess.call("zenity --error --text=" + msg + " 2> >(grep -v 'GtkDialog' >&2)",
-                            shell=True, executable='/bin/bash')
-        except subprocess.CalledProcessError:
-            pass
-        exit()
-    else:
-        import tkinter # WAIT: Bruke appjar heller her?
-        from tkinter import ttk, messagebox
-        root = tkinter.Tk()
-        root.overrideredirect(1)
-        root.withdraw()
-        messagebox.showinfo("Error", msg)
-        root.destroy()
-        exit()
+    pwb_message("'Illegal or missing values in user input'", "error")
+
+config.set('DATABASE', 'db_args', db_args)
+with open(conf_file, "w+") as configfile:
+    config.write(configfile, space_around_delimiters=False)

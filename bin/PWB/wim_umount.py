@@ -17,6 +17,7 @@
 
 import subprocess, os, shutil
 from configparser import SafeConfigParser
+from verify_md5sum import pwb_message
 
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
@@ -40,3 +41,5 @@ if process == 'file':
 elif process == 'meta':
     shutil.copytree(mount_dir, package_dir)
     subprocess.run("wimunmount --force " + mount_dir, shell=True)
+
+pwb_message("'Done!'", "info")

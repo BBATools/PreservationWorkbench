@@ -15,21 +15,21 @@
        <void property="text">
         <string>-- EXPORT DATABASE SCHEMA/FILES --
 
--- Read env variables from config-file -- 
+-- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- User input --
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_user_input.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
--- create base directories --
+-- create base directories
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
--- Read user variables from config-file -- 
+-- Read user variables from config-file
 WbVarDef -file=tmp/pwb.ini;
--- Check connection --
-WbConfirm -ifDefined=db_schema -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
--- Create schemareport --
-WbInclude -ifDefined=db_schema -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
--- Export to tsv -----
+-- Check connection
+WbConfirm -ifDefined=db_args -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
+-- Create schemareport
+WbInclude -ifDefined=db_args -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
+-- Export to tsv
 -- TODO: Vil virke også med LONG RAW på oracle (bug i oracle jdbc-driver) hvis det feltet  er listet sist i tabellen -&gt; fikse auto hvordan?
-WbExport -ifDefined=db_schema
+WbExport -ifDefined=db_args
 -type=text
 -schema=$[db_schema]
 -types=TABLE,SYNONYM
@@ -48,11 +48,9 @@ WbExport -ifDefined=db_schema
 -replaceExpression=&apos;(\n|\r\n|\r|\t|^$)&apos; -replaceWith=&apos; &apos;
 -nullString=&apos; &apos;
 -showProgress=10000;  
--- Create archives from directories  --
-WbSysExec -ifDefined=dir1 -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+-- Create archives from directories
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 
--- Done --
-WbMessage Done!;
 </string>
        </void>
        <void property="tooltip">
@@ -106,11 +104,11 @@ WbMessage Done!;
        <void property="text">
         <string>-- CREATE SYSTEM DATA PACKAGE -- 
 
--- Read env variables from config-file -- 
+-- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
--- Create archive from extracted data --
+-- Create archive from extracted data
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]create_data_package.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
--- Done --
+-- Done
 WbMessage Done!;</string>
        </void>
        <void property="tooltip">
@@ -141,9 +139,9 @@ WbMessage Done!;</string>
        <void property="text">
         <string>-- VERIFY CHECKSUM --
 
--- Read env variables from config-file -- 
+-- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
--- md5sum check --
+-- md5sum check
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_md5sum.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;</string>
        </void>
        <void property="tooltip">
@@ -162,9 +160,9 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_m
        <void property="text">
         <string>-- MAKE COPIES --
 
--- Read env variables from config-file -- 
+-- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
--- md5sum check --
+-- md5sum check
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_make_copies.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 
 </string>
@@ -257,11 +255,11 @@ WbMessage &quot;Not implemented yet&quot;;</string>
        <void property="text">
         <string>-- PROCESS FILES:
 
--- Read env variables from config-file -- 
+-- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Fix directories and generate sql if needed
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_files_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
--- Read env variables from config-file -- 
+-- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Run generated sql (if sql_proc variable exists in config file)																																									
 WbInclude -ifDefined=sql_proc -file=tmp/file_process.sql -displayResult=false -verbose=false -continueOnError=false; 																
@@ -275,8 +273,8 @@ WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot
 WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Clean up																	
 WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
--- Done --
-WbMessage Done!;</string>
+
+</string>
        </void>
        <void property="tooltip">
         <string>Normalize documents</string>
@@ -292,196 +290,30 @@ WbMessage Done!;</string>
         <int>1</int>
        </void>
        <void property="text">
-        <string>-- Process metadata:
-WbSysExec -program=&quot;python3&quot; -argument=&apos;PWB/wim_mount.py&apos;; WbVarDef  -contentFile=tmp/wim_info -variable=wim_info; 																		-- Choose/mount wim-file 	
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/clear_file.py -f &quot;tmp/PWB.log&quot;&apos;; 																											-- Clear log-file
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/meta_process.py --wim &quot;$[wim_info]&quot;&apos;;																									-- Normalize metadata and generate sql		
-WbInclude -ifDefined=wim_info -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false;																	-- Generate DDL and web-report from sql
-WbSysExec -ifDefined=wim_info  -program=&quot;python3&quot; -argument=&apos;PWB/meta_check.py --wim &quot;$[wim_info]&quot;&apos;;																									-- Generate sql for testing metadata
-WbInclude -ifDefined=wim_info -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;																		-- Generate schemas and import metadata (5 db-engines)
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/wim_umount.py --wim &quot;$[wim_info]&quot; --proc &quot;meta&quot; --log &quot;system_process_metadata.log&quot;&apos;; -- Save log/unmount wim image
-WbSysExec -ifDefined=wim_info -program=&quot;python3&quot; -argument=&apos;PWB/cleanup.py --wim &quot;$[wim_info]&quot; --proc &quot;meta&quot;&apos;; 																											-- Clean up</string>
-       </void>
-       <void property="tooltip">
-        <string>Normalize metadata</string>
-       </void>
-      </object>
-     </void>
-     <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
-       <void property="name">
-        <string>Metadata_original</string>
-       </void>
-       <void property="sortOrder">
-        <int>2</int>
-       </void>
-       <void property="text">
-        <string>-- Extract Database Copy and process data
--- Define variables --
--- WbVarDef SubSystemPath=$[?SubSystemPath];
+        <string>-- PROCESS METADATA:
 
--- Generate db-url ---
-WbSysExec basename &apos;$[SubSystemPath]&apos; &gt; ~/bin/sql_workbench/tmp/tmp.txt;
-WbSysExec sed -i &apos;1s;^;jdbc:h2:$[SubSystemPath]/documentation/code/;&apos; ~/bin/sql_workbench/tmp/tmp.txt;
-WbVarDef -contentFile=bin/sql_workbench/tmp/tmp.txt -variable=db;
-WbEcho $[db];
--- Fix illegal names -
-WbSysExec sed -i &apos;s:&lt;column-name&gt;NOTNULL&lt;/column-name&gt;:&lt;column-name&gt;NOTNULL_&lt;/column-name&gt; &lt;!-- renamed from illegal name &quot;NOTNULL&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml;     
-WbSysExec sed -i &apos;s:&lt;column name=&quot;NOTNULL&quot; direction=&quot;ASC&quot;/&gt;:&lt;column name=&quot;NOTNULL_&quot; direction=&quot;ASC&quot;/&gt; &lt;!-- renamed from illegal name &quot;NOTNULL&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml; 
-WbSysExec sed -i &apos;s:&lt;column-name&gt;SYSTEM&lt;/column-name&gt;:&lt;column-name&gt;SYSTEM_&lt;/column-name&gt; &lt;!-- renamed from illegal name &quot;SYSTEM&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml; 
-WbSysExec sed -i &apos;s:&lt;column name=&quot;SYSTEM&quot; direction=&quot;ASC&quot;/&gt;:&lt;column name=&quot;SYSTEM_&quot; direction=&quot;ASC&quot;/&gt; &lt;!-- renamed from illegal name &quot;SYSTEM&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml; 
-WbSysExec sed -i &apos;s:&lt;column-name&gt;FUNCTION&lt;/column-name&gt;:&lt;column-name&gt;FUNCTION_&lt;/column-name&gt; &lt;!-- renamed from illegal name &quot;FUNCTION&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml;    
-WbSysExec sed -i &apos;s:&lt;column name=&quot;FUNCTION&quot; direction=&quot;ASC&quot;/&gt;:&lt;column name=&quot;FUNCTION_&quot; direction=&quot;ASC&quot;/&gt; &lt;!-- renamed from illegal name &quot;FUNCTION&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml; 
-WbSysExec sed -i &apos;s:&lt;column-name&gt;STORED&lt;/column-name&gt;:&lt;column-name&gt;STORED_&lt;/column-name&gt; &lt;!-- renamed from illegal name &quot;STORED&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml;    
-WbSysExec sed -i &apos;s:&lt;column name=&quot;STORED&quot; direction=&quot;ASC&quot;/&gt;:&lt;column name=&quot;STORED_&quot; direction=&quot;ASC&quot;/&gt; &lt;!-- renamed from illegal name &quot;STORED&quot; --&gt;:g&apos; $[SubSystemPath]/header/metadata.xml; 
--- Generate HTML -----
-WbXslt 
--inputfile=$[SubSystemPath]/header/metadata.xml
--stylesheet=bin/sql_workbench/xslt/wbreport2html.xslt
--xsltOutput=$[SubSystemPath]/header/metadata.html;
--- Generate DDL ------
-WbXslt 
--inputfile=$[SubSystemPath]/header/metadata.xml
--stylesheet=bin/sql_workbench/xslt/metadata2ddl.xslt
--xsltOutput=$[SubSystemPath]/documentation/code/ddl.sql;
--- Connect to db -----
-WbConnect
--url=$[db]
--password=&apos;&apos;;
--- Fix illegal column names -
-WbVarDef illegalFields=&quot;&apos;NOTNULL&apos;,&apos;SYSTEM&apos;,&apos;FUNCTION&apos;,&apos;STORED&apos;&quot;;
-WbVarDef illegalCount=@&quot;SELECT COUNT(TABLE_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = &apos;PUBLIC&apos; AND COLUMN_NAME in ($[illegalFields]);&quot;;
-WbVarDef fixColumns=@&quot;SELECT GROUP_CONCAT(&apos;ALTER TABLE &apos; || TABLE_NAME  || &apos; ALTER COLUMN &apos; || COLUMN_NAME || &apos; RENAME TO &apos; || COLUMN_NAME || &apos;_;&apos;) FROM (
-                      SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-                      WHERE TABLE_SCHEMA = &apos;PUBLIC&apos;
-                      AND COLUMN_NAME in ($[illegalFields]))&quot;;                                           
-WbSysExec basename &apos;$[fixColumns]&apos; &gt; ~/bin/sql_workbench/tmp/tmp.sql;
-WbVarDef fixColumns=&apos;&apos;;
-WbSysExec sed -i &apos;s/\,/\n/g&apos; ~/bin/sql_workbench/tmp/tmp.sql;
-WbInclude -file=bin/sql_workbench/tmp/tmp.sql -displayResult=false -verbose=false -continueOnError=true;
-COMMIT;
-WbSysExec rm bin/sql_workbench/tmp/tmp.sql;
-
--- Export to tsv -----
-WbExport
--type=text
--schema=PUBLIC
--types=TABLE
--sourceTable=*
--outputdir=$[SubSystemPath]/content/data
--createDir=true
--continueOnError=false
--encoding=UTF8                
--header=true                  
--decimal=&apos;.&apos;                  
--maxDigits=0                  -- export as many decimasl as possible
--lineEnding=crlf        
--clobAsFile=true              -- export huge text fields as separate files
--blobType=file                -- export binary fields as separate files
--delimiter=\t                 -- tab-separated  
--replaceExpression=&apos;(\n|\r\n|\r|\t)&apos; -replaceWith=&apos; &apos;
--showProgress=10000;   
--- Create schemareport from local copy of database --
-WbSchemaReport 
--file=$[SubSystemPath]/documentation/code/metadata_dbcopy.xml
--schemas=PUBLIC
--includeProcedures=true
--includeTriggers=true
--writeFullSource=true;
------------------------------------------------------
-WbDisconnect;
--- Create directory for lobs if not exists --      
-WbSysExec mkdir -p $[SubSystemPath]/content/data_documents 2&gt;/dev/null; 
----------------------------------------------
--- Move extracted *lobs into their own directory --
-WbSysExec mv &apos;$[SubSystemPath]/content/data/&apos;*.data $[SubSystemPath]/content/data_documents 2&gt;/dev/null; 
----------------------------------------------------
--- Remove directory for lobs if empty --
-WbSysExec rmdir $[SubSystemPath]/content/data_documents/ 2&gt;/dev/null; 
--- HSQLDB 2.4 -------- 
-WbConnect -url=&quot;jdbc:hsqldb:mem:HSQLDB_test&quot; -password=&quot;&quot;; 
-WbInclude -file=$[SubSystemPath]/documentation/code/ddl.sql -displayResult=true -verbose=true -continueOnError=false;
-WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=PUBLIC -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
-WbDisconnect;
--- H2 1.4 ------------
--- Import with SQL Workbench/J (all tables):
-WbConnect -url=&quot;jdbc:h2:mem:H2_test&quot; -password=&quot;&quot;;
-WbInclude -file=$[SubSystemPath]/documentation/code/ddl.sql -displayResult=true -verbose=true -continueOnError=false;
-WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=PUBLIC -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
-WbDisconnect;
--- MySQL 8.0 ---------    
-WbConnect -url=&quot;jdbc:mysql://localhost:3306&quot; -username=&quot;root&quot; -password=&quot;bba&quot; -driverjar=&quot;bin/mysql-connector-java-8.0.13.jar&quot; -driver=com.mysql.cj.jdbc.Driver;
-DROP DATABASE IF EXISTS MySQL_test; CREATE DATABASE MySQL_test; USE MySQL_test;
-WbInclude -file=$[SubSystemPath]/documentation/code/ddl.sql -displayResult=true -verbose=true -continueOnError=false;
--- Import with SQL Workbench/J (all tables):
-WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=&quot;&quot; -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
-WbDisconnect;
--- PostgreSQL 12 -----
-WbSysExec cp $[SubSystemPath]/documentation/code/ddl.sql $[SubSystemPath]/documentation/code/pg_ora_ddl.sql;
-WbSysExec sed -i &apos;s: datetime: timestamp:g&apos; $[SubSystemPath]/documentation/code/pg_ora_ddl.sql;
-WbConnect -url=&quot;jdbc:postgresql://localhost:5432/&quot; -username=&quot;postgres&quot; -password=&quot;bba&quot;; 
-DROP SCHEMA IF EXISTS PostgreSQL_test CASCADE; COMMIT; CREATE SCHEMA PostgreSQL_test; COMMIT; SET search_path TO PostgreSQL_test;
-WbInclude -file=$[SubSystemPath]/documentation/code/pg_ora_ddl.sql -displayResult=true -verbose=true -continueOnError=false;
-COMMIT;
--- Import with SQL Workbench/J (all tables):
-WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=PostgreSQL_test -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
-WbDisconnect;
--- Oracle 12 --------- 
-WbSysExec cp $[SubSystemPath]/documentation/code/ddl.sql $[SubSystemPath]/documentation/code/pg_ora_ddl.sql;
-WbSysExec sed -i &apos;s: datetime: timestamp:g&apos; $[SubSystemPath]/documentation/code/pg_ora_ddl.sql; 
-WbSysExec echo \
-&apos;BEGIN 
-  FOR cur_rec IN (SELECT object_name, object_type 
-                  FROM   user_objects
-                  WHERE  object_type IN (&apos;\&apos;&apos;TABLE&apos;\&apos;&apos;,&apos;\&apos;&apos;VIEW&apos;\&apos;&apos;,&apos;\&apos;&apos;SEQUENCE&apos;\&apos;&apos;)) LOOP
-    BEGIN
-      IF cur_rec.object_type = &apos;\&apos;&apos;TABLE&apos;\&apos;&apos; THEN
-        EXECUTE IMMEDIATE &apos;\&apos;&apos;DROP &apos;\&apos;&apos; || cur_rec.object_type || &apos;\&apos;&apos; &quot;&apos;\&apos;&apos; || cur_rec.object_name || &apos;\&apos;&apos;&quot; CASCADE CONSTRAINTS&apos;\&apos;&apos;;
-      ELSE
-        EXECUTE IMMEDIATE &apos;\&apos;&apos;DROP &apos;\&apos;&apos; || cur_rec.object_type || &apos;\&apos;&apos; &quot;&apos;\&apos;&apos; || cur_rec.object_name || &apos;\&apos;&apos;&quot;&apos;\&apos;&apos;;
-      END IF;
-    EXCEPTION
-      WHEN OTHERS THEN
-        DBMS_OUTPUT.put_line(&apos;\&apos;&apos;FAILED: DROP &apos;\&apos;&apos; || cur_rec.object_type || &apos;\&apos;&apos; &quot;&apos;\&apos;&apos; || cur_rec.object_name || &apos;\&apos;&apos;&quot;&apos;\&apos;&apos;);
-    END;
-  END LOOP;
-  COMMIT;
-END;&apos; &gt; bin/sql_workbench/tmp/ora_reset.sql;
-WbConnect -url=&quot;jdbc:oracle:thin:@oradb29i.srv.bergenkom.no:21525/INNPROD&quot; -username=&quot;INNSYN_TEST2&quot; -password=&quot;historie&quot;;
-WbInclude -file=bin/sql_workbench/tmp/ora_reset.sql -displayResult=true -verbose=true -continueOnError=false;
-WbInclude -file=$[SubSystemPath]/documentation/code/pg_ora_ddl.sql -displayResult=true -verbose=true -continueOnError=false;
-COMMIT;
--- Import with SQL Workbench/J (all tables):
--- WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=INNSYN_TEST2 -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
-WbDisconnect;
-WbSysExec rm bin/sql_workbench/tmp/ora_reset.sql;
--- SQLite 3.21 ------- 
-WbConnect -url=&quot;jdbc:sqlite::memory:&quot; -username=&quot;&quot; -password=&quot;&quot; -driverjar=&quot;bin/sqlite-jdbc-3.21.0.1.jar&quot; -driver=org.sqlite.JDBC;
-WbInclude -file=$[SubSystemPath]/documentation/code/ddl.sql -displayResult=true -verbose=true -continueOnError=false;
--- Import with SQL Workbench/J (all tables):
--- WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema= -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
-WbDisconnect;
--- MSSQLServer 2019 --
-WbConnect -url=&quot;jdbc:sqlserver://localhost\SQLEXPRESS:1433&quot; -username=&quot;sa&quot; -password=&quot;Hp3tusen1&quot; -autocommit=true;
-DROP DATABASE IF EXISTS MSSQLServer_test; CREATE DATABASE MSSQLServer_test; USE MSSQLServer_test;
-WbInclude -file=$[SubSystemPath]/documentation/code/ddl.sql -displayResult=true -verbose=true -continueOnError=false;
-WbDisconnect;
-WbConnect -url=&quot;jdbc:sqlserver://localhost\SQLEXPRESS:1433&quot; -username=&quot;sa&quot; -password=&quot;Hp3tusen1&quot; -autocommit=false;
-USE MSSQLServer_test;
--- Import with SQL Workbench/J (all tables):
--- WbImport -type=text -mode=insert -sourceDir=$[SubSystemPath]/content/data -skipTargetCheck=false -checkDependencies=true -continueOnError=false -ignoreIdentityColumns=true -schema=dbo -delimiter=\t -decimal=&apos;.&apos; -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=true -createTarget=false -showProgress=10000;
-WbDisconnect;
-----------------------
-
-
-
-
+-- Read env variables from config-file
+WbVarDef -file=tmp/pwb.ini;
+-- Normalize metadata and generate sql	
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_metadata_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+-- Read env variables from config-file
+WbVarDef -file=tmp/pwb.ini;
+-- Generate DDL from xml																																					
+WbInclude -ifDefined=wim_path -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false; 		
+-- Generate sql for testing metadata
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_metadata_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+-- Generate schemas and import metadata (5 db-engines)															
+WbInclude -ifDefined=wim_path -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;		
+-- Save log/unmount wim image																			
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+-- Clean up																	
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
 
 
 </string>
        </void>
-       <void property="visibleInMenu">
-        <boolean>false</boolean>
+       <void property="tooltip">
+        <string>Normalize metadata</string>
        </void>
       </object>
      </void>

@@ -16,6 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import hashlib, os, subprocess, pathlib
+from verify_make_copies import add_wim_file
+import tkinter
+from tkinter import ttk, messagebox
 
 
 def md5sum(filename, blocksize=65536):
@@ -26,67 +29,40 @@ def md5sum(filename, blocksize=65536):
     return hash.hexdigest()
 
 
-filepath = ""
-if os.name == "posix":
-    try:
-        filepath = subprocess.check_output(
-            # WAIT: Husk valgt mappe til neste gang og bruk som default under. Samme for tkinter-variant under
-            # WAIT: Endre til zenipy?
-            "zenity --file-selection --filename=../_DATA/ 2> >(grep -v 'GtkDialog' >&2)", shell=True, executable='/bin/bash').decode("utf-8").strip()
-    except subprocess.CalledProcessError:
-        pass
-
-    file_ext = pathlib.Path(filepath).suffix
-    if file_ext != ".wim":
+def pwb_message(message, box_arg):
+    if os.name == "posix":
         try:
-            subprocess.call("zenity --error --text='Not a valid wim archive.' 2> >(grep -v 'GtkDialog' >&2)",
+            subprocess.call("zenity --" + box_arg + " --text=" + message + " 2> >(grep -v 'GtkDialog' >&2)",
                             shell=True, executable='/bin/bash')
         except subprocess.CalledProcessError:
             pass
         exit()
-else:
-    import tkinter # WAIT: Endre til appjar?
-    from tkinter import ttk, messagebox
-    from tkinter.filedialog import askopenfilename
-    root = tkinter.Tk()
-    root.overrideredirect(1)
-    root.withdraw()
+    else:
+        root = tkinter.Tk()
+        root.overrideredirect(1)
+        root.withdraw()
+        messagebox.showinfo(box_arg, message)
+        root.destroy()
 
-    filepath = askopenfilename(initialdir="../_DATA",
-                               filetypes=("Wim Archive", "*.wim"),
-                               title="Choose a file."
-                               )
 
-    file_ext = pathlib.Path(filepath).suffix
-    if file_ext != ".wim":
-        messagebox.showinfo("Error", "Not a valid wim archive.")
-    root.destroy()
-    exit()
+if __name__== "__main__":
+    tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
+    data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
+    filepath = add_wim_file(data_dir)  
 
-file = open(os.path.splitext(filepath)[0]+'_md5sum.txt', "r")
-mount_dir = os.path.splitext(filepath)[0] + '_mount'
-orig = file.read().replace('\n', '')
-check = md5sum(filepath)
+    md5sum_file = os.path.splitext(filepath)[0]+'_md5sum.txt'
+    if not os.path.isfile(md5sum_file):
+        pwb_message(os.path.basename(md5sum_file) + "' not in path'", "error")
+    else:
+        file = open(md5sum_file, "r")
+        orig = file.read().replace('\n', '')
+        check = md5sum(filepath)
 
-if check == orig:
-    message = "'Checksum Matches'"
-    box_arg = "info"
-else:
-    message = "'Checksum Mismatch'"
-    box_arg = "error"
+        if check == orig:
+            message = "'Checksum Matches'"
+            box_arg = "info"
+        else:
+            message = "'Checksum Mismatch'"
+            box_arg = "error"
 
-if os.name == "posix":
-    try:
-        subprocess.call("zenity --" + box_arg + " --text=" + message + " 2> >(grep -v 'GtkDialog' >&2)",
-                        shell=True, executable='/bin/bash')
-    except subprocess.CalledProcessError:
-        pass
-    exit()
-else:
-    import tkinter
-    from tkinter import ttk, messagebox
-    root = tkinter.Tk()
-    root.overrideredirect(1)
-    root.withdraw()
-    messagebox.showinfo(box_arg, message)
-    root.destroy()
+        pwb_message(message, box_arg)

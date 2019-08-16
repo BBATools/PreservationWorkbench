@@ -17,6 +17,7 @@
 
 from configparser import SafeConfigParser
 import subprocess, os, shutil
+from verify_md5sum import pwb_message
 
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
@@ -46,4 +47,6 @@ if config.has_option('DOCUMENTS', 'dir1'):
                     " --no-acls --compress=none", shell=True)
 
 # Save log-file to documentation directory
-shutil.copyfile(tmp_dir + "/PWB.log", data_dir + "/" + sys_name + "/content/sub_systems/" + subsys_name + "/documentation/export.log")
+if (sys_name and subsys_name):  
+    shutil.copyfile(tmp_dir + "/PWB.log", data_dir + "/" + sys_name + "/content/sub_systems/" + subsys_name + "/documentation/export.log")
+    pwb_message("'Done!'", "info")

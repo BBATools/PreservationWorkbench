@@ -70,8 +70,8 @@ filepath = add_wim_file(data_dir)
 if filepath:
     add_config_section(config, 'ENV')
     config.set('ENV', 'wim_path', filepath)
-    # config.set('ENV', 'log_file', "system_process_files.log")
-    # config.set('ENV', 'process', "file")
+    config.set('ENV', 'log_file', "system_process_metadata.log")
+    config.set('ENV', 'process', "meta")
     with open(conf_file, "w+") as configfile:
         config.write(configfile, space_around_delimiters=False)
 else:

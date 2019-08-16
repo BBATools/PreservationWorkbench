@@ -153,7 +153,7 @@ for folder in subfolders:
             'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
             "DROP DATABASE IF EXISTS MSSQLServer_test; CREATE DATABASE MSSQLServer_test;",
             "WbDisconnect;",
-            'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=MSSQLServer_test" -username="sa" -password="Hp3tusen1" -autocommit=false;',
+            'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=MSSQLServer_test" -username="sa" -password="P@ssw0rd" -autocommit=false;',
             "WbSysExec touch '" + ms_done + "';",
             "WbVarDef -contentFile='" + ms_done + "' -variable=ms_done;",
             "WbInclude -ifNotDefined=ms_done -file='"

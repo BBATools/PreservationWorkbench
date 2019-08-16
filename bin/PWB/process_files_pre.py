@@ -24,6 +24,7 @@ from appJar import gui
 # TODO: Endre så en logg pr subsystem heller
 
 def quit(conf_file):
+    config = SafeConfigParser()
     add_config_section(config, 'ENV')
     config.set('ENV', 'wim_path', "")
     with open(conf_file, "w+") as configfile:
