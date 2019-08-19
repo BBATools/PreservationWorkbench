@@ -2,11 +2,12 @@
 _DATA/*
 bin/*
 
-
 # exceptions to above rule
 !_DATA/.gitkeep 
 !bin/PWB/
-!bin/PWB/WbDrivers.xml
+!bin/WbDrivers.xml
+!bin/WbMacros.xml
+!bin/h2-1.4.196.jar
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
