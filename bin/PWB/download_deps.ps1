@@ -52,12 +52,12 @@ Write-Host "Downloading $filename (approx. 40MB)"
 Invoke-WebRequest -Uri $url -OutFile $filename
 Write-Host "Extracting JDK to $PSScriptRoot"
 Expand-Archive $filename -DestinationPath $binPath
-$jdkDir = Get-ChildItem $binPath | Where-Object {$_.name -like "jdk-*"} | Select-Object -First 1
 
 #Cleanup
 Get-ChildItem -Path $PSScriptRoot | ?{ $_.PSIsContainer } | foreach { Remove-Item -Path $_.FullName -Recurse -Force -Confirm:$false}
 Get-ChildItem -Path $PSScriptRoot\* -include *.txt,*.cmd | foreach { Remove-Item -Path $_.FullName }
 Get-ChildItem -Path $binPath\* -include *.ps1,*.cmd,*.sample,*.sh,*-sample.xml,*.vbs,*.exe,*.zip,*.pdf | foreach { Remove-Item -Path $_.FullName }
-
-#Rename dir later to avoid file lock
+$pythonExe = Get-ChildItem $pythonPath | Where-Object {$_.name -Match "python.exe"} | Select-Object -First 1
+Rename-Item $pythonExe "python3.exe"
+$jdkDir = Get-ChildItem $binPath | Where-Object {$_.name -like "jdk-*"} | Select-Object -First 1
 Rename-Item $jdkDir jre
