@@ -57,7 +57,7 @@ Expand-Archive $filename -DestinationPath $binPath
 Get-ChildItem -Path $PSScriptRoot | ?{ $_.PSIsContainer } | foreach { Remove-Item -Path $_.FullName -Recurse -Force -Confirm:$false}
 Get-ChildItem -Path $PSScriptRoot\* -include *.txt,*.cmd | foreach { Remove-Item -Path $_.FullName }
 Get-ChildItem -Path $binPath\* -include *.ps1,*.cmd,*.sample,*.sh,*-sample.xml,*.vbs,*.exe,*.zip,*.pdf | foreach { Remove-Item -Path $_.FullName }
-$pythonExe = Get-ChildItem $pythonPath | Where-Object {$_.name -Match "python.exe"} | Select-Object -First 1
-Rename-Item $pythonExe "python3.exe"
+$pythonExe = [IO.Path]::Combine($pythonPath, 'python.exe')
+Rename-Item -Path $pythonExe -NewName "python3.exe"
 $jdkDir = Get-ChildItem $binPath | Where-Object {$_.name -like "jdk-*"} | Select-Object -First 1
 Rename-Item $jdkDir jre
