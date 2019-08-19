@@ -39,7 +39,7 @@ Expand-Archive $filename -DestinationPath $pythonPath
 # Download wimlib
 $url= "https://wimlib.net/downloads/wimlib-1.13.1-windows-x86_64-bin.zip"
 $filename = [System.IO.Path]::GetFileName($url); 
-Write-Host "Downloading $filename (approx. 7MB)"
+Write-Host "Downloading $filename (approx. 1MB)"
 Invoke-WebRequest -Uri $url -OutFile $filename
 Write-Host "Extracting $filename  to $binPath"
 Expand-Archive $filename -DestinationPath $PSScriptRoot
