@@ -31,6 +31,8 @@ config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
 conf_file = tmp_dir + "/pwb.ini"
 config.read(conf_file)
+sys_name = None
+subsys_name = None
 
 if config.has_option('ENV', 'data_dir'):
     basepath = config.get('ENV', 'data_dir') + "/"
@@ -43,33 +45,40 @@ if config.has_option('DATABASE', 'db_schema'):
 
 subsystem_path = None
 db_args = ""
+doc_args= ""
 
-if len(sys_name) > 0:
-    pathlib.Path(basepath + sys_name +
-                 '/administrative_metadata/').mkdir(parents=True, exist_ok=True)
-    pathlib.Path(basepath + sys_name +
-                 '/descriptive_metadata/').mkdir(parents=True, exist_ok=True)
-    pathlib.Path(basepath + sys_name +
-                 '/content/documentation/').mkdir(parents=True, exist_ok=True)
-    if len(schema) > 0 and len(database) > 0:
+if sys_name:
+    if config.has_option('DOCUMENTS', 'dir1'):
+        doc_args = "ok"
+
+    if schema and database:
         subsystem_path = basepath + sys_name + \
             '/content/sub_systems/' + database + '_' + schema
         db_args = "ok"
-    else:
+    elif doc_args:
         subsystem_path = str(unique_dir(basepath + sys_name + '/content/sub_systems/' +
                                         sys_name))
+                                        
+    if db_args or doc_args:
+        pathlib.Path(basepath + sys_name +
+                 '/administrative_metadata/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(basepath + sys_name +
+                 '/descriptive_metadata/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(basepath + sys_name +
+                 '/content/documentation/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(subsystem_path +
+                    '/header/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(subsystem_path +
+                    '/content/documents/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(subsystem_path +
+                    '/content/documents/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(subsystem_path +
+                    '/documentation/dip/').mkdir(parents=True, exist_ok=True)
 
-    pathlib.Path(subsystem_path +
-                 '/header/').mkdir(parents=True, exist_ok=True)
-    pathlib.Path(subsystem_path +
-                 '/content/documents/').mkdir(parents=True, exist_ok=True)
-    pathlib.Path(subsystem_path +
-                 '/content/documents/').mkdir(parents=True, exist_ok=True)
-    pathlib.Path(subsystem_path +
-                 '/documentation/dip/').mkdir(parents=True, exist_ok=True)
-
-    subsys_name = subsystem_path.split('/')[-1]
-    config.set('SYSTEM', 'subsys_name', subsys_name)
+        subsys_name = subsystem_path.split('/')[-1]
+        config.set('SYSTEM', 'subsys_name', subsys_name)
+    else:
+        pwb_message("'Illegal or missing values in user input'", "error")
 else:
     pwb_message("'Illegal or missing values in user input'", "error")
 

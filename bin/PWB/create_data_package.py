@@ -17,6 +17,7 @@
 
 from configparser import SafeConfigParser
 import subprocess, os, hashlib, shutil
+from verify_md5sum import pwb_message
 
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
@@ -54,6 +55,9 @@ if config.has_option('SYSTEM', 'sys_name'):
     f.close()
 
     shutil.rmtree(data_dir + sys_name, ignore_errors=True)
+    pwb_message("'Done!'", "info")
+else:
+    pwb_message("'No data to package!'", "error")
 
 
 

@@ -4,7 +4,7 @@ SCRIPT_PATH="$(dirname "$(readlink -f "$0")")"/bin
 echo "[ENV]
 py_path=
 os=posix
-pwb_path="$SCRIPT_PATH"/PWB/" > $SCRIPT_PATH/tmp/pwb.ini
+pwb_path="$SCRIPT_PATH"/PWB" > $SCRIPT_PATH/tmp/pwb.ini
 
 JAVACMD="java"
 

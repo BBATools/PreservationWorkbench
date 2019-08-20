@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<java version="11.0.4" class="java.beans.XMLDecoder">
+<java version="1.8.0_222" class="java.beans.XMLDecoder">
  <object class="java.util.ArrayList">
   <void method="add">
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -20,7 +20,7 @@ WbVarDef -file=tmp/pwb.ini;
 -- User input --
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_user_input.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- create base directories
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec  -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Read user variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Check connection
@@ -49,14 +49,14 @@ WbExport -ifDefined=db_args
 -nullString=&apos; &apos;
 -showProgress=10000;  
 -- Create archives from directories
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -ifDefined=subsys_name -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+
 
 </string>
        </void>
        <void property="tooltip">
         <string>XML/TSV-export</string>
        </void>
-       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
@@ -87,7 +87,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract
         <string>XML/H2-export</string>
        </void>
        <void property="visibleInPopup">
-        <object idref="Boolean0"/>
+        <boolean>false</boolean>
        </void>
       </object>
      </void>
@@ -109,8 +109,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract
 WbVarDef -file=tmp/pwb.ini;
 -- Create archive from extracted data
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/create_data_package.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
--- Done
-WbMessage Done!;</string>
+</string>
        </void>
        <void property="tooltip">
         <string>Package all data and generate checksum</string>
@@ -365,7 +364,7 @@ WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot
      <int>4</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -401,7 +400,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -414,7 +413,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>6</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -427,7 +426,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>7</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -440,7 +439,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>8</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -453,7 +452,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>9</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -466,7 +465,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>10</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>

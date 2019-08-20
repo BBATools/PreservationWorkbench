@@ -91,6 +91,7 @@ def add_dir(btn):
         if not duplicate:
             app.addListItem("Directories", dir_path)
 
+
 def quit(btn):
     app.stop()
 

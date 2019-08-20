@@ -33,7 +33,7 @@ if config.has_option('SYSTEM', 'sys_name'):
 if config.has_option('SYSTEM', 'subsys_name'):
     subsys_name = config.get('SYSTEM', 'subsys_name')
 
-if config.has_option('DOCUMENTS', 'dir1'):
+if sys_name and config.has_option('DOCUMENTS', 'dir1'):
     source_doc_paths = dict(config.items('DOCUMENTS'))
     base_path = data_dir + "/" + sys_name + "/content/sub_systems/" + subsys_name + "/content/documents/"
     pwb_dir = os.path.abspath(os.path.join(tmp_dir, '..', 'PWB'))
