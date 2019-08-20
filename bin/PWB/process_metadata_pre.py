@@ -98,14 +98,13 @@ open(sql_file, 'w').close()  # Blank out between runs
 sub_systems_path = mount_dir + "/content/sub_systems/"
 subfolders = os.listdir(sub_systems_path)
 for folder in subfolders:
-    if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path), folder)):
-        # Fix xml:
-        # WAIT: Legg inn endring av alle tabell -og feltnavn til lower-case (ser at xsl gjør det -> nok?)
-        base_path = sub_systems_path + folder
-        ddl_file = base_path + "/documentation/metadata.sql"
-        header_xml_file = base_path + "/header/metadata.xml"
-        mod_xml_file = base_path + "/documentation/metadata_mod.xml"
-
+    # Fix xml:
+    # WAIT: Legg inn endring av alle tabell -og feltnavn til lower-case (ser at xsl gjør det -> nok?)
+    base_path = sub_systems_path + folder
+    ddl_file = base_path + "/documentation/metadata.sql"
+    header_xml_file = base_path + "/header/metadata.xml"
+    mod_xml_file = base_path + "/documentation/metadata_mod.xml"
+    if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path), folder)) and os.path.isfile(header_xml_file):
         # TODO: Sjekk nederste svar her (sammenlign med kode under): https://stackoverflow.com/questions/23921485/update-an-xml-document-using-python-or-a-shell-script
         # TODO: ----> se også på den ift kode for å kassere tabeller
         tree = ET.parse(header_xml_file)

@@ -45,7 +45,8 @@ elif process == 'meta':
   sub_systems_path = package_dir + "/content/sub_systems/"
   subfolders = os.listdir(sub_systems_path)
   for folder in subfolders:
-    if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path), folder)):
+    header_xml_file = sub_systems_path + folder + "/header/metadata.xml"
+    if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path), folder)) and os.path.isfile(header_xml_file):
       sub_documentation_folder = sub_systems_path + folder + "/documentation/"
       header_folder = sub_systems_path + folder + "/header/"
 
