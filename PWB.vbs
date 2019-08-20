@@ -13,7 +13,6 @@ End If
 Set wbFolder = FSO.GetFolder(wbpath)
 For Each Subfolder in wbFolder.SubFolders
   	If instr(Subfolder.Name, "jdk-") = 1 Then
-  		Wscript.Echo Subfolder.Name
   		FSO.MoveFolder Subfolder.Path, wbpath & "jre"
   		Exit For
   	End If
