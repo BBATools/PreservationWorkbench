@@ -13,9 +13,9 @@ End If
 configFile="tmp\pwb.ini"
 Set objFile = FSO.OpenTextFile(configFile, 2, True)
 objFile.WriteLine "[ENV]"
-objFile.WriteLine "py_path=" & wbpath & "python\" 
+objFile.WriteLine "py_path=" & wbpath & "python" 
 objFile.WriteLine "os="
-objFile.WriteLine "pwb_path=" & wbpath & "PWB\"
+objFile.WriteLine "pwb_path=" & wbpath & "PWB"
 objFile.Close
 
 set args = WScript.Arguments

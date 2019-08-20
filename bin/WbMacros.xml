@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<java version="1.8.0_222" class="java.beans.XMLDecoder">
+<java version="11.0.4" class="java.beans.XMLDecoder">
  <object class="java.util.ArrayList">
   <void method="add">
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -18,9 +18,9 @@
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- User input --
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_user_input.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_user_input.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- create base directories
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Read user variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Check connection
@@ -49,13 +49,14 @@ WbExport -ifDefined=db_args
 -nullString=&apos; &apos;
 -showProgress=10000;  
 -- Create archives from directories
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 
 </string>
        </void>
        <void property="tooltip">
         <string>XML/TSV-export</string>
        </void>
+       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
@@ -86,7 +87,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_
         <string>XML/H2-export</string>
        </void>
        <void property="visibleInPopup">
-        <boolean>false</boolean>
+        <object idref="Boolean0"/>
        </void>
       </object>
      </void>
@@ -107,7 +108,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]extract_
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Create archive from extracted data
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]create_data_package.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/create_data_package.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Done
 WbMessage Done!;</string>
        </void>
@@ -142,7 +143,7 @@ WbMessage Done!;</string>
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- md5sum check
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_md5sum.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;</string>
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_md5sum.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;</string>
        </void>
        <void property="tooltip">
         <string>Verify data is unchanged</string>
@@ -163,7 +164,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_m
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- md5sum check
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]verify_make_copies.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_make_copies.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 
 </string>
        </void>
@@ -258,21 +259,21 @@ WbMessage &quot;Not implemented yet&quot;;</string>
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Fix directories and generate sql if needed
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_files_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Run generated sql (if sql_proc variable exists in config file)																																									
 WbInclude -ifDefined=sql_proc -file=tmp/file_process.sql -displayResult=false -verbose=false -continueOnError=false; 																
 -- Fix directories post sql-run
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_files_post.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_post.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Virus check and metadata extract															
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_files_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Convert files			
--- WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_files_convert.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+-- WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_convert.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Save log/unmount wim image																			
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Clean up																	
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
 
 </string>
        </void>
@@ -295,19 +296,19 @@ WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Normalize metadata and generate sql	
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_metadata_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_metadata_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Generate DDL from xml																																					
 WbInclude -ifDefined=wim_path -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false; 		
 -- Generate sql for testing metadata
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]process_metadata_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_metadata_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Generate schemas and import metadata (5 db-engines)															
 WbInclude -ifDefined=wim_path -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;		
 -- Save log/unmount wim image																			
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Clean up																	
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
+WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
 
 
 </string>
@@ -364,7 +365,7 @@ WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot
      <int>4</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -400,7 +401,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -413,7 +414,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>6</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -426,7 +427,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>7</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -439,7 +440,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>8</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -452,7 +453,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>9</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -465,7 +466,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>10</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
