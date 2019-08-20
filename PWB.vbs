@@ -10,6 +10,15 @@ If Not FSO.FolderExists(wbpath & "/tmp") Then
 	Set objFolder = FSO.CreateFolder(wbpath & "/tmp")
 End If 
 
+Set wbFolder = FSO.GetFolder(wbpath)
+For Each Subfolder in wbFolder.SubFolders
+  	If instr(Subfolder.Name, "jdk-") = 1 Then
+  		Wscript.Echo Subfolder.Name
+  		FSO.MoveFolder Subfolder.Path, wbpath & "jre"
+  		Exit For
+  	End If
+Next
+
 configFile="tmp\pwb.ini"
 Set objFile = FSO.OpenTextFile(configFile, 2, True)
 objFile.WriteLine "[ENV]"
