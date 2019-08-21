@@ -93,6 +93,7 @@ def add_dir(btn):
 
 
 def quit(btn):
+
     app.stop()
 
 if __name__== "__main__":
