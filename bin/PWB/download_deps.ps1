@@ -31,7 +31,8 @@ If (-Not (Test-Path $wbTestPath)) {
 }
 
 # Download Python
-If (-Not (Test-Path $pythonPath)) {
+$pythonTestPath = [IO.Path]::Combine($binPath, 'python','python.exe')
+If (-Not (Test-Path $pythonTestPath)) {
 	$url= "https://www.python.org/ftp/python/3.6.8/python-3.6.8-embed-amd64.zip"
 	New-Item -ItemType Directory -Force -Path $pythonPath 
     $filename = [System.IO.Path]::GetFileName($url); 
