@@ -8,7 +8,7 @@ bin/*
 !bin/python/
 !bin/WbDrivers.xml
 !bin/WbMacros.xml
-!bin/h2-1.4.196.jar
+!bin/h2-*.jar
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

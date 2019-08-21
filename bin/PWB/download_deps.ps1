@@ -17,32 +17,44 @@ function Get-RedirectedUrl
 
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 $binPath = (get-item $PSScriptRoot).parent.FullName
+$pythonPath = [IO.Path]::Combine($binPath, 'python')
 
 # Download SQL Workbench J
-$url= "https://www.sql-workbench.eu/Workbench-Build125.zip"
-$filename = [System.IO.Path]::GetFileName($url); 
-Write-Host "Downloading $filename (approx. 6MB)"
-Invoke-WebRequest -Uri $url -OutFile $filename
-Write-Host "Extracting $filename  to $binPath"
-Expand-Archive $filename -DestinationPath $binPath
+$wbTestPath = [IO.Path]::Combine($binPath, 'sqlworkbench.jar')
+If (-Not (Test-Path $wbTestPath)) {
+	$url= "https://www.sql-workbench.eu/Workbench-Build125.zip"
+	$filename = [System.IO.Path]::GetFileName($url); 
+	Write-Host "Downloading $filename (approx. 6MB)"
+	Invoke-WebRequest -Uri $url -OutFile $filename
+	Write-Host "Extracting $filename  to $binPath"
+	Expand-Archive $filename -DestinationPath $binPath
+}
 
 # Download Python
-$url= "https://www.python.org/ftp/python/3.6.8/python-3.6.8-embed-amd64.zip"
-$pythonPath = [IO.Path]::Combine($binPath, 'python')
-New-Item -ItemType Directory -Force -Path $pythonPath 
-$filename = [System.IO.Path]::GetFileName($url); 
-Write-Host "Downloading $filename (approx. 7MB)"
-Invoke-WebRequest -Uri $url -OutFile $filename
-Write-Host "Extracting $filename  to $binPath"
-Expand-Archive $filename -DestinationPath $pythonPath
+If (-Not (Test-Path $pythonPath)) {
+	$url= "https://www.python.org/ftp/python/3.6.8/python-3.6.8-embed-amd64.zip"
+	New-Item -ItemType Directory -Force -Path $pythonPath 
+    $filename = [System.IO.Path]::GetFileName($url); 
+    Write-Host "Downloading $filename (approx. 7MB)"
+    Invoke-WebRequest -Uri $url -OutFile $filename
+    Write-Host "Extracting $filename  to $binPath"
+    Expand-Archive $filename -DestinationPath $pythonPath
+    #Fix python path
+    $pthFile = [IO.Path]::Combine($pythonPath, 'python36._pth')
+    $text = [string]::Join("`n", (Get-Content $pthFile))
+	[regex]::Replace($text, "\.`n", ".`n..\PWB`n", "Singleline") | Set-Content $pthFile
+}
 
 # Download wimlib
-$url= "https://wimlib.net/downloads/wimlib-1.13.1-windows-x86_64-bin.zip"
-$filename = [System.IO.Path]::GetFileName($url); 
-Write-Host "Downloading $filename (approx. 1MB)"
-Invoke-WebRequest -Uri $url -OutFile $filename
-Write-Host "Extracting $filename  to $binPath"
-Expand-Archive $filename -DestinationPath $PSScriptRoot
+$wimlibTestPath = [IO.Path]::Combine($binPath, 'PWB','wimlib-imagex.exe')
+If (-Not (Test-Path $wimlibTestPath)) {
+    $url= "https://wimlib.net/downloads/wimlib-1.13.1-windows-x86_64-bin.zip"
+    $filename = [System.IO.Path]::GetFileName($url); 
+    Write-Host "Downloading $filename (approx. 1MB)"
+    Invoke-WebRequest -Uri $url -OutFile $filename
+    Write-Host "Extracting $filename  to $binPath"
+    Expand-Archive $filename -DestinationPath $PSScriptRoot
+}
 
 #Download JRE
 $url= "https://api.adoptopenjdk.net/v2/binary/releases/openjdk11?openjdk_impl=hotspot&os=windows&arch=x64&release=latest&type=jre"
