@@ -1,11 +1,17 @@
 # Ignore directories and files
 _DATA/*
 bin/*
+bin/PWB/libwim-15.dll
+bin/PWB/wimlib-imagex.exe
 
 # exceptions to above rule
 !_DATA/.gitkeep 
 !bin/PWB/
-!bin/python/
+!bin/python/tcl
+!bin/python/tkinter
+!bin/python/tcl86t.dll
+!bin/python/tk86t.dll
+!bin/python/_tkinter.pyd
 !bin/WbDrivers.xml
 !bin/WbMacros.xml
 !bin/h2-*.jar
@@ -19,4 +25,5 @@ __pycache__/
 
 # Include files
 !.gitignore
+
 
