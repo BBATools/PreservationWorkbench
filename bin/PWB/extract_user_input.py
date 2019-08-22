@@ -36,6 +36,7 @@ def submit(btn):
     data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
     add_config_section(config, 'ENV')
     config.set('ENV', 'data_dir', data_dir)
+    config.set('ENV', 'quit', "")
     
     add_config_section(config, 'SYSTEM')
     sys_name = app.getEntry("sys_name")
@@ -93,8 +94,13 @@ def add_dir(btn):
 
 
 def quit(btn):
-
+    config = SafeConfigParser()
+    add_config_section(config, 'ENV')
+    config.set('ENV', 'quit', "true")
+    with open(conf_file, "w+") as configfile:
+        config.write(configfile, space_around_delimiters=False)
     app.stop()
+
 
 if __name__== "__main__":
     config = SafeConfigParser()
