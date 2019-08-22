@@ -10,14 +10,6 @@ If Not FSO.FolderExists(wbpath & "/tmp") Then
 	Set objFolder = FSO.CreateFolder(wbpath & "/tmp")
 End If 
 
-Set wbFolder = FSO.GetFolder(wbpath)
-For Each Subfolder in wbFolder.SubFolders
-  	If instr(Subfolder.Name, "jdk-") = 1 Then
-  		FSO.MoveFolder Subfolder.Path, wbpath & "jre"
-  		Exit For
-  	End If
-Next
-
 configFile="tmp\pwb.ini"
 Set objFile = FSO.OpenTextFile(configFile, 2, True)
 objFile.WriteLine "[ENV]"
@@ -36,7 +28,9 @@ if (args.length > 0) then
   	next
 end if
 
-If FSO.FileExists(jarpath) And FSO.FileExists(javaPath) Then
+pythonPath = wbpath & "python\python3.exe" 
+wimPath = wbpath & "PWB\wimlib-imagex.exe" 
+If (FSO.FileExists(jarpath) And FSO.FileExists(javaPath) And FSO.FileExists(pythonPath) And FSO.FileExists(wimPath)) Then
 	' WScript.Echo javaCmd
 	retValue = WshShell.Run(javaCmd, 0, false)
 	Set WshShell = Nothing

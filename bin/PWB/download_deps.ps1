@@ -18,6 +18,7 @@ function Get-RedirectedUrl
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 $binPath = (get-item $PSScriptRoot).parent.FullName
 $pythonPath = [IO.Path]::Combine($binPath, 'python')
+$jrePath = [IO.Path]::Combine($binPath, 'jre')
 
 # Download SQL Workbench J
 $wbTestPath = [IO.Path]::Combine($binPath, 'sqlworkbench.jar')
@@ -31,7 +32,7 @@ If (-Not (Test-Path $wbTestPath)) {
 }
 
 # Download Python
-$pythonTestPath = [IO.Path]::Combine($binPath, 'python','python.exe')
+$pythonTestPath = [IO.Path]::Combine($pythonPath, 'python3.exe')
 If (-Not (Test-Path $pythonTestPath)) {
 	$url= "https://www.python.org/ftp/python/3.6.8/python-3.6.8-embed-amd64.zip"
 	New-Item -ItemType Directory -Force -Path $pythonPath 
@@ -58,13 +59,18 @@ If (-Not (Test-Path $wimlibTestPath)) {
 }
 
 #Download JRE
-$url= "https://api.adoptopenjdk.net/v2/binary/releases/openjdk11?openjdk_impl=hotspot&os=windows&arch=x64&release=latest&type=jre"
-$fUrl = Get-RedirectedUrl $url
-$filename = [System.IO.Path]::GetFileName($fUrl); 
-Write-Host "Downloading $filename (approx. 40MB)"
-Invoke-WebRequest -Uri $url -OutFile $filename
-Write-Host "Extracting JDK to $PSScriptRoot"
-Expand-Archive $filename -DestinationPath $binPath
+$jreTestPath = [IO.Path]::Combine($jrePath, 'bin', 'javaw.exe')
+If (-Not (Test-Path $jreTestPath)) {
+    $url= "https://api.adoptopenjdk.net/v2/binary/releases/openjdk11?openjdk_impl=hotspot&os=windows&arch=x64&release=latest&type=jre"
+    $fUrl = Get-RedirectedUrl $url
+    $filename = [System.IO.Path]::GetFileName($fUrl); 
+    Write-Host "Downloading $filename (approx. 40MB)"
+    Invoke-WebRequest -Uri $url -OutFile $filename
+    Write-Host "Extracting JDK to $PSScriptRoot"
+    Expand-Archive $filename -DestinationPath $jrePath
+    $jdkDir = Get-ChildItem -Directory -Path $jrePath | Select-Object -ExpandProperty FullName
+    Get-ChildItem -Path $jdkDir | Move-Item -Destination $jrePath
+} 
 
 #Cleanup
 Get-ChildItem -Path $PSScriptRoot -exclude appJar | ?{ $_.PSIsContainer } | foreach { Remove-Item -Path $_.FullName -Recurse -Force -Confirm:$false}
