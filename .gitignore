@@ -15,6 +15,7 @@ bin/PWB/wimlib-imagex.exe
 !bin/WbDrivers.xml
 !bin/WbMacros.xml
 !bin/h2-*.jar
+!bin/mssql-jdbc-*.jar
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

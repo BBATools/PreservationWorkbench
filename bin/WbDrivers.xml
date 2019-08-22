@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<java version="1.8.0_222" class="java.beans.XMLDecoder">
+<java version="11.0.4" class="java.beans.XMLDecoder">
  <object class="java.util.ArrayList">
   <void method="add">
    <object class="workbench.db.DbDriver">
@@ -374,7 +374,7 @@
      <object class="java.util.Collections" method="unmodifiableList">
       <object class="java.util.ArrayList">
        <void method="add">
-        <string>sqljdbc42.jar</string>
+        <string>mssql-jdbc-7.4.1.jre11.jar</string>
        </void>
       </object>
      </object>
