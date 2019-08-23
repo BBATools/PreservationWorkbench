@@ -167,14 +167,12 @@ if __name__== "__main__":
 
     app = gui('         Copy wim archive', useTtk=True, colspan=5)
     # TODO: Hvordan midtstille tittel uten space først?
-    app.setSize("400x400")
+    app.setSize("400x370")
     app.setLocation("CENTER")
     app.setStretch("column")
 
     if os.name == "posix":
         app.setTtkTheme('scidmint')
-    else:
-        app.setTtkTheme("winnative")
 
     app.addLabel("l0", "Choose wim-file:", 0, 0)
     app.addEntry("wim_path", 1, 0, 5)
