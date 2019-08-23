@@ -6,8 +6,8 @@ wbpath = Left(WScript.ScriptFullName, Len(WScript.ScriptFullName) - Len(WScript.
 WshShell.CurrentDirectory = wbpath
 javaPath = wbpath & "jre\bin\javaw.exe"
 
-If Not FSO.FolderExists(wbpath & "/tmp") Then
-	Set objFolder = FSO.CreateFolder(wbpath & "/tmp")
+If Not FSO.FolderExists(wbpath & "\tmp") Then
+	Set objFolder = FSO.CreateFolder(wbpath & "\tmp")
 End If 
 
 configFile="tmp\pwb.ini"
@@ -31,6 +31,15 @@ end if
 pythonPath = wbpath & "python\python3.exe" 
 wimPath = wbpath & "PWB\wimlib-imagex.exe" 
 If (FSO.FileExists(jarpath) And FSO.FileExists(javaPath) And FSO.FileExists(pythonPath) And FSO.FileExists(wimPath)) Then
+	Set jreFolder = FSO.GetFolder(wbpath & "\jre")
+	For Each Subfolder in jreFolder.SubFolders
+		On Error Resume Next
+		If instr(Subfolder.Name, "jdk-") = 1 Then
+			Set folder = FSO.GetFolder(Subfolder.Path)
+			folder.Delete [True]	
+			Exit For
+		End If
+	Next
 	' WScript.Echo javaCmd
 	retValue = WshShell.Run(javaCmd, 0, false)
 	Set WshShell = Nothing
@@ -41,4 +50,6 @@ else
 		WshShell.run("powershell -executionpolicy bypass -noexit -file PWB/download_deps.ps1")
 	End If
 End If
+
+
 

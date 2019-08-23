@@ -404,7 +404,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
