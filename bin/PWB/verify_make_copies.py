@@ -120,7 +120,7 @@ def add_wim_file(data_dir):
         if 'app' in globals():
             path = app.openBox(title, data_dir,[("WIM archives", "*.wim")])
         else:
-            path = gui().openBox(title, data_dir,[("WIM archives", "*.wim")])
+            path = gui(showIcon=False).openBox(title, data_dir,[("WIM archives", "*.wim")])
     return path
 
 
@@ -165,7 +165,7 @@ if __name__== "__main__":
     conf_file = tmp_dir + "/pwb.ini"
     config.read(conf_file)
 
-    app = gui('         Copy wim archive', useTtk=True, colspan=5)
+    app = gui('         Copy wim archive', useTtk=True, colspan=5, showIcon=False)
     # TODO: Hvordan midtstille tittel uten space først?
     app.setLocation("CENTER")
     app.setStretch("column")

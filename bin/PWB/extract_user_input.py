@@ -107,7 +107,7 @@ if __name__== "__main__":
     with open(conf_file, "w+") as configfile:
         config.write(configfile, space_around_delimiters=False)
 
-    app = gui('         System Details', useTtk=True, colspan=5)
+    app = gui('         System Details', useTtk=True, colspan=5, showIcon=False)
     # TODO: Hvordan midtstille tittel uten space først?
     app.setLocation("CENTER")
     app.setStretch("column")
