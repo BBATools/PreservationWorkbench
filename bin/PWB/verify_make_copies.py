@@ -117,8 +117,10 @@ def add_wim_file(data_dir):
         except subprocess.CalledProcessError:
             pass
     else:
-        path = app.openBox(title, data_dir,[("WIM archives", "*.wim")])
-
+        if 'app' in globals():
+            path = app.openBox(title, data_dir,[("WIM archives", "*.wim")])
+        else:
+            path = gui().openBox(title, data_dir,[("WIM archives", "*.wim")])
     return path
 
 

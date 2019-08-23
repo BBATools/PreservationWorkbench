@@ -203,7 +203,7 @@ WbMessage &quot;Not implemented yet&quot;;
         <string>dispos...</string>
        </void>
        <void id="Boolean0" method="isVisibleInMenu"/>
-       <void id="Boolean1" property="expandWhileTyping"/>
+       <void id="Boolean1" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">

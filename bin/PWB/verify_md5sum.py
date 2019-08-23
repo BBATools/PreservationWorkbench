@@ -50,19 +50,20 @@ if __name__== "__main__":
     data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
     filepath = add_wim_file(data_dir)  
 
-    md5sum_file = os.path.splitext(filepath)[0]+'_md5sum.txt'
-    if not os.path.isfile(md5sum_file):
-        pwb_message(os.path.basename(md5sum_file) + "' not in path'", "error")
-    else:
-        file = open(md5sum_file, "r")
-        orig = file.read().replace('\n', '')
-        check = md5sum(filepath)
-
-        if check == orig:
-            message = "'Checksum Matches'"
-            box_arg = "info"
+    if filepath:
+        md5sum_file = os.path.splitext(filepath)[0]+'_md5sum.txt'
+        if not os.path.isfile(md5sum_file):
+            pwb_message(os.path.basename(md5sum_file) + "' not in path'", "error")
         else:
-            message = "'Checksum Mismatch'"
-            box_arg = "error"
+            file = open(md5sum_file, "r")
+            orig = file.read().replace('\n', '')
+            check = md5sum(filepath)
 
-        pwb_message(message, box_arg)
+            if check == orig:
+                message = "'Checksum Matches'"
+                box_arg = "info"
+            else:
+                message = "'Checksum Mismatch'"
+                box_arg = "error"
+
+            pwb_message(message, box_arg)
