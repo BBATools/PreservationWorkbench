@@ -16,6 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import subprocess, os, pathlib, glob, sys, fileinput
+if os.name == "posix":
+    from lxml import etree as ET
+    import pandas as pd
+    
 from depgen import flatten
 from functools import reduce
 from configparser import SafeConfigParser
@@ -23,9 +27,7 @@ from verify_make_copies import add_wim_file
 from extract_user_input import add_config_section
 from appJar import gui
 from process_files_pre import mount_wim, quit
-if os.name == "posix":
-    from lxml import etree as ET
-    import pandas as pd
+
 # TODO: Endre så en logg pr subsystem heller
 
 def blocks(files, size=65536):
