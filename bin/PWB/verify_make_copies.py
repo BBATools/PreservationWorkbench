@@ -172,7 +172,7 @@ if __name__== "__main__":
 
     if os.name == "posix":
         app.setTtkTheme('scidmint')
-        app.setSize("400x380")
+        app.setSize("400x400")
     else:
         app.setSize("400x370")
 
