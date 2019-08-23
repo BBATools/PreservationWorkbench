@@ -94,11 +94,6 @@ def add_dir(btn):
 
 
 def quit(btn):
-    config = SafeConfigParser()
-    add_config_section(config, 'ENV')
-    config.set('ENV', 'quit', "true")
-    with open(conf_file, "w+") as configfile:
-        config.write(configfile, space_around_delimiters=False)
     app.stop()
 
 
@@ -107,10 +102,13 @@ if __name__== "__main__":
     tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
     conf_file = tmp_dir + "/pwb.ini"
     config.read(conf_file)
+    add_config_section(config, 'ENV')
+    config.set('ENV', 'quit', "true")
+    with open(conf_file, "w+") as configfile:
+        config.write(configfile, space_around_delimiters=False)
 
     app = gui('         System Details', useTtk=True, colspan=5)
     # TODO: Hvordan midtstille tittel uten space først?
-    app.setSize("400x470")
     app.setLocation("CENTER")
     app.setStretch("column")
 
