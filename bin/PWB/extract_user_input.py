@@ -110,12 +110,15 @@ if __name__== "__main__":
 
     app = gui('         System Details', useTtk=True, colspan=5)
     # TODO: Hvordan midtstille tittel uten space først?
-    app.setSize("400x400")
+    app.setSize("400x470")
     app.setLocation("CENTER")
     app.setStretch("column")
 
     if os.name == "posix":
         app.setTtkTheme('scidmint')
+        app.setSize("400x470")
+    else:
+        app.setSize("400x400")
 
     app.addLabel("l1", "System Name:", 0, 0)
     app.addEntry("sys_name", 1, 0)
