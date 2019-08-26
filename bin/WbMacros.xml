@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<java version="1.8.0_222" class="java.beans.XMLDecoder">
+<java version="11.0.4" class="java.beans.XMLDecoder">
  <object class="java.util.ArrayList">
   <void method="add">
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -59,6 +59,7 @@ WbSysExec -ifDefined=subsys_name -program=&apos;python3&apos; -argument=&apos;&q
        <void property="tooltip">
         <string>XML/TSV-export</string>
        </void>
+       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
@@ -92,7 +93,7 @@ WbMessage &quot;Not implemented yet&quot;;
         <string>XML/H2-export</string>
        </void>
        <void property="visibleInPopup">
-        <boolean>false</boolean>
+        <object idref="Boolean0"/>
        </void>
       </object>
      </void>
@@ -369,7 +370,7 @@ WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot
      <int>4</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -405,7 +406,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -418,7 +419,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>6</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -431,7 +432,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>7</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -444,7 +445,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>8</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -457,7 +458,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>9</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -470,7 +471,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>10</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>

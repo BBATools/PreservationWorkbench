@@ -87,6 +87,7 @@ mount_wim(filepath, mount_dir)
 open(sql_file, 'w').close()  # Blank out between runs
 
 # TODO: Prøv å endre loop-in-loop til noe som det under:
+# Også 'continue' for å begrense indentering
 # def process_item(item):
 #     # setups
 #     # condition

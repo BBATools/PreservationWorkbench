@@ -16,6 +16,9 @@ bin/PWB/wimlib-imagex.exe
 !bin/WbMacros.xml
 !bin/h2-*.jar
 !bin/mssql-jdbc-*.jar
+!bin/postgresql-*.jar
+!bin/mysql-connector-java-*.jar
+!bin/sqlite-jdbc-*.jar
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
