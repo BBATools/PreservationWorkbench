@@ -1,15 +1,17 @@
-#### WIP
+Some features are only available when installed as part of Arkimint: https://github.com/BBATools/Arkimint
 
 
 
-##### Install on Windows
+### Install instructions (extract and verify features only)
 
-Download repo as zip or git clone.
+##### Windows:
+
+Download this repo as zip or git clone.
 
 Run *PWB.vbs* which will download any missing dependencies before first run.
 
 
 
-##### Install on Linux
+##### Linux:
 
 Installer under construction
