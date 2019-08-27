@@ -462,7 +462,7 @@
      <object class="java.util.Collections" method="unmodifiableList">
       <object class="java.util.ArrayList">
        <void method="add">
-        <string>ojdbc8.jar</string>
+        <string>ojdbc10.jar</string>
        </void>
       </object>
      </object>
@@ -484,7 +484,7 @@
      <object class="java.util.Collections" method="unmodifiableList">
       <object class="java.util.ArrayList">
        <void method="add">
-        <string>ojdbc8.jar</string>
+        <string>ojdbc10.jar</string>
        </void>
        <void method="add">
         <string>xdb6.jar</string>
