@@ -28,6 +28,16 @@ if (args.length > 0) then
   	next
 end if
 
+wkspPath = wbpath & "Default.wksp" 
+If Not FSO.FileExists(wkspPath) Then
+	FSO.CopyFile wbpath & "PWB\Default.wksp" , wkspPath
+End If
+
+settingsPath = wbpath & "workbench.settings" 
+If Not FSO.FileExists(settingsPath) Then
+	FSO.CopyFile wbpath & "PWB\workbench.settings" , settingsPath
+End If
+
 pythonPath = wbpath & "python\python3.exe" 
 wimPath = wbpath & "PWB\wimlib-imagex.exe" 
 If (FSO.FileExists(jarpath) And FSO.FileExists(javaPath) And FSO.FileExists(pythonPath) And FSO.FileExists(wimPath)) Then
