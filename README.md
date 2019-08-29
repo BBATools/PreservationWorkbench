@@ -19,28 +19,29 @@ https://en.wikipedia.org/wiki/Portable_application
 
 
 ##### Linux:
-Installer under construction.
+Portable generic Linux install will be made available after we switch to a custom SQL Workbench/J build with jlink:
+https://docs.oracle.com/javase/9/tools/jlink.htm 
 
 
 
 ### Usage:
 Start SQL Workbench/J with  *PWB.vbs* (Windows) or  *PWB.sh* (Linux).
 PWB specific features are started via macros and are thus found under the *Macros* menu. 
-#### Extract:
+##### Extract:
 *Extract data from database and/or disk.*
 If database export, Use *File->Connect window* first to connect to database/schema.
 Use *Export to Disk* once per database schema (and any files on disk that are connected to schema) *or* (if no database) any collection of files on disk that constitute a separate part of the system.
 Use *Create System Data Package* when all parts of the system have been extracted to package the data as one data package (packaged as a wim file to retain file metadata) and generate checksum. 
 
-#### Verify:
+##### Verify:
 *Verify checksum and make backup of raw SIP before processing.*
-#### Dispose:
+##### Dispose:
 *Dispose/remove parts of the extracted data that has no archival value*
 WIP
 
-#### Process:
+##### Process:
 *Normalize documents and metadata. Generate AIP.*
 
-#### Other:
+##### Other:
 SQL Workbench/J standard features are described here: 
 https://www.sql-workbench.eu/manual/workbench-manual.html
