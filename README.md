@@ -1,5 +1,5 @@
 Preservation Workbench (PWB) implements the features we need to extract data from systems and generate a data package suitable for long time storage. 
-PWB is implemented on top of SQL Workbench/J (installed as dependency): https://www.sql-workbench.eu/
+PWB is implemented on top of SQL Workbench/J (installed as a dependency): https://www.sql-workbench.eu/
 
 Some features are only available when installed as part of Arkimint: https://github.com/BBATools/Arkimint
 
