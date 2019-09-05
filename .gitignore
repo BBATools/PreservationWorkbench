@@ -5,7 +5,7 @@ bin/PWB/libwim-15.dll
 bin/PWB/wimlib-imagex.exe
 
 # exceptions to above rule
-!_DATA/.gitkeep 
+!_DATA/.gitkeep
 !bin/PWB/
 !bin/python/tcl
 !bin/python/tkinter
@@ -19,6 +19,7 @@ bin/PWB/wimlib-imagex.exe
 !bin/postgresql-*.jar
 !bin/mysql-connector-java-*.jar
 !bin/sqlite-jdbc-*.jar
+!bin/PWB.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

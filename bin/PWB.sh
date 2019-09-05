@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SCRIPT_PATH="$(dirname "$(readlink -f "$0")")"/bin
+SCRIPT_PATH="$(dirname "$(readlink -f "$0")")"
 echo "[ENV]
 py_path=
 os=posix
@@ -33,8 +33,9 @@ cp=$cp:$SCRIPT_PATH/serializer.jar
 cp=$cp:$SCRIPT_PATH/simple-odf.jar
 cp=$cp:$SCRIPT_PATH/ext/*
 
+#/u01/app/oracle/product/11.2.0/xe/bin/lsnrctl start
+#sudo /etc/init.d/oracle-xe start && "$ORACLE_HOME"/bin/lsnrctl reload
+
 cd $SCRIPT_PATH
-/u01/app/oracle/product/11.2.0/xe/bin/lsnrctl start
-sudo /etc/init.d/oracle-xe start && "$ORACLE_HOME"/bin/lsnrctl reload 
 java -jar sqlworkbench.jar -Dvisualvm.display.name=SQLWorkbench -Dawt.useSystemAAFontSettings=on -configDir=. -url=jdbc:h2:mem:PWB -password="";
 
