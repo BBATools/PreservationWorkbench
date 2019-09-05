@@ -6,10 +6,6 @@ wbpath = Left(WScript.ScriptFullName, Len(WScript.ScriptFullName) - Len(WScript.
 WshShell.CurrentDirectory = wbpath
 javaPath = wbpath & "jre\bin\javaw.exe"
 
-If Not FSO.FolderExists(wbpath & "\tmp") Then
-	Set objFolder = FSO.CreateFolder(wbpath & "\tmp")
-End If 
-
 configFile="tmp\pwb.ini"
 Set objFile = FSO.OpenTextFile(configFile, 2, True)
 objFile.WriteLine "[ENV]"

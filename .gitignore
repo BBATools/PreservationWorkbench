@@ -7,6 +7,8 @@ bin/PWB/wimlib-imagex.exe
 # exceptions to above rule
 !_DATA/.gitkeep
 !bin/PWB/
+!bin/tmp/
+!bin/tmp/.gitkeep
 !bin/python/tcl
 !bin/python/tkinter
 !bin/python/tcl86t.dll
