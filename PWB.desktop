@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Preservation Workbench
-Exec=./bin/PWB.sh
+Exec=./bin/pwb
 Icon=/usr/share/icons/Mint-X/categories/32/applications-development.png
 Terminal=false
 Type=Application

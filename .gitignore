@@ -20,7 +20,7 @@ bin/PWB/wimlib-imagex.exe
 !bin/postgresql-*.jar
 !bin/mysql-connector-java-*.jar
 !bin/sqlite-jdbc-*.jar
-!bin/PWB.sh
+!bin/pwb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
