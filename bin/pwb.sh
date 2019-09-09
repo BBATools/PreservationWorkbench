@@ -4,10 +4,14 @@ SCRIPT_PATH="$(dirname "$(readlink -f "$0")")"
 echo "[ENV]
 py_path=
 os=posix
-pwb_path="$SCRIPT_PATH"/PWB" > $SCRIPT_PATH/tmp/pwb.ini
+pwb_path=$SCRIPT_PATH/PWB" > $SCRIPT_PATH/tmp/pwb.ini
+
+if [ ! -f $SCRIPT_PATH/workbench.settings ]; then
+    echo $pwb_path
+    cp $SCRIPT_PATH/PWB/workbench.settings $SCRIPT_PATH;
+fi
 
 JAVACMD="java"
-
 if [ -x "$SCRIPT_PATH/jre/bin/java" ]
 then
   JAVACMD="$SCRIPT_PATH/jre/bin/java"
