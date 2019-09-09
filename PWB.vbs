@@ -31,7 +31,7 @@ End If
 
 settingsPath = wbpath & "workbench.settings" 
 If Not FSO.FileExists(settingsPath) Then
-	FSO.CopyFile wbpath & "PWB\workbench.settings" , settingsPath
+	FSO.CopyFile wbpath & "PWB\workbench_win.settings" , settingsPath
 End If
 
 pythonPath = wbpath & "python\python3.exe" 
