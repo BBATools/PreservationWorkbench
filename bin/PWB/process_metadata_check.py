@@ -20,7 +20,7 @@ from functools import reduce
 from configparser import SafeConfigParser
 
 config = SafeConfigParser()
-tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
+tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tmp'))
 conf_file = tmp_dir + "/pwb.ini"
 config.read(conf_file)
 data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
@@ -40,7 +40,8 @@ sub_systems_path = mount_dir + "/content/sub_systems/"
 subfolders = os.listdir(sub_systems_path)
 for folder in subfolders:
     header_xml_file = sub_systems_path + folder + "/header/metadata.xml"
-    if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path), folder)) and os.path.isfile(header_xml_file):
+    if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path),
+                                  folder)) and os.path.isfile(header_xml_file):
         documentation_folder = sub_systems_path + folder + "/documentation/"
         isosql_ddl = documentation_folder + "metadata.sql"
         oracle_ddl = documentation_folder + "metadata_oracle.sql"
@@ -54,10 +55,11 @@ for folder in subfolders:
         sqlite_db = "/tmp/sqlite_test.db"
 
         # TODO: Se her for datatyper: http://troels.arvin.dk/db/rdbms/#data_types
-        mssql_repls = ((" timestamp", " datetime"),
-                       #    (" boolean", " varchar(5)"),
-                       #  (" bigint", " numeric"), #TODO: Ser ikke ut til at bigint kan ha desimaler i alle dbtyper
-                       )
+        mssql_repls = (
+            (" timestamp", " datetime"),
+            #    (" boolean", " varchar(5)"),
+            #  (" bigint", " numeric"), #TODO: Ser ikke ut til at bigint kan ha desimaler i alle dbtyper
+        )
         mssql_ddl_w = open(mssql_ddl, "w")
         # mssql_ddl_w.write(
         #     "SET ANSI_NULLS OFF; \n \n")
@@ -67,12 +69,13 @@ for folder in subfolders:
                     reduce(lambda a, kv: a.replace(*kv), mssql_repls, line))
         mssql_ddl_w.close()
 
-        oracle_repls = ((" text", " clob"),
-                        (" varchar(4000)", " clob"),
-                        (" varchar2(4000)", " clob"),
-                        (" varchar(", " varchar2("),
-                        # (" boolean", " varchar2(5)"),
-                        )
+        oracle_repls = (
+            (" text", " clob"),
+            (" varchar(4000)", " clob"),
+            (" varchar2(4000)", " clob"),
+            (" varchar(", " varchar2("),
+            # (" boolean", " varchar2(5)"),
+        )
         oracle_ddl_w = open(oracle_ddl, "w")
         oracle_ddl_w.write(
             "ALTER SESSION SET NLS_LENGTH_SEMANTICS=CHAR; \n \n")
@@ -82,8 +85,7 @@ for folder in subfolders:
                     reduce(lambda a, kv: a.replace(*kv), oracle_repls, line))
         oracle_ddl_w.close()
 
-        mysql_repls = ((" timestamp", " datetime"),
-                       )
+        mysql_repls = ((" timestamp", " datetime"), )
         mysql_ddl_w = open(mysql_ddl, "w")
         with open(isosql_ddl, 'r') as file_r:
             for line in file_r:
@@ -95,7 +97,7 @@ for folder in subfolders:
             "\n",
             "-- PostgreSQL 12",
             "WbDisconnect;",
-            'WbConnect -url="jdbc:postgresql://localhost:5432/" -username="postgres" -password="bba";',
+            'WbConnect -url="jdbc:postgresql://localhost:5432/" -username="postgres" -password="P@ssw0rd";',
             "DROP SCHEMA IF EXISTS postgresql_test CASCADE; COMMIT; CREATE SCHEMA postgresql_test; COMMIT; SET search_path TO postgresql_test;",
             "WbSysExec touch '" + pg_done + "';",
             "WbVarDef -contentFile='" + pg_done + "' -variable=pg_done;",
@@ -114,7 +116,7 @@ for folder in subfolders:
             "\n",
             "-- MySQL 8.0",
             "WbDisconnect;",
-            'WbConnect -url="jdbc:mysql://localhost:3306?zeroDateTimeBehavior=CONVERT_TO_NULL&serverTimezone=UTC" -username="root" -password="root";',
+            'WbConnect -url="jdbc:mysql://localhost:3306?zeroDateTimeBehavior=CONVERT_TO_NULL&serverTimezone=UTC" -username="root" -password="P@ssw0rd";',
             "DROP DATABASE IF EXISTS MySQL_test; CREATE DATABASE MySQL_test; ALTER DATABASE MySQL_test CHARACTER SET = utf8mb4 COLLATE = utf8mb4_da_0900_as_cs; USE MySQL_test;",
             "RESET MASTER;"
             "WbSysExec touch '" + my_done + "';",
@@ -133,7 +135,7 @@ for folder in subfolders:
             "\n",
             "-- Oracle 11.2",
             "WbDisconnect;",
-            'WbConnect -url="jdbc:oracle:thin:@127.0.1.1:1521/XE" -username="oracle_test" -password="oracle_test";',
+            'WbConnect -url="jdbc:oracle:thin:@127.0.1.1:1521/XE" -username="oracle_test" -password="P@ssw0rd";',
             "WbSysExec touch '" + ora_done + "';",
             "WbVarDef -contentFile='" + ora_done + "' -variable=ora_done;",
             "WbInclude -ifNotDefined=ora_done -file='../PWB/ora_schema_reset.sql' -displayResult=true -verbose=true -continueOnError=false;",
