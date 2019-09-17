@@ -39,6 +39,7 @@ cp=$cp:$SCRIPT_PATH/ext/*
 
 #/u01/app/oracle/product/11.2.0/xe/bin/lsnrctl start
 #sudo /etc/init.d/oracle-xe start && "$ORACLE_HOME"/bin/lsnrctl reload
+sudo /etc/init.d/oracle-xe start
 
 cd $SCRIPT_PATH
 java -jar sqlworkbench.jar -Dvisualvm.display.name=SQLWorkbench -Dawt.useSystemAAFontSettings=on -configDir=. -url=jdbc:h2:mem:PWB -password="";
