@@ -135,7 +135,7 @@ for folder in subfolders:
             "\n",
             "-- Oracle 11.2",
             "WbDisconnect;",
-            'WbConnect -url="jdbc:oracle:thin:@127.0.1.1:1521/XE" -username="oracle_test" -password="P@ssw0rd";',
+            'WbConnect -url="jdbc:oracle:thin:@127.0.1.1:1521/XE" -username="oracle" -password="pwb";',
             "WbSysExec touch '" + ora_done + "';",
             "WbVarDef -contentFile='" + ora_done + "' -variable=ora_done;",
             "WbInclude -ifNotDefined=ora_done -file='../PWB/ora_schema_reset.sql' -displayResult=true -verbose=true -continueOnError=false;",
