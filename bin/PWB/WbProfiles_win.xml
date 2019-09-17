@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="11.0.4" class="java.beans.XMLDecoder">
+ <object class="java.util.ArrayList">
+  <void method="add">
+   <object class="workbench.db.ConnectionProfile">
+    <void property="driverName">
+     <string>H2 Database Engine</string>
+    </void>
+    <void property="driverclass">
+     <string>org.h2.Driver</string>
+    </void>
+    <void property="name">
+     <string>H2 Local(memory)</string>
+    </void>
+    <void property="storeExplorerSchema">
+     <boolean>true</boolean>
+    </void>
+    <void property="url">
+     <string>jdbc:h2:mem:PWB</string>
+    </void>
+    <void property="useSeparateConnectionPerTab">
+     <boolean>true</boolean>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.db.ConnectionProfile">
+    <void property="driverName">
+     <string>SQLite</string>
+    </void>
+    <void property="driverclass">
+     <string>org.sqlite.JDBC</string>
+    </void>
+    <void property="name">
+     <string>SQLite Local(memory)</string>
+    </void>
+    <void property="storeExplorerSchema">
+     <boolean>true</boolean>
+    </void>
+    <void property="url">
+     <string>jdbc:sqlite::memory:</string>
+    </void>
+    <void property="useSeparateConnectionPerTab">
+     <boolean>true</boolean>
+    </void>
+   </object>
+  </void>
+ </object>
+</java>

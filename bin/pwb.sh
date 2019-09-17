@@ -7,8 +7,11 @@ os=posix
 pwb_path=$SCRIPT_PATH/PWB" > $SCRIPT_PATH/tmp/pwb.ini
 
 if [ ! -f $SCRIPT_PATH/workbench.settings ]; then
-    echo $pwb_path
     cp $SCRIPT_PATH/PWB/workbench.settings $SCRIPT_PATH;
+fi
+
+if [ ! -f $SCRIPT_PATH/WbProfiles.xml ]; then
+    cp $SCRIPT_PATH/PWB/WbProfiles.xml $SCRIPT_PATH;
 fi
 
 JAVACMD="java"

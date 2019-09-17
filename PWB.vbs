@@ -9,13 +9,13 @@ javaPath = wbpath & "jre\bin\javaw.exe"
 configFile="tmp\pwb.ini"
 Set objFile = FSO.OpenTextFile(configFile, 2, True)
 objFile.WriteLine "[ENV]"
-objFile.WriteLine "py_path=" & wbpath & "python" 
+objFile.WriteLine "py_path=" & wbpath & "python"
 objFile.WriteLine "os="
 objFile.WriteLine "pwb_path=" & wbpath & "PWB"
 objFile.Close
 
 set args = WScript.Arguments
-jarpath = wbpath & "sqlworkbench.jar" 
+jarpath = wbpath & "sqlworkbench.jar"
 
 javaCmd = chr(34) & javaPath & chr(34) & " -jar " & chr(34) & jarpath & chr(34) & " -url=jdbc:h2:mem:PWB -password=""" & chr(34) & " -configDir=" & chr(34) & wbpath
 if (args.length > 0) then
@@ -24,25 +24,30 @@ if (args.length > 0) then
   	next
 end if
 
-wkspPath = wbpath & "Default.wksp" 
+wkspPath = wbpath & "Default.wksp"
 If Not FSO.FileExists(wkspPath) Then
 	FSO.CopyFile wbpath & "PWB\Default.wksp" , wkspPath
 End If
 
-settingsPath = wbpath & "workbench.settings" 
+settingsPath = wbpath & "workbench.settings"
 If Not FSO.FileExists(settingsPath) Then
 	FSO.CopyFile wbpath & "PWB\workbench_win.settings" , settingsPath
 End If
 
-pythonPath = wbpath & "python\python3.exe" 
-wimPath = wbpath & "PWB\wimlib-imagex.exe" 
+profilesPath = wbpath & "WbProfiles.xml"
+If Not FSO.FileExists(profilesPath) Then
+	FSO.CopyFile wbpath & "PWB\WbProfiles_win.xml" , profilesPath
+End If
+
+pythonPath = wbpath & "python\python3.exe"
+wimPath = wbpath & "PWB\wimlib-imagex.exe"
 If (FSO.FileExists(jarpath) And FSO.FileExists(javaPath) And FSO.FileExists(pythonPath) And FSO.FileExists(wimPath)) Then
 	Set jreFolder = FSO.GetFolder(wbpath & "\jre")
 	For Each Subfolder in jreFolder.SubFolders
 		On Error Resume Next
 		If instr(Subfolder.Name, "jdk-") = 1 Then
 			Set folder = FSO.GetFolder(Subfolder.Path)
-			folder.Delete [True]	
+			folder.Delete [True]
 			Exit For
 		End If
 	Next
