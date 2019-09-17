@@ -32,6 +32,34 @@
   <void method="add">
    <object class="workbench.db.ConnectionProfile">
     <void property="driverName">
+     <string>Oracle</string>
+    </void>
+    <void property="driverclass">
+     <string>oracle.jdbc.OracleDriver</string>
+    </void>
+    <void property="name">
+     <string>Oracle Local</string>
+    </void>
+    <void property="password">
+     <string>pwb</string>
+    </void>
+    <void property="storeExplorerSchema">
+     <boolean>true</boolean>
+    </void>
+    <void property="url">
+     <string>jdbc:oracle:thin:@127.0.1.1:1521/XE</string>
+    </void>
+    <void property="useSeparateConnectionPerTab">
+     <boolean>true</boolean>
+    </void>
+    <void property="username">
+     <string>oracle</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.db.ConnectionProfile">
+    <void property="driverName">
      <string>PostgreSQL</string>
     </void>
     <void property="driverclass">
@@ -86,7 +114,7 @@
    </object>
   </void>
   <void method="add">
-   <object class="workbench.db.ConnectionProfile">
+   <object class="workbench.db.ConnectionProfile" id="ConnectionProfile0">
     <void property="driverName">
      <string>SQLite</string>
     </void>
@@ -96,42 +124,37 @@
     <void property="name">
      <string>SQLite Local(memory)</string>
     </void>
+    <void id="Boolean0" property="includeNullInInsert"/>
     <void property="storeExplorerSchema">
-     <boolean>true</boolean>
+     <object idref="Boolean0"/>
     </void>
     <void property="url">
      <string>jdbc:sqlite::memory:</string>
     </void>
     <void property="useSeparateConnectionPerTab">
-     <boolean>true</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
   <void method="add">
    <object class="workbench.db.ConnectionProfile">
     <void property="driverName">
-     <string>Oracle</string>
+     <string>H2 Database Engine</string>
     </void>
     <void property="driverclass">
-     <string>oracle.jdbc.OracleDriver</string>
+     <string>org.h2.Driver</string>
     </void>
     <void property="name">
-     <string>Oracle Local</string>
-    </void>
-    <void property="password">
-     <string>pwb</string>
+     <string>H2 Local(memory)</string>
     </void>
     <void property="storeExplorerSchema">
-     <boolean>true</boolean>
+     <object idref="Boolean0"/>
     </void>
     <void property="url">
-     <string>jdbc:oracle:thin:@127.0.1.1:1521/XE</string>
+     <string>jdbc:h2:mem:PWB</string>
     </void>
     <void property="useSeparateConnectionPerTab">
-     <boolean>true</boolean>
-    </void>
-    <void property="username">
-     <string>oracle</string>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
