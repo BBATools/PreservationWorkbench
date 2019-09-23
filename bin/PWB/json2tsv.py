@@ -1,7 +1,9 @@
-import glob, json
+import glob, json, os
+
+userhome = os.path.expanduser('~')
 
 glob_data = []
-for file in glob.glob('/home/bba/bin/tika/tmp/*.json'):
+for file in glob.glob(userhome + '/bin/tika/tmp/*.json'):
     with open(file) as json_file:
         data = json.load(json_file)
 
@@ -10,5 +12,5 @@ for file in glob.glob('/home/bba/bin/tika/tmp/*.json'):
             glob_data.append(data[i])
             i += 1
 
-with open('/home/bba/bin/tika/tmp/finalFile.json', 'w') as f:
+with open(userhome + '/bin/tika/tmp/finalFile.json', 'w') as f:
     json.dump(glob_data, f, indent=4)

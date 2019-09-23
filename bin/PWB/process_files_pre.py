@@ -23,6 +23,7 @@ from appJar import gui
 
 # TODO: Endre så en logg pr subsystem heller
 
+
 def quit(conf_file):
     config = SafeConfigParser()
     add_config_section(config, 'ENV')
@@ -31,14 +32,20 @@ def quit(conf_file):
         config.write(configfile, space_around_delimiters=False)
     sys.exit()
 
+
 def mount_wim(filepath, mount_dir):
     pathlib.Path(mount_dir).mkdir(parents=True, exist_ok=True)
     if len(os.listdir(mount_dir)) == 0:
-        subprocess.run("GVFS_DISABLE_FUSE=1; export GVFS_DISABLE_FUSE; wimmountrw --allow-other " + filepath + " " + mount_dir, shell=True)
+        subprocess.run(
+            "GVFS_DISABLE_FUSE=1; export GVFS_DISABLE_FUSE; wimmountrw --allow-other "
+            + filepath + " " + mount_dir,
+            shell=True)
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     config = SafeConfigParser()
-    tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
+    tmp_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'tmp'))
     conf_file = tmp_dir + "/pwb.ini"
     config.read(conf_file)
     data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
@@ -47,10 +54,10 @@ if __name__== "__main__":
         app = gui(useTtk=True)
         app.setLocation("CENTER")
         app.setTtkTheme("winnative")
-        app.errorBox("Error","Only supported on Arkimint")
+        app.errorBox("Error", "Only supported on Arkimint")
         sys.exit()
 
-    filepath = add_wim_file(data_dir)  
+    filepath = add_wim_file(data_dir)
     if filepath:
         add_config_section(config, 'ENV')
         config.set('ENV', 'wim_path', filepath)
@@ -74,7 +81,8 @@ if __name__== "__main__":
     sub_systems_path = mount_dir + "/content/sub_systems"
     subfolders = os.listdir(sub_systems_path)
     for folder in subfolders:
-        if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path), folder)):
+        if os.path.isdir(
+                os.path.join(os.path.abspath(sub_systems_path), folder)):
             data_docs_folder = sub_systems_path + "/" + folder + "/content/data_documents"
             docs_folder = sub_systems_path + "/" + folder + "/content/documents"
             data_folder = sub_systems_path + "/" + folder + "/content/data"
@@ -89,17 +97,18 @@ if __name__== "__main__":
                 export_folder = os.path.splitext(file)[0]
                 pathlib.Path(export_folder).mkdir(parents=True, exist_ok=True)
                 if len(os.listdir(export_folder)) == 0:
-                    subprocess.run("wimapply " + file + " " +
-                                    export_folder, shell=True)
+                    subprocess.run(
+                        "wimapply " + file + " " + export_folder, shell=True)
                     os.remove(file)
 
             h2_file = documentation_folder + folder
             h2_done_file = documentation_folder + "done"
-            if (os.path.isfile(h2_file + ".mv.db") and not os.path.isfile(h2_done_file)
-            ):
+            if (os.path.isfile(h2_file + ".mv.db")
+                    and not os.path.isfile(h2_done_file)):
                 sql = [
                     "\n",
-                    "WbConnect -url=" + "jdbc:h2:" + h2_file + " -password='';",
+                    "WbConnect -url=" + "jdbc:h2:" + h2_file +
+                    " -password='';",
                     '''WbVarDef fixColumns= @"SELECT GROUP_CONCAT('ALTER TABLE ' || TABLE_NAME  || ' ALTER COLUMN ' || COLUMN_NAME || ' RENAME TO ' || COLUMN_NAME || '_;') FROM (
                         SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
                         WHERE TABLE_SCHEMA='PUBLIC'
@@ -107,7 +116,7 @@ if __name__== "__main__":
                     '''WbSysExec basename '$[fixColumns]' > ~/bin/PWB/bin/tmp/wim_h2_fix.sql;''',
                     '''WbSysExec sed -i 's/ INTERVAL / "INTERVAL" /' ~/bin/PWB/bin/tmp/wim_h2_fix.sql;''',
                     # '''WbSysExec -program="sed" -argument="-i 's/\INTERVAL\/"INTERVAL"/' ~/bin/PWB/bin/tmp/wim_h2_fix.sql";''',
-                    "WbInclude -file=/home/bba/bin/PWB/bin/tmp/wim_h2_fix.sql -displayResult=false -verbose=false -continueOnError=false;",
+                    "WbInclude -file=tmp/wim_h2_fix.sql -displayResult=false -verbose=false -continueOnError=false;",
                     "COMMIT;",
                     "WbExport",
                     "-type=text",
@@ -133,7 +142,7 @@ if __name__== "__main__":
 
                 with open(sql_file, "a+") as file:
                     file.write("\n".join(sql))
-                
+
                 add_config_section(config, 'DATABASE')
                 config.set('DATABASE', 'sql_proc', "True")
                 with open(conf_file, "w+") as configfile:

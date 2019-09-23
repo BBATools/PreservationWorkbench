@@ -175,7 +175,6 @@ for folder in subfolders:
             "\n",
             "-- SQLite 3.27",
             "WbDisconnect;",
-            # jdbc:sqlite:/home/bba/SQLite_test.db
             # 'WbConnect -url="jdbc:sqlite::memory:" -username="" -password="" -driverjar="../bin/sqlite-jdbc-3.27.2.1.jar" -driver=org.sqlite.JDBC;',
             "WbSysExec rm '" + sqlite_db + "' 2> /dev/null;",
             'WbConnect -url="jdbc:sqlite:' + sqlite_db + \
