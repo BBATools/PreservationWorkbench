@@ -60,6 +60,7 @@ config.read(conf_file)
 data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
 sql_file = tmp_dir + "/meta_process.sql"
 
+# TODO: Legg også inn sjekk på at mappen ~/.arkimint/ finnes. Flere steder?
 if os.name != "posix":
     app = gui(useTtk=True)
     app.setLocation("CENTER")

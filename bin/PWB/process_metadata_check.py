@@ -40,8 +40,9 @@ sub_systems_path = mount_dir + "/content/sub_systems/"
 subfolders = os.listdir(sub_systems_path)
 for folder in subfolders:
     header_xml_file = sub_systems_path + folder + "/header/metadata.xml"
-    if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path),
-                                  folder)) and os.path.isfile(header_xml_file):
+    if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path), folder)) \
+    and os.path.isfile(header_xml_file) \
+    and os.listdir(sub_systems_path + folder + '/content/data/'):
         documentation_folder = sub_systems_path + folder + "/documentation/"
         isosql_ddl = documentation_folder + "metadata.sql"
         oracle_ddl = documentation_folder + "metadata_oracle.sql"
