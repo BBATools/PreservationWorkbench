@@ -82,7 +82,7 @@ av_done_file = mount_dir + "/content/documentation/av_done"
 meta_done_file = mount_dir + "/content/documentation/meta_done"
 viruses = False
 sub_systems_path = mount_dir + "/content/sub_systems"
-tika_path = "~/bin/tika/tika-app-1.20.jar"
+tika_path = "~/bin/tika/tika-app.jar"
 
 if not wim_file:
     exit()
