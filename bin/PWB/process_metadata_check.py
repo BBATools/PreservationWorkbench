@@ -53,7 +53,7 @@ for folder in subfolders:
         ora_done = documentation_folder + "ora_done"
         ms_done = documentation_folder + "ms_done"
         lite_done = documentation_folder + "lite_done"
-        sqlite_db = "/tmp/sqlite_test.db"
+        sqlite_db = "/tmp/" + folder + ".db"
 
         # TODO: Se her for datatyper: http://troels.arvin.dk/db/rdbms/#data_types
         mssql_repls = (
@@ -99,38 +99,36 @@ for folder in subfolders:
             "-- PostgreSQL 12",
             "WbDisconnect;",
             'WbConnect -url="jdbc:postgresql://localhost:5432/" -username="postgres" -password="P@ssw0rd";',
-            "DROP SCHEMA IF EXISTS postgresql_test CASCADE; COMMIT; CREATE SCHEMA postgresql_test; COMMIT; SET search_path TO postgresql_test;",
+            "DROP SCHEMA IF EXISTS postgresql_test CASCADE; COMMIT; CREATE SCHEMA pwb; COMMIT; SET search_path TO pwb;",
             "WbSysExec touch '" + pg_done + "';",
             "WbVarDef -contentFile='" + pg_done + "' -variable=pg_done;",
             "WbInclude -ifNotDefined=pg_done -file='"
             + isosql_ddl
             + "' -displayResult=true -verbose=true -continueOnError=false;",
             "COMMIT;",
-            "WbEcho 'Processing PostgreSQL...';",
             "WbImport -ifNotDefined=pg_done -type=text -extension=tsv -mode=insert -sourceDir='"
             + sub_systems_path
             + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=postgresql_test -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
-            "DROP SCHEMA postgresql_test CASCADE; COMMIT;",
+            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=pwb -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
+            "DROP SCHEMA pwb CASCADE; COMMIT;",
             "WbSysExec echo 'done' > '" + pg_done + "';",
             "WbDisconnect;",
             "\n",
             "-- MySQL 8.0",
             "WbDisconnect;",
             'WbConnect -url="jdbc:mysql://localhost:3306?zeroDateTimeBehavior=CONVERT_TO_NULL&serverTimezone=UTC" -username="root" -password="P@ssw0rd";',
-            "DROP DATABASE IF EXISTS MySQL_test; CREATE DATABASE MySQL_test; ALTER DATABASE MySQL_test CHARACTER SET = utf8mb4 COLLATE = utf8mb4_da_0900_as_cs; USE MySQL_test;",
+            "DROP DATABASE IF EXISTS MySQL_test; CREATE DATABASE pwb; ALTER DATABASE pwb CHARACTER SET = utf8mb4 COLLATE = utf8mb4_da_0900_as_cs; USE pwb;",
             "RESET MASTER;"
             "WbSysExec touch '" + my_done + "';",
             "WbVarDef -contentFile='" + my_done + "' -variable=my_done;",
             "WbInclude -ifNotDefined=my_done -file='"
             + mysql_ddl
             + "' -displayResult=true -verbose=true -continueOnError=false;",
-            "WbEcho 'Processing MySQL...';",
             "WbImport -ifNotDefined=my_done -type=text -extension=tsv -mode=insert -sourceDir='"
             + sub_systems_path
             + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=MySQL_test -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
-            # "DROP DATABASE MySQL_test;", #TODO: Fjern utkommentering etter demo i Trondheim. Behold pg heller da
+            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=pwb -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
+            "DROP DATABASE pwb;",
             "WbSysExec echo 'done' > '" + my_done + "';",
             "WbDisconnect;",
             "\n",
@@ -143,11 +141,10 @@ for folder in subfolders:
             "WbInclude -ifNotDefined=ora_done -file='"
             + oracle_ddl
             + "' -displayResult=true -verbose=true -continueOnError=false;",
-            "WbEcho 'Processing Oracle...';",
             "WbImport -ifNotDefined=ora_done -type=text -extension=tsv -mode=insert -sourceDir='"
             + sub_systems_path
             + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=oracle_test -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
+            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=oracle -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
             "WbInclude -ifNotDefined=ora_done -file='../PWB/ora_schema_reset.sql' -displayResult=true -verbose=true -continueOnError=false;",
             "WbSysExec echo 'done' > '" + ora_done + "';",
             "WbDisconnect;",
@@ -155,22 +152,22 @@ for folder in subfolders:
             "-- SQL Server 2019",
             "WbDisconnect;",
             'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
-            "DROP DATABASE IF EXISTS MSSQLServer_test; CREATE DATABASE MSSQLServer_test;",
+            "DROP DATABASE IF EXISTS pwb; CREATE DATABASE pwb;",
             "WbDisconnect;",
-            'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=MSSQLServer_test" -username="sa" -password="P@ssw0rd" -autocommit=false;',
+            'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=pwb" -username="sa" -password="P@ssw0rd" -autocommit=false;',
             "WbSysExec touch '" + ms_done + "';",
             "WbVarDef -contentFile='" + ms_done + "' -variable=ms_done;",
             "WbInclude -ifNotDefined=ms_done -file='"
             + mssql_ddl
             + "' -displayResult=true -verbose=true -continueOnError=false;",
-            "WbEcho 'Processing SQL Server...';",
+            "COMMIT;",
             "WbImport -ifNotDefined=ms_done -type=text -extension=tsv -mode=insert -sourceDir='"
             + sub_systems_path
             + folder
             + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=dbo -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
             "WbDisconnect;",
             'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
-            "DROP DATABASE IF EXISTS MSSQLServer_test;",
+            "DROP DATABASE IF EXISTS pwb;",
             "WbSysExec echo 'done' > '" + ms_done + "';",
             "WbDisconnect;",
             "\n",
@@ -185,7 +182,6 @@ for folder in subfolders:
             "WbInclude -ifNotDefined=lite_done -file='"
             + isosql_ddl
             + "' -displayResult=true -verbose=true -continueOnError=false;",
-            "WbEcho 'Processing SQLite...';",
             "WbImport -ifNotDefined=lite_done -type=text -extension=tsv -mode=insert -sourceDir='"
             + sub_systems_path
             + folder

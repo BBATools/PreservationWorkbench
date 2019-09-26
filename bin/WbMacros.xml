@@ -62,7 +62,7 @@ WbSysExec -ifDefined=subsys_name -program=&apos;python3&apos; -argument=&apos;&q
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="name">
         <string>Export to local database (alt. 2)</string>
        </void>
@@ -94,6 +94,7 @@ WbMessage &quot;Not implemented yet&quot;;
        <void property="visibleInPopup">
         <boolean>false</boolean>
        </void>
+       <void id="Boolean0" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
@@ -193,7 +194,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup2">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>File</string>
        </void>
@@ -205,8 +206,6 @@ WbMessage &quot;Not implemented yet&quot;;
        <void property="tooltip">
         <string>dispos...</string>
        </void>
-       <void id="Boolean0" method="isVisibleInMenu"/>
-       <void id="Boolean1" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
@@ -381,7 +380,7 @@ WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
-        <object idref="Boolean0"/>
+        <boolean>true</boolean>
        </void>
        <void property="name">
         <string>MD5sum File</string>
@@ -420,7 +419,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>6</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -433,7 +432,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>7</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -446,7 +445,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>8</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -459,7 +458,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>9</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -472,7 +471,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>10</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
