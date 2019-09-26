@@ -17,15 +17,14 @@
 
 from configparser import SafeConfigParser
 from appJar import gui
-import os
+import os, subprocess
 if os.name == "posix":
     from ttkthemes import ThemedTk
-    # TODO: Bruk zenity direkte med subprocess heller -> fjerner gtk fm samt færre begrensninger
-    from zenipy import file_selection
 
 # WAIT: Legg inn meny for å velge connection profiles definert i WbProfiles.xml
 # WAIT: Lag sjekkboks for å velge om eksport til fil eller h2
 # WAIT: http://appjar.info/pythonEvents/#stopping-the-gui
+
 
 def add_config_section(s, section_name):
     if not s.has_section(section_name):
@@ -37,7 +36,7 @@ def submit(btn):
     add_config_section(config, 'ENV')
     config.set('ENV', 'data_dir', data_dir)
     config.set('ENV', 'quit', "")
-    
+
     add_config_section(config, 'SYSTEM')
     sys_name = app.getEntry("sys_name")
     config.set('SYSTEM', 'sys_name', sys_name)
@@ -73,11 +72,21 @@ def clear(btn):
     app.clearAllListBoxes()
 
 
-def add_dir(btn):
+# WAIT: Def under finnes også i verify_make_copies -> splitt ut til egen som kan importeres til begge
+def app_add_dir(btn):
+    title = "Choose Directory"
+    path = None
     if os.name == "posix":
-        path = file_selection(directory=True)
+        try:
+            path = subprocess.check_output(
+                "zenity --file-selection --directory --title='" + title +
+                "' 2> >(grep -v 'GtkDialog' >&2)",
+                shell=True,
+                executable='/bin/bash').decode("utf-8").strip()
+        except subprocess.CalledProcessError:
+            pass
     else:
-        path = app.directoryBox()
+        path = app.directoryBox(title)
 
     if path:
         app.setEntry("dir_path", path)
@@ -97,9 +106,10 @@ def quit(btn):
     app.stop()
 
 
-if __name__== "__main__":
+if __name__ == "__main__":
     config = SafeConfigParser()
-    tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
+    tmp_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'tmp'))
     conf_file = tmp_dir + "/pwb.ini"
     config.read(conf_file)
     add_config_section(config, 'ENV')
@@ -107,7 +117,8 @@ if __name__== "__main__":
     with open(conf_file, "w+") as configfile:
         config.write(configfile, space_around_delimiters=False)
 
-    app = gui('         System Details', useTtk=True, colspan=5, showIcon=False)
+    app = gui(
+        '         System Details', useTtk=True, colspan=5, showIcon=False)
     # TODO: Hvordan midtstille tittel uten space først?
     app.setLocation("CENTER")
     app.setStretch("column")
@@ -132,7 +143,7 @@ if __name__== "__main__":
     app.setSticky("new")
     app.addEntry("dir_path", 7, 0, 5)
     app.setSticky("ne")
-    app.addButton("Directory", add_dir, 7, 4, 1)
+    app.addButton("Directory", app_add_dir, 7, 4, 1)
 
     app.setSticky("new")
     app.addLabel("l5", "Directories:", 8, 0)
@@ -159,7 +170,6 @@ if __name__== "__main__":
             if not conf_db_schema == '':
                 app.setEntry("db_schema", conf_db_schema)
 
-    app.addButtons(["Submit", "Clear ", " Quit "], [submit, clear, quit], row=16)
+    app.addButtons(
+        ["Submit", "Clear ", " Quit "], [submit, clear, quit], row=16)
     app.go()
-
-
