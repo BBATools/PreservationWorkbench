@@ -1,7 +1,9 @@
 Preservation Workbench (PWB) implements the features we need to extract data from systems and generate data packages suitable for long time storage. 
-PWB is implemented on top of SQL Workbench/J (installed as a dependency): https://www.sql-workbench.eu/
+PWB is implemented on top of SQL Workbench/J (installed as a dependency): 
+https://www.sql-workbench.eu/
 
-Some features are only available when installed as part of Arkimint: https://github.com/BBATools/Arkimint
+Some features are only available when installed as part of Arkimint:  
+https://github.com/BBATools/Arkimint
 
 
 ### Install instructions (extract and verify features only):
@@ -14,7 +16,7 @@ Run or click *PWB.vbs* again after install has finished to run the program.
 Many database drivers are available as part of the install, but for licensing reasons Oracle drivers are not included. Download ojdbc10.jar from here https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html
 and add to the PreservationWorkbench\bin directory.
 
-The resulting *PreservationWorkbench* directory can be used as a portable app: 
+The resulting *PreservationWorkbench* directory can be used as a portable app:  
 https://en.wikipedia.org/wiki/Portable_application
 
 
@@ -43,5 +45,5 @@ WIP
 *Normalize documents and metadata. Generate AIP.*
 
 ##### Other:
-SQL Workbench/J standard features are described here: 
+SQL Workbench/J standard features are described here:  
 https://www.sql-workbench.eu/manual/workbench-manual.html
