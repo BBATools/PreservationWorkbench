@@ -19,7 +19,8 @@ import subprocess, os, pathlib, glob, shutil, json, csv, sys
 from configparser import SafeConfigParser
 import pandas as pd
 
-def flatten_folder(destination, tsv_log = None):
+
+def flatten_folder(destination, tsv_log=None):
     all_files = []
     first_loop_pass = True
     for root, _dirs, files in os.walk(destination):
@@ -39,6 +40,7 @@ def flatten_folder(destination, tsv_log = None):
             new_path = destination + "/%s%d%s" % (file_base, uniq, file_ext)
             uniq += 1
         shutil.move(filepath, new_path)
+
 
 def to_string(s):
     try:
@@ -61,15 +63,15 @@ def reduce_item(key, value):
         sub_keys = value.keys()
         for sub_key in sub_keys:
             reduce_item(
-                to_string(sub_key).replace(":", "_").replace("-", "_"), value[sub_key]
-            )
+                to_string(sub_key).replace(":", "_").replace("-", "_"),
+                value[sub_key])
     # Base Condition
     else:
         reduced_item[to_string(key)] = to_string(value)
 
 
 config = SafeConfigParser()
-tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
+tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tmp'))
 conf_file = tmp_dir + "/pwb.ini"
 config.read(conf_file)
 data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
@@ -90,12 +92,9 @@ if not wim_file:
 if not os.path.isfile(av_done_file):
     subprocess.run('echo "Checking for viruses...."', shell=True)
     subprocess.run(
-        ">"
-        + sav_file
-        + " && savscan -sc -rec -c -archive -suspicious --stay-on-filesystem --stay-on-machine --backtrack-protection --preserve-backtrack --examine-x-bit -p="
-        + sav_file
-        + " "
-        + mount_dir,
+        ">" + sav_file +
+        " && savscan -sc -rec -c -archive -suspicious --stay-on-filesystem --stay-on-machine --backtrack-protection --preserve-backtrack --examine-x-bit -p="
+        + sav_file + " " + mount_dir,
         shell=True,
     )
     with open(sav_file) as f:
@@ -110,25 +109,20 @@ if not viruses:
     with open(av_done_file, "w+") as file:
         file.write(" ")
 
-
 if not os.path.isfile(meta_done_file):
     subprocess.run('echo "Extracting metadata from files...."', shell=True)
     sub_folders = [f.path for f in os.scandir(sub_systems_path) if f.is_dir()]
     for dir in sub_folders:
         doc_folders = [
-            f.path
-            for f in os.scandir(dir + "/content")
-            if (f.is_dir() and f.name != "data" and not f.name.endswith("_tmp"))
+            f.path for f in os.scandir(dir + "/content")
+            if (f.is_dir() and f.name != "data" and not f.name.endswith("_tmp")
+                )
         ]
         for folder in doc_folders:
             tmp_folder = folder + "_tmp"
             pathlib.Path(tmp_folder).mkdir(parents=True, exist_ok=True)
-            header_file = (
-                dir
-                + "/header/"
-                + os.path.basename(os.path.dirname(folder + "/"))
-                + ".tsv"
-            )
+            header_file = (dir + "/header/" + os.path.basename(
+                os.path.dirname(folder + "/")) + ".tsv")
 
             if os.path.isfile(header_file):
                 continue
@@ -137,12 +131,8 @@ if not os.path.isfile(meta_done_file):
             # Process with Tika:
             if len(os.listdir(tmp_folder)) == 0:
                 subprocess.run(
-                    "java -jar "
-                    + tika_path
-                    + " -J -m -i "
-                    + folder
-                    + " -o "
-                    + tmp_folder,
+                    "java -jar " + tika_path + " -J -m -i " + folder + " -o " +
+                    tmp_folder,
                     stderr=subprocess.DEVNULL,
                     stdout=subprocess.DEVNULL,
                     shell=True,
@@ -167,9 +157,9 @@ if not os.path.isfile(meta_done_file):
                     json.dump(glob_data, f, indent=4)
 
             # Convert merged file to tsv:
-            if os.path.isfile(tmp_folder + "/merged.json") and not os.path.isfile(
-                tmp_folder + "/merged.tsv"
-            ):
+            if os.path.isfile(
+                    tmp_folder + "/merged.json"
+            ) and not os.path.isfile(tmp_folder + "/merged.tsv"):
                 node = ""
                 fp = open(tmp_folder + "/merged.json", "r")
                 json_value = fp.read()
@@ -198,33 +188,37 @@ if not os.path.isfile(meta_done_file):
                     for row in processed_data:
                         writer.writerow(row)
 
+                # WAIT: Gjør med std csv-modul heller senere. Også flere kolonner som må fjernes
                 # Remove some columns
-                df = pd.read_csv(
-                    tmp_folder + "/merged.tsv",
-                    sep="\t",
-                    error_bad_lines=False)
-                df.drop(
-                    [
-                        "0",
-                        "1",
-                        "X_TIKA_parse_time_millis",
-                        "access_permission_assemble_document",
-                        "access_permission_can_modify",
-                        "access_permission_can_print",
-                        "access_permission_can_print_degraded",
-                        "access_permission_extract_content",
-                        "access_permission_extract_for_accessibility",
-                        "access_permission_fill_in_form",
-                        "access_permission_modify_annotations",
-                    ],
-                    axis=1,
-                    errors="ignore",
-                    inplace=True,
-                )
-                df.to_csv(header_file, index=False, sep="\t")
+                # df = pd.read_csv(
+                #     tmp_folder + "/merged.tsv",
+                #     sep="\t",
+                #     dtype=object # Better fix than line below?
+                #     # error_bad_lines=False
+                #     )
+                # df.drop(
+                #     [
+                #         "0",
+                #         "1",
+                #         "X_TIKA_parse_time_millis",
+                #         "access_permission_assemble_document",
+                #         "access_permission_can_modify",
+                #         "access_permission_can_print",
+                #         "access_permission_can_print_degraded",
+                #         "access_permission_extract_content",
+                #         "access_permission_extract_for_accessibility",
+                #         "access_permission_fill_in_form",
+                #         "access_permission_modify_annotations",
+                #     ],
+                #     axis=1,
+                #     errors="ignore",
+                #     inplace=True,
+                # )
+                # df.to_csv(header_file, index=False, sep="\t")
                 if os.path.isfile(header_file):
                     shutil.rmtree(tmp_folder)
 
 # TODO: Legg inn tester før linjer under kjøres
+# TODO: Legg inn test på at alle filer fakisk er listet opp i tsv
 with open(meta_done_file, "w+") as file:
     file.write(" ")
