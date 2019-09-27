@@ -66,7 +66,7 @@ def reduce_item(key, value):
     # Base Condition
     else:
         reduced_item[to_string(key)] = to_string(value)
-        
+
 
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
@@ -149,6 +149,7 @@ if not os.path.isfile(meta_done_file):
                 )
 
             # Flatten tmp folder structure before merging of json-files
+            # TODO: Test om denne kan brukes også på "dokcuments-mapper"
             flatten_folder(tmp_folder)
 
             # Merge Tika-generated files:
@@ -198,7 +199,10 @@ if not os.path.isfile(meta_done_file):
                         writer.writerow(row)
 
                 # Remove some columns
-                df = pd.read_csv(tmp_folder + "/merged.tsv", sep="\t")
+                df = pd.read_csv(
+                    tmp_folder + "/merged.tsv",
+                    sep="\t",
+                    error_bad_lines=False)
                 df.drop(
                     [
                         "0",
@@ -218,11 +222,9 @@ if not os.path.isfile(meta_done_file):
                     inplace=True,
                 )
                 df.to_csv(header_file, index=False, sep="\t")
-                # TODO: Aktiver linjer under igjen når feil over fikset 
                 if os.path.isfile(header_file):
                     shutil.rmtree(tmp_folder)
 
 # TODO: Legg inn tester før linjer under kjøres
 with open(meta_done_file, "w+") as file:
     file.write(" ")
-
