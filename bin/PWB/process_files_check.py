@@ -188,6 +188,7 @@ if not os.path.isfile(meta_done_file):
                     for row in processed_data:
                         writer.writerow(row)
 
+                shutil.copyfile(tmp_folder + "/merged.tsv", header_file)
                 # WAIT: Gjør med std csv-modul heller senere. Også flere kolonner som må fjernes
                 # Remove some columns
                 # df = pd.read_csv(

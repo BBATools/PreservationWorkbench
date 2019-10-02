@@ -3,56 +3,121 @@ import os
 import argparse
 import pathlib
 import pandas as pd
+from pathlib import Path
+from configparser import SafeConfigParser
+from pgmagick.api import Image
 
-# TODO: Legg inn sjekk på om wim-fil er mountet og msgbox og sys.exit hvis ikke
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--wim", "-w", help="set wim path")
-args = parser.parse_args()
-
-wim_file = args.wim
+config = SafeConfigParser()
+tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tmp'))
+conf_file = tmp_dir + "/pwb.ini"
+config.read(conf_file)
+data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
+wim_file = config.get('ENV', 'wim_path')
 in_dir = os.path.dirname(wim_file) + "/"
 sys_name = os.path.splitext(os.path.basename(wim_file))[0]
-mount_dir = os.path.abspath("../_DATA/" + sys_name)
+mount_dir = data_dir + "/" + sys_name + "_mount"
 convert_done_file = in_dir + sys_name + "_convert_done"
 sub_systems_path = mount_dir + "/content/sub_systems"
 convert_done = False
 
+
+def image2pdf(image_path, pdf_path):
+    ok = False
+    try:
+        img = Image(image_path)
+        img.write(pdf_path)
+        ok = True
+    except Exception as e:
+        print(e)
+        ok = False
+    return ok
+
+
+# WAIT: Se for flere gs argumenter: https://superuser.com/questions/360216/use-ghostscript-but-tell-it-to-not-reprocess-images
+def pdf2pdfa(pdf_path, pdfa_path):
+    # because of a ghostscript bug, which does not allow parameters that are longer than 255 characters
+    # we need to perform a directory changes, before we can actually return from the method
+    ok = False
+    cwd = os.getcwd()
+    os.chdir(os.path.dirname(pdfa_path))
+    ghostScriptExec = [
+        'gs', '-dPDFA', '-dBATCH', '-dNOPAUSE',
+        '-sProcessColorModel=DeviceRGB', '-sDEVICE=pdfwrite',
+        '-dColorConversionStrategy=/LeaveColorUnchanged',
+        '-dEncodeColorImages=false', '-dEncodeGrayImages=false',
+        '-dEncodeMonoImages=false', '-dPDFACompatibilityPolicy=1'
+    ]
+    try:
+        subprocess.check_output(
+            ghostScriptExec +
+            ['-sOutputFile=' + os.path.basename(pdfa_path), pdf_path])
+        ok = True
+    except subprocess.CalledProcessError as e:
+        ok = False
+        raise RuntimeError(
+            "command '{}' return with error (code {}): {}".format(
+                e.cmd, e.returncode, e.output))
+    os.chdir(cwd)
+    return ok
+
+
+def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
+    file_name = os.path.basename(file_full_path)
+
+    tmp_file_full_path = folder + '_normalized/' + file_rel_path + '.tmp.' + tmp_ext
+    norm_folder_full_path = os.path.dirname(tmp_file_full_path)
+    norm_file_full_path = norm_folder_full_path + '/' + os.path.splitext(
+        file_name)[0] + '.norm.' + norm_ext
+    tmp_exists = True
+    norm_exists = True
+    if not os.path.isfile(norm_file_full_path):
+        if not os.path.isfile(tmp_file_full_path):
+            pathlib.Path(norm_folder_full_path).mkdir(
+                parents=True, exist_ok=True)
+            if file_type == 'image/tiff':
+                tmp_exists = image2pdf(file_full_path, tmp_file_full_path)
+        if tmp_exists:
+            if tmp_ext == 'pdf':
+                norm_exists = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
+        if norm_exists and tmp_exists:
+            os.remove(tmp_file_full_path)
+        # TODO: Oppdater tsv
+
+
 if not os.path.isfile(convert_done_file):
     pathlib.Path(mount_dir).mkdir(parents=True, exist_ok=True)
     if len(os.listdir(mount_dir)) == 0:
-        subprocess.run("GVFS_DISABLE_FUSE=1; export GVFS_DISABLE_FUSE; wimmountrw --allow-other " + in_dir + sys_name +
-                       ".wim " + mount_dir, shell=True)
+        subprocess.run(
+            "GVFS_DISABLE_FUSE=1; export GVFS_DISABLE_FUSE; wimmountrw --allow-other "
+            + in_dir + sys_name + ".wim " + mount_dir,
+            shell=True)
 
-    sub_folders = [f.path for f in os.scandir(
-        sub_systems_path) if f.is_dir() and len(os.listdir(f)) != 0]  # TODO: samme lengdesjekk i "file_check.py"?
+    sub_folders = [
+        f.path for f in os.scandir(sub_systems_path)
+        if f.is_dir() and len(os.listdir(f)) != 0
+    ]  # TODO: samme lengdesjekk i "file_check.py"?
     for dir in sub_folders:
         doc_folders = [
-            f.path
-            for f in os.scandir(dir + "/content")
-            if (f.is_dir() and f.name != "data" and not f.name.endswith("_tmp"))
+            f.path for f in os.scandir(dir + "/content")
+            if (f.is_dir() and f.name != "data" and not (
+                f.name.endswith("_tmp") or f.name.endswith("_normalized")))
         ]
         for folder in doc_folders:
             tmp_folder = folder + "_tmp"
             pathlib.Path(tmp_folder).mkdir(parents=True, exist_ok=True)
 
             for dirpath, dirnames, filenames in os.walk(folder):
-                structure = os.path.join(
-                    tmp_folder, os.path.relpath(dirpath, folder))
+                structure = os.path.join(tmp_folder,
+                                         os.path.relpath(dirpath, folder))
                 pathlib.Path(structure).mkdir(parents=True, exist_ok=True)
 
-            header_file = (
-                dir
-                + "/header/"
-                + os.path.basename(os.path.dirname(folder + "/"))
-                + ".tsv"
-            )
+            header_file = (dir + "/header/" + os.path.basename(
+                os.path.dirname(folder + "/")) + ".tsv")
 
             # TODO: https://stackoverflow.com/questions/43847926/python-loop-through-a-csv-file-row-values
             # TODO: Oppdatere tsv først med hva som skal bli og så loope gjennom og så sjekke på disk?
             # TODO: Bruk for å legge til rette extension på .data-filer? https://github.com/timothyryanwalsh/addext
             # WAIT: Test denne for filer Tika ikke tar? https://github.com/h2non/filetype.py/blob/master/README.rst
-            # TODO: Test mot denne filen: "endret extension fra tif.doc"
             # TODO: Generer DDL for "header_file"
             # TODO: Unoconv: test  -P option for converting spreadsheets into PDFs in landscape
             # TODO: Generer også (samtidig som telle antall filer) en tsv som bare inneholder viktigste kolonner
@@ -77,13 +142,24 @@ if not os.path.isfile(convert_done_file):
             df = pd.read_csv(header_file, sep="\t")
             df.tika_batch_fs_relative_path = df.tika_batch_fs_relative_path.fillna(
                 'embedded file')  # filer som er embedded i andre
+
+            # TODO: For BIR trenger vi også disse typene (mulig at noen av de bare embedded):
+            # text/plain, image/png, image/jpeg, application/x-msdownload,
+            # application/vnd.wordperfect, application/vnd.ms-excel, application/pdf, application/msword,
+            # application/rtf, application/vnd.ms-project, application/x-tika-msoffice, image/emf,
+            # image/gif, text/html, image/unknown, image/wmf
             for index, row in df.iterrows():
-                path = str(row['tika_batch_fs_relative_path'])
-                if(path != 'embedded file'):
+                file_rel_path = str(row['tika_batch_fs_relative_path'])
+                if (file_rel_path != 'embedded file'):
+                    file_full_path = folder + '/' + file_rel_path
+
                     # print(str(index + 2), path)  # index +2 så ihht exel/libre
                     # TODO: Sjekk først at antall linjer stemmer med antall filer på disk -> dialog hvis ikke
-                    type = row['Content_Type']
-                    if type == 'application/pdf':
+                    file_type = str(row['Content_Type'])
+                    if file_type == 'application/pdf':
                         print("pdf")
-                    elif type in ('application/x-tika-msoffice'):
+                    if file_type == 'image/tiff':
+                        file_convert(file_full_path, file_type, 'pdf', 'pdf')
+                        # TODO: Oppdatere tsv her eller i funksjon?
+                    elif file_type in ('application/x-tika-msoffice'):
                         print("office")
