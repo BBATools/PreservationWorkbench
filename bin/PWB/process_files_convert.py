@@ -1,6 +1,4 @@
-import subprocess
-import os
-import argparse
+import subprocess, os, shutil, argparse
 import pathlib
 import pandas as pd
 from pathlib import Path
@@ -20,12 +18,16 @@ convert_done_file = in_dir + sys_name + "_convert_done"
 sub_systems_path = mount_dir + "/content/sub_systems"
 convert_done = False
 
+def copy(src, dst):
+    if os.path.isdir(dst):
+        dst = os.path.join(dst, os.path.basename(src))
+    shutil.copyfile(src, dst)
 
-def image2pdf(image_path, pdf_path):
+def image2norm(image_path, norm_path):
     ok = False
     try:
         img = Image(image_path)
-        img.write(pdf_path)
+        img.write(norm_path)
         ok = True
     except Exception as e:
         print(e)
@@ -63,25 +65,36 @@ def pdf2pdfa(pdf_path, pdfa_path):
 
 def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
     file_name = os.path.basename(file_full_path)
-
-    tmp_file_full_path = folder + '_normalized/' + file_rel_path + '.tmp.' + tmp_ext
-    norm_folder_full_path = os.path.dirname(tmp_file_full_path)
+    if tmp_ext:
+        tmp_file_full_path = folder + '_normalized/' + file_rel_path + '.tmp.' + tmp_ext
+    else:
+        tmp_file_full_path = folder + '_normalized/' + file_rel_path + '.tmp.pwb'
+    norm_folder_full_path = folder + '_normalized/' + os.path.dirname(file_rel_path)
     norm_file_full_path = norm_folder_full_path + '/' + os.path.splitext(
         file_name)[0] + '.norm.' + norm_ext
-    tmp_exists = True
-    norm_exists = True
+
     if not os.path.isfile(norm_file_full_path):
-        if not os.path.isfile(tmp_file_full_path):
-            pathlib.Path(norm_folder_full_path).mkdir(
-                parents=True, exist_ok=True)
-            if file_type == 'image/tiff':
-                tmp_exists = image2pdf(file_full_path, tmp_file_full_path)
+        pathlib.Path(norm_folder_full_path).mkdir(parents=True, exist_ok=True)
+
+        norm_exists = False
+        tmp_exists = False
+        if (not os.path.isfile(tmp_file_full_path) or tmp_ext == None):
+            if file_type in ('image/tiff', 'image/jpeg'):
+                tmp_exists = image2norm(file_full_path, tmp_file_full_path)
+            elif file_type == 'image/gif':
+                norm_exists = image2norm(file_full_path, norm_file_full_path)
+            elif file_type == 'application/pdf':
+                norm_exists = pdf2pdfa(file_full_path, norm_file_full_path)
+            elif file_type == 'image/png':
+                copy(file_full_path, norm_file_full_path)
         if tmp_exists:
             if tmp_ext == 'pdf':
                 norm_exists = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
         if norm_exists and tmp_exists:
             os.remove(tmp_file_full_path)
         # TODO: Oppdater tsv
+        # TODO: Legg inn hvilken originalfiler som skal slettes
+
 
 
 if not os.path.isfile(convert_done_file):
@@ -148,6 +161,21 @@ if not os.path.isfile(convert_done_file):
             # application/vnd.wordperfect, application/vnd.ms-excel, application/pdf, application/msword,
             # application/rtf, application/vnd.ms-project, application/x-tika-msoffice, image/emf,
             # image/gif, text/html, image/unknown, image/wmf
+
+            # TODO: Utflating av mappestruktur:
+            # * https://stackoverflow.com/questions/17547273/flatten-complex-directory-structure-in-python
+            # * https://stackoverflow.com/questions/19777292/recursively-copy-and-flatten-a-directory-with-python
+            # * https://stackoverflow.com/questions/18383384/python-copy-files-to-a-new-directory-and-rename-if-file-name-already-exists
+
+            # TODO: Bruke unoconv som lib: https://github.com/unoconv/unoconv/issues/238
+
+            # TODO: Legg til kolonne (se pandas løsning): https://stackoverflow.com/questions/11070527/how-to-add-a-new-column-to-a-csv-file
+            # -> fjerne kolonner: https://nitratine.net/blog/post/remove-columns-in-a-csv-file-with-python/
+
+            # TODO: Verifisere pdf/a:
+            # * verapdf (i gammelt arkimintscript?)
+            # * sally(https://github.com/CDSP/sallypy)
+            # * jhove(https://github.com/AndreasPetter/PDF2PDFa/blob/master/de/pettersystems/pdf2pdfa/pdf2pdfa.py)
             for index, row in df.iterrows():
                 file_rel_path = str(row['tika_batch_fs_relative_path'])
                 if (file_rel_path != 'embedded file'):
@@ -157,9 +185,23 @@ if not os.path.isfile(convert_done_file):
                     # TODO: Sjekk først at antall linjer stemmer med antall filer på disk -> dialog hvis ikke
                     file_type = str(row['Content_Type'])
                     if file_type == 'application/pdf':
-                        print("pdf")
-                    if file_type == 'image/tiff':
+                        # TODO: Sjekke føst om allerede er pdf/a -> se lenker over
+                        file_convert(file_full_path, file_type, None, 'pdf')
+                    elif file_type in ('image/tiff', 'image/jpeg'):
                         file_convert(file_full_path, file_type, 'pdf', 'pdf')
                         # TODO: Oppdatere tsv her eller i funksjon?
+                    elif file_type == 'image/png':
+                        file_convert(file_full_path, file_type, None, 'png')
+                    elif file_type == 'image/gif':
+                        file_convert(file_full_path, file_type, None, 'png')                        
+                    elif file_type.startswith('text/html'):
+                        # TODO: Må ha sjekk på encoding og endre ved behov for de som ikke kan vises i ff
+                        print("HTML. Not done")
+                    # elif file_type.startswith('text/html'):
+                    # TODO: Test og integrer beste html2pdf først
+                    #     file_convert(file_full_path, file_type, 'pdf', 'pdf')
                     elif file_type in ('application/x-tika-msoffice'):
+                        # TODO: Er dette alltid Thumbs.db ?
                         print("office")
+                    else:
+                        print(file_type)
