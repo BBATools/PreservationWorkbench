@@ -4,6 +4,7 @@ import pandas as pd
 from pathlib import Path
 from configparser import SafeConfigParser
 from pgmagick.api import Image
+from pdfy import Pdfy
 
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tmp'))
@@ -18,7 +19,8 @@ convert_done_file = in_dir + sys_name + "_convert_done"
 sub_systems_path = mount_dir + "/content/sub_systems"
 convert_done = False
 
-def copy(src, dst):
+
+def file_copy(src, dst):
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
     shutil.copyfile(src, dst)
@@ -31,6 +33,20 @@ def image2norm(image_path, norm_path):
         ok = True
     except Exception as e:
         print(e)
+        ok = False
+    return ok
+
+
+def office2pdfa(file_path, norm_path):
+    ok = False
+    try:
+        subprocess.check_call([
+            'unoconv', '--format=pdf', '-eSelectPdfVersion=1',
+            '--output=' + norm_path, file_path
+        ])
+        ok = True
+    except subprocess.CalledProcessorError as e:
+        print('CalledProcessorError', e)
         ok = False
     return ok
 
@@ -62,6 +78,19 @@ def pdf2pdfa(pdf_path, pdfa_path):
     os.chdir(cwd)
     return ok
 
+# WAIT: Brukes for annet enn html? Støtter alt chrome kan lese
+def html2pdf(file_path, tmp_path):
+    ok = False
+    try:
+        p = Pdfy()
+        p.html_to_pdf(file_path, tmp_path)
+        ok = True
+    except Exception as e:
+        print(e)
+        ok = False
+    return ok
+
+
 
 def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
     file_name = os.path.basename(file_full_path)
@@ -69,16 +98,17 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
         tmp_file_full_path = folder + '_normalized/' + file_rel_path + '.tmp.' + tmp_ext
     else:
         tmp_file_full_path = folder + '_normalized/' + file_rel_path + '.tmp.pwb'
-    norm_folder_full_path = folder + '_normalized/' + os.path.dirname(file_rel_path)
+    norm_folder_full_path = folder + '_normalized/' + os.path.dirname(
+        file_rel_path)
     norm_file_full_path = norm_folder_full_path + '/' + os.path.splitext(
         file_name)[0] + '.norm.' + norm_ext
 
     if not os.path.isfile(norm_file_full_path):
         pathlib.Path(norm_folder_full_path).mkdir(parents=True, exist_ok=True)
-
         norm_exists = False
         tmp_exists = False
-        if (not os.path.isfile(tmp_file_full_path) or tmp_ext == None):
+        if (not os.path.isfile(tmp_file_full_path)
+                or tmp_ext == None):  #TODO: Trengs ext-sjekk lenger?
             if file_type in ('image/tiff', 'image/jpeg'):
                 tmp_exists = image2norm(file_full_path, tmp_file_full_path)
             elif file_type == 'image/gif':
@@ -86,15 +116,21 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
             elif file_type == 'application/pdf':
                 norm_exists = pdf2pdfa(file_full_path, norm_file_full_path)
             elif file_type == 'image/png':
-                copy(file_full_path, norm_file_full_path)
+                norm_exists = file_copy(file_full_path, norm_file_full_path)
+            # elif file_type == 'application/msword':
+            elif file_type.startswith('text/html'):
+                tmp_exists = html2pdf(file_full_path, tmp_file_full_path)
+            elif file_type in ('application/msword',
+                                       'application/rtf'):
+                norm_exists = office2pdfa(file_full_path, norm_file_full_path)
         if tmp_exists:
             if tmp_ext == 'pdf':
                 norm_exists = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
+
         if norm_exists and tmp_exists:
             os.remove(tmp_file_full_path)
         # TODO: Oppdater tsv
         # TODO: Legg inn hvilken originalfiler som skal slettes
-
 
 
 if not os.path.isfile(convert_done_file):
@@ -193,13 +229,16 @@ if not os.path.isfile(convert_done_file):
                     elif file_type == 'image/png':
                         file_convert(file_full_path, file_type, None, 'png')
                     elif file_type == 'image/gif':
-                        file_convert(file_full_path, file_type, None, 'png')                        
+                        file_convert(file_full_path, file_type, None, 'png')
                     elif file_type.startswith('text/html'):
                         # TODO: Må ha sjekk på encoding og endre ved behov for de som ikke kan vises i ff
-                        print("HTML. Not done")
+                        file_convert(file_full_path, file_type, 'pdf', 'pdf')
                     # elif file_type.startswith('text/html'):
                     # TODO: Test og integrer beste html2pdf først
                     #     file_convert(file_full_path, file_type, 'pdf', 'pdf')
+                    elif file_type in ('application/msword',
+                                       'application/rtf'):
+                        file_convert(file_full_path, file_type, None, 'pdf')
                     elif file_type in ('application/x-tika-msoffice'):
                         # TODO: Er dette alltid Thumbs.db ?
                         print("office")
