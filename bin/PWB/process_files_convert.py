@@ -37,15 +37,15 @@ def image2norm(image_path, norm_path):
     return ok
 
 
-def office2pdfa(file_path, norm_path):
+def office2x(file_path, norm_path, format):
     ok = False
+    command = ['unoconv', '--format=' + format, '--output=' + norm_path, file_path]
+    if format == 'pdf':
+        command.insert(3,'-eSelectPdfVersion=1')
     try:
-        subprocess.check_call([
-            'unoconv', '--format=pdf', '-eSelectPdfVersion=1',
-            '--output=' + norm_path, file_path
-        ])
+        subprocess.check_call(command)
         ok = True
-    except subprocess.CalledProcessorError as e:
+    except subprocess.CalledProcessError as e:
         print('CalledProcessorError', e)
         ok = False
     return ok
@@ -117,19 +117,25 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
                 norm_exists = pdf2pdfa(file_full_path, norm_file_full_path)
             elif file_type == 'image/png':
                 norm_exists = file_copy(file_full_path, norm_file_full_path)
-            # elif file_type == 'application/msword':
+            elif file_type in (
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            ):
+                tmp_exists = office2x(file_full_path, tmp_file_full_path,'html')
             elif file_type.startswith('text/html'):
                 tmp_exists = html2pdf(file_full_path, tmp_file_full_path)
             elif file_type in ('application/msword',
                                        'application/rtf'):
-                norm_exists = office2pdfa(file_full_path, norm_file_full_path)
+                norm_exists = office2x(file_full_path, norm_file_full_path,'pdf')
         if tmp_exists:
             if tmp_ext == 'pdf':
                 norm_exists = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
+            elif tmp_ext == 'html':
+                norm_exists = office2x(tmp_file_full_path, norm_file_full_path, 'pdf')
 
         if norm_exists and tmp_exists:
             os.remove(tmp_file_full_path)
-        # TODO: Oppdater tsv
+        # TODO: Oppdater tsv her eller i kode som looper tsv under ?
         # TODO: Legg inn hvilken originalfiler som skal slettes
 
 
@@ -219,6 +225,7 @@ if not os.path.isfile(convert_done_file):
 
                     # print(str(index + 2), path)  # index +2 så ihht exel/libre
                     # TODO: Sjekk først at antall linjer stemmer med antall filer på disk -> dialog hvis ikke
+                    # TODO: Må ha sjekk på encoding og endre ved behov for de som ikke kan vises i ff (av rent tekst som ikke er html)
                     file_type = str(row['Content_Type'])
                     if file_type == 'application/pdf':
                         # TODO: Sjekke føst om allerede er pdf/a -> se lenker over
@@ -230,12 +237,15 @@ if not os.path.isfile(convert_done_file):
                         file_convert(file_full_path, file_type, None, 'png')
                     elif file_type == 'image/gif':
                         file_convert(file_full_path, file_type, None, 'png')
+                    elif file_type in (
+                            'application/vnd.ms-excel',
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    ):
+                        # TODO: Problem med ->html->pdf når embedded filer i excel-ark(sjekke tika-info og bare for de uten?)
+                        # TODO: Test å konvertere til odt som mellomformat. Annet?
+                        file_convert(file_full_path, file_type, 'html', 'pdf')
                     elif file_type.startswith('text/html'):
-                        # TODO: Må ha sjekk på encoding og endre ved behov for de som ikke kan vises i ff
                         file_convert(file_full_path, file_type, 'pdf', 'pdf')
-                    # elif file_type.startswith('text/html'):
-                    # TODO: Test og integrer beste html2pdf først
-                    #     file_convert(file_full_path, file_type, 'pdf', 'pdf')
                     elif file_type in ('application/msword',
                                        'application/rtf'):
                         file_convert(file_full_path, file_type, None, 'pdf')
