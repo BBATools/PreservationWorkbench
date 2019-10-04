@@ -5,7 +5,7 @@
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -22,16 +22,16 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract
 -- Read user variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- create base directories
-WbSysExec -ifNotDefined=quit -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -ifEmpty=quit -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Read user variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Check connection
-WbConfirm -ifDefined=db_args -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
+WbConfirm -ifNotEmpty=db_args -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
 -- Create schemareport
-WbInclude -ifDefined=db_args -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
+WbInclude -ifNotEmpty=db_args -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
 -- Export to tsv
 -- TODO: Vil virke også med LONG RAW på oracle (bug i oracle jdbc-driver) hvis det feltet  er listet sist i tabellen -&gt; fikse auto hvordan?
-WbExport -ifDefined=db_args
+WbExport -ifNotEmpty=db_args
 -type=text
 -schema=$[db_schema]
 -types=TABLE,SYNONYM
@@ -51,7 +51,7 @@ WbExport -ifDefined=db_args
 -nullString=&apos; &apos;
 -showProgress=10000;  
 -- Create archives from directories
-WbSysExec -ifDefined=subsys_name -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 
 
 </string>
@@ -59,10 +59,11 @@ WbSysExec -ifDefined=subsys_name -program=&apos;python3&apos; -argument=&apos;&q
        <void property="tooltip">
         <string>XML/TSV-export</string>
        </void>
+       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>Export to local database (alt. 2)</string>
        </void>
@@ -92,9 +93,8 @@ WbMessage &quot;Not implemented yet&quot;;
         <string>XML/H2-export</string>
        </void>
        <void property="visibleInPopup">
-        <boolean>false</boolean>
+        <object idref="Boolean0"/>
        </void>
-       <void id="Boolean0" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
@@ -268,17 +268,17 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Run generated sql (if sql_proc variable exists in config file)																																									
-WbInclude -ifDefined=sql_proc -file=tmp/file_process.sql -displayResult=false -verbose=false -continueOnError=false; 																
+WbInclude -ifNotEmpty=sql_proc -file=tmp/file_process.sql -displayResult=false -verbose=false -continueOnError=false; 																
 -- Fix directories post sql-run
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_post.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_post.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Virus check and metadata extract															
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Convert files			
--- WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_convert.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+-- WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_convert.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Save log/unmount wim image																			
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Clean up																	
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
+WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
 
 </string>
        </void>
@@ -305,15 +305,15 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Generate DDL from xml																																					
-WbInclude -ifDefined=wim_path -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false; 		
+WbInclude -ifNotEmpty=wim_path -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false; 		
 -- Generate sql for testing metadata
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_metadata_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_metadata_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Generate schemas and import metadata (5 db-engines)															
-WbInclude -ifDefined=wim_path -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;		
+WbInclude -ifNotEmpty=wim_path -file=tmp/meta_check.sql -displayResult=false -verbose=false -continueOnError=false;		
 -- Save log/unmount wim image																			
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Clean up																	
-WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
+WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
 
 
 </string>
@@ -370,7 +370,7 @@ WbSysExec -ifDefined=wim_path -program=&apos;python3&apos; -argument=&apos;&quot
      <int>4</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -406,7 +406,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
