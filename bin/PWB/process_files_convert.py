@@ -37,11 +37,27 @@ def image2norm(image_path, norm_path):
     return ok
 
 
+# WAIT: Test denne: https://github.com/xrmx/pylokit
 def office2x(file_path, norm_path, format):
     ok = False
-    command = ['unoconv', '--format=' + format, '--output=' + norm_path, file_path]
+    # command = ['unoconv', '-f', format, '-o', '"' + norm_path + '"','"' + file_path + '"']
+    # command = ['unoconv', '-f', format, '-o', norm_path,file_path]
+    command = ['unoconv', '-f', format]
     if format == 'pdf':
-        command.insert(3,'-eSelectPdfVersion=1')
+        command.extend([
+            '-d', 'spreadsheet', '-P', 'PaperOrientation=landscape',
+            '-eSelectPdfVersion=1'
+        ])
+        # command.append('-eSelectPdfVersion=1')
+        # command.insert(1,'-eSelectPdfVersion=1')
+    elif format == 'html':
+        command.extend(['-d', 'spreadsheet', '-P', 'PaperOrientation=landscape'])
+        # command.insert(1, '-d')
+        # command.insert(2, 'spreadsheet')
+        # command.insert(1, '-d spreadsheet -P PaperOrientation=landscape')
+        # TODO: Noen av valgene her også når til pdf direkte
+
+    command.extend(['-o', norm_path,file_path])
     try:
         subprocess.check_call(command)
         ok = True
@@ -121,7 +137,10 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
                     'application/vnd.ms-excel',
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             ):
-                tmp_exists = office2x(file_full_path, tmp_file_full_path,'html')
+                if tmp_ext == None:
+                    norm_exists = office2x(file_full_path, norm_file_full_path, 'pdf')
+                else:
+                    tmp_exists = office2x(file_full_path, tmp_file_full_path,'html')
             elif file_type.startswith('text/html'):
                 tmp_exists = html2pdf(file_full_path, tmp_file_full_path)
             elif file_type in ('application/msword',
@@ -218,7 +237,10 @@ if not os.path.isfile(convert_done_file):
             # * verapdf (i gammelt arkimintscript?)
             # * sally(https://github.com/CDSP/sallypy)
             # * jhove(https://github.com/AndreasPetter/PDF2PDFa/blob/master/de/pettersystems/pdf2pdfa/pdf2pdfa.py)
-            for index, row in df.iterrows():
+            row_iterator = df.iterrows()
+            df['next_file_rel_path'] = df['tika_batch_fs_relative_path'].shift(
+                1)
+            for index, row in row_iterator:
                 file_rel_path = str(row['tika_batch_fs_relative_path'])
                 if (file_rel_path != 'embedded file'):
                     file_full_path = folder + '/' + file_rel_path
@@ -241,9 +263,11 @@ if not os.path.isfile(convert_done_file):
                             'application/vnd.ms-excel',
                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                     ):
-                        # TODO: Problem med ->html->pdf når embedded filer i excel-ark(sjekke tika-info og bare for de uten?)
-                        # TODO: Test å konvertere til odt som mellomformat. Annet?
-                        file_convert(file_full_path, file_type, 'html', 'pdf')
+                        next_file_rel_path = str(row['next_file_rel_path'])                        
+                        if (next_file_rel_path == 'embedded file'):
+                            file_convert(file_full_path, file_type, None, 'pdf')
+                        else:
+                            file_convert(file_full_path, file_type, 'html','pdf')
                     elif file_type.startswith('text/html'):
                         file_convert(file_full_path, file_type, 'pdf', 'pdf')
                     elif file_type in ('application/msword',
