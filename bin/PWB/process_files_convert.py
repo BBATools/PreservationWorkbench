@@ -21,9 +21,16 @@ convert_done = False
 
 
 def file_copy(src, dst):
-    if os.path.isdir(dst):
-        dst = os.path.join(dst, os.path.basename(src))
-    shutil.copyfile(src, dst)
+    ok = False
+    try:
+        if os.path.isdir(dst):
+            dst = os.path.join(dst, os.path.basename(src))
+        shutil.copyfile(src, dst)
+    except Exception as e:
+        print(e)
+        ok = False
+    return ok
+
 
 def image2norm(image_path, norm_path):
     ok = False
@@ -51,13 +58,14 @@ def office2x(file_path, norm_path, format):
         # command.append('-eSelectPdfVersion=1')
         # command.insert(1,'-eSelectPdfVersion=1')
     elif format == 'html':
-        command.extend(['-d', 'spreadsheet', '-P', 'PaperOrientation=landscape'])
+        command.extend(
+            ['-d', 'spreadsheet', '-P', 'PaperOrientation=landscape'])
         # command.insert(1, '-d')
         # command.insert(2, 'spreadsheet')
         # command.insert(1, '-d spreadsheet -P PaperOrientation=landscape')
         # TODO: Noen av valgene her også når til pdf direkte
 
-    command.extend(['-o', norm_path,file_path])
+    command.extend(['-o', norm_path, file_path])
     try:
         subprocess.check_call(command)
         ok = True
@@ -94,6 +102,7 @@ def pdf2pdfa(pdf_path, pdfa_path):
     os.chdir(cwd)
     return ok
 
+
 # WAIT: Brukes for annet enn html? Støtter alt chrome kan lese
 def html2pdf(file_path, tmp_path):
     ok = False
@@ -105,7 +114,6 @@ def html2pdf(file_path, tmp_path):
         print(e)
         ok = False
     return ok
-
 
 
 def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
@@ -131,26 +139,30 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
                 norm_exists = image2norm(file_full_path, norm_file_full_path)
             elif file_type == 'application/pdf':
                 norm_exists = pdf2pdfa(file_full_path, norm_file_full_path)
-            elif file_type == 'image/png':
+            elif file_type in ('image/png', 'text/plain; charset=ISO-8859-1',
+                               'text/plain; charset=UTF-8'):
                 norm_exists = file_copy(file_full_path, norm_file_full_path)
             elif file_type in (
                     'application/vnd.ms-excel',
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             ):
                 if tmp_ext == None:
-                    norm_exists = office2x(file_full_path, norm_file_full_path, 'pdf')
+                    norm_exists = office2x(file_full_path, norm_file_full_path,
+                                           'pdf')
                 else:
-                    tmp_exists = office2x(file_full_path, tmp_file_full_path,'html')
+                    tmp_exists = office2x(file_full_path, tmp_file_full_path,
+                                          'html')
             elif file_type.startswith('text/html'):
                 tmp_exists = html2pdf(file_full_path, tmp_file_full_path)
-            elif file_type in ('application/msword',
-                                       'application/rtf'):
-                norm_exists = office2x(file_full_path, norm_file_full_path,'pdf')
+            elif file_type in ('application/msword', 'application/rtf'):
+                norm_exists = office2x(file_full_path, norm_file_full_path,
+                                       'pdf')
         if tmp_exists:
             if tmp_ext == 'pdf':
                 norm_exists = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
             elif tmp_ext == 'html':
-                norm_exists = office2x(tmp_file_full_path, norm_file_full_path, 'pdf')
+                norm_exists = office2x(tmp_file_full_path, norm_file_full_path,
+                                       'pdf')
 
         if norm_exists and tmp_exists:
             os.remove(tmp_file_full_path)
@@ -257,17 +269,22 @@ if not os.path.isfile(convert_done_file):
                         # TODO: Oppdatere tsv her eller i funksjon?
                     elif file_type == 'image/png':
                         file_convert(file_full_path, file_type, None, 'png')
+                    elif file_type in ('text/plain; charset=ISO-8859-1',
+                                       'text/plain; charset=UTF-8'):
+                        file_convert(file_full_path, file_type, None, 'txt')
                     elif file_type == 'image/gif':
                         file_convert(file_full_path, file_type, None, 'png')
                     elif file_type in (
                             'application/vnd.ms-excel',
                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                     ):
-                        next_file_rel_path = str(row['next_file_rel_path'])                        
+                        next_file_rel_path = str(row['next_file_rel_path'])
                         if (next_file_rel_path == 'embedded file'):
-                            file_convert(file_full_path, file_type, None, 'pdf')
+                            file_convert(file_full_path, file_type, None,
+                                         'pdf')
                         else:
-                            file_convert(file_full_path, file_type, 'html','pdf')
+                            file_convert(file_full_path, file_type, 'html',
+                                         'pdf')
                     elif file_type.startswith('text/html'):
                         file_convert(file_full_path, file_type, 'pdf', 'pdf')
                     elif file_type in ('application/msword',
