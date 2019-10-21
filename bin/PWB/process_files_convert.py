@@ -185,9 +185,9 @@ if not os.path.isfile(convert_done_file):
     for dir in sub_folders:
         doc_folders = [
             f.path for f in os.scandir(dir + "/content")
-            if (f.is_dir() and f.name != "data" and not (
-                f.name.endswith("_tmp") or f.name.endswith("_normalized")))
+            if (f.is_dir() and f.name in ('documents', 'data_documents'))
         ]
+
         for folder in doc_folders:
             tmp_folder = folder + "_tmp"
             pathlib.Path(tmp_folder).mkdir(parents=True, exist_ok=True)
@@ -200,12 +200,10 @@ if not os.path.isfile(convert_done_file):
             header_file = (dir + "/header/" + os.path.basename(
                 os.path.dirname(folder + "/")) + ".tsv")
 
-            # TODO: https://stackoverflow.com/questions/43847926/python-loop-through-a-csv-file-row-values
             # TODO: Oppdatere tsv først med hva som skal bli og så loope gjennom og så sjekke på disk?
             # TODO: Bruk for å legge til rette extension på .data-filer? https://github.com/timothyryanwalsh/addext
             # WAIT: Test denne for filer Tika ikke tar? https://github.com/h2non/filetype.py/blob/master/README.rst
-            # TODO: Generer DDL for "header_file"
-            # TODO: Unoconv: test  -P option for converting spreadsheets into PDFs in landscape
+            # TODO: Generer DDL for "header_file" -> må først legge til kode for fjerning av flere kolonner
             # TODO: Generer også (samtidig som telle antall filer) en tsv som bare inneholder viktigste kolonner
             # --> legge denne i data-mappe for import til innsyn mens den originale med alt blir liggende i header?
             # TODO: Gå gjennom alle pdf til slutt og konvertere til pdf/a hvis ikke allerede?
@@ -225,9 +223,24 @@ if not os.path.isfile(convert_done_file):
             # 	https://superuser.com/questions/188953/how-to-convert-a-pdf-to-a-pdf-a
             # Filtrere tsv: https://kanoki.org/2019/03/27/pandas-select-rows-by-condition-and-string-operations/
             #		    https://kite.com/blog/python/pandas-tutorial
+
             df = pd.read_csv(header_file, sep="\t")
+            if 'normalized_relative_path' not in df:
+                df['normalized_relative_path'] = 'Not processed'
+
+            pd_line_count = len(df)
+            print(pd_line_count)
+            # TODO: Teller line_count med header -> sjekk manuelt at stemmer
+            os_line_count = sum(
+                [len(files) for r, d, files in os.walk(folder)])
+
+            if os_line_count > pd_line_count:
+                print("Filreferanser mangler i tsv")
+                # TODO: Endre i melding med appjar på engelsk -> stop prosess
+                # TODO: Også finnes hvilken som mangler?
+
             df.tika_batch_fs_relative_path = df.tika_batch_fs_relative_path.fillna(
-                'embedded file')  # filer som er embedded i andre
+                'embedded file')
 
             # TODO: For BIR trenger vi også disse typene (mulig at noen av de bare embedded):
             # text/plain, image/png, image/jpeg, application/x-msdownload,
@@ -240,9 +253,6 @@ if not os.path.isfile(convert_done_file):
             # * https://stackoverflow.com/questions/19777292/recursively-copy-and-flatten-a-directory-with-python
             # * https://stackoverflow.com/questions/18383384/python-copy-files-to-a-new-directory-and-rename-if-file-name-already-exists
 
-            # TODO: Bruke unoconv som lib: https://github.com/unoconv/unoconv/issues/238
-
-            # TODO: Legg til kolonne (se pandas løsning): https://stackoverflow.com/questions/11070527/how-to-add-a-new-column-to-a-csv-file
             # -> fjerne kolonner: https://nitratine.net/blog/post/remove-columns-in-a-csv-file-with-python/
 
             # TODO: Verifisere pdf/a:
@@ -256,6 +266,7 @@ if not os.path.isfile(convert_done_file):
                 file_rel_path = str(row['tika_batch_fs_relative_path'])
                 if (file_rel_path != 'embedded file'):
                     file_full_path = folder + '/' + file_rel_path
+                    print('Processing ' + os.path.basename(file_full_path))
 
                     # print(str(index + 2), path)  # index +2 så ihht exel/libre
                     # TODO: Sjekk først at antall linjer stemmer med antall filer på disk -> dialog hvis ikke
