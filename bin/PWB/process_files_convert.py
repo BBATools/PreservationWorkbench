@@ -45,25 +45,35 @@ def image2norm(image_path, norm_path):
 
 
 # WAIT: Test denne: https://github.com/xrmx/pylokit
-def office2x(file_path, norm_path, format):
+def office2x(file_path, norm_path, format, file_type):
     ok = False
     # command = ['unoconv', '-f', format, '-o', '"' + norm_path + '"','"' + file_path + '"']
     # command = ['unoconv', '-f', format, '-o', norm_path,file_path]
     command = ['unoconv', '-f', format]
-    if format == 'pdf':
+
+    if file_type in (
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ):
+        if format == 'pdf':
+            command.extend([
+                '-d', 'spreadsheet', '-P', 'PaperOrientation=landscape',
+                '-eSelectPdfVersion=1'
+            ])
+            # command.append('-eSelectPdfVersion=1')
+            # command.insert(1,'-eSelectPdfVersion=1')
+        elif format == 'html':
+            command.extend(
+                ['-d', 'spreadsheet', '-P', 'PaperOrientation=landscape'])
+            # command.insert(1, '-d')
+            # command.insert(2, 'spreadsheet')
+            # command.insert(1, '-d spreadsheet -P PaperOrientation=landscape')
+            # TODO: Noen av valgene her også når til pdf direkte
+    elif file_type in ('application/msword', 'application/rtf'):
         command.extend([
-            '-d', 'spreadsheet', '-P', 'PaperOrientation=landscape',
+            '-d', 'document',
             '-eSelectPdfVersion=1'
         ])
-        # command.append('-eSelectPdfVersion=1')
-        # command.insert(1,'-eSelectPdfVersion=1')
-    elif format == 'html':
-        command.extend(
-            ['-d', 'spreadsheet', '-P', 'PaperOrientation=landscape'])
-        # command.insert(1, '-d')
-        # command.insert(2, 'spreadsheet')
-        # command.insert(1, '-d spreadsheet -P PaperOrientation=landscape')
-        # TODO: Noen av valgene her også når til pdf direkte
 
     command.extend(['-o', norm_path, file_path])
     try:
@@ -148,15 +158,15 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
             ):
                 if tmp_ext == None:
                     norm_exists = office2x(file_full_path, norm_file_full_path,
-                                           'pdf')
+                                           'pdf', file_type)
                 else:
                     tmp_exists = office2x(file_full_path, tmp_file_full_path,
-                                          'html')
+                                          'html', file_type)
             elif file_type.startswith('text/html'):
                 tmp_exists = html2pdf(file_full_path, tmp_file_full_path)
             elif file_type in ('application/msword', 'application/rtf'):
                 norm_exists = office2x(file_full_path, norm_file_full_path,
-                                       'pdf')
+                                       'pdf', file_type)
         if tmp_exists:
             if tmp_ext == 'pdf':
                 norm_exists = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
@@ -266,7 +276,6 @@ if not os.path.isfile(convert_done_file):
                 file_rel_path = str(row['tika_batch_fs_relative_path'])
                 if (file_rel_path != 'embedded file'):
                     file_full_path = folder + '/' + file_rel_path
-                    print('Processing ' + os.path.basename(file_full_path))
 
                     # print(str(index + 2), path)  # index +2 så ihht exel/libre
                     # TODO: Sjekk først at antall linjer stemmer med antall filer på disk -> dialog hvis ikke
