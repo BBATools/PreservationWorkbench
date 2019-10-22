@@ -5,6 +5,9 @@ from pathlib import Path
 from configparser import SafeConfigParser
 from pgmagick.api import Image
 from pdfy import Pdfy
+import shlex
+import logging
+from io import StringIO
 
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tmp'))
@@ -18,6 +21,35 @@ mount_dir = data_dir + "/" + sys_name + "_mount"
 convert_done_file = in_dir + sys_name + "_convert_done"
 sub_systems_path = mount_dir + "/content/sub_systems"
 convert_done = False
+
+
+def run_shell_command(command_line):
+    command_line_args = shlex.split(command_line)
+
+    logging.info('Subprocess: "' + command_line + '"')
+
+    try:
+        command_line_process = subprocess.Popen(
+            command_line_args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+
+        process_output, _ = command_line_process.communicate()
+
+        # process_output is now a string, not a file,
+        # you may want to do:
+        # process_output = StringIO(process_output)
+        subprocess.log_subprocess_output(process_output)
+    except (OSError, subprocess.CalledProcessError) as exception:
+        logging.info('Exception occured: ' + str(exception))
+        logging.info('Subprocess failed')
+        return False
+    else:
+        # no exception was raised
+        logging.info('Subprocess finished')
+
+    return True
 
 
 def file_copy(src, dst):
@@ -77,12 +109,17 @@ def office2x(file_path, norm_path, format, file_type):
 
     command.extend(['-o', norm_path, file_path])
     try:
-        subprocess.check_call(command)
-        ok = True
-    except subprocess.CalledProcessError as e:
-        print('CalledProcessorError', e)
+        run_shell_command(command)
+    except:
         ok = False
     return ok
+    # try:
+    #     subprocess.check_call(command)
+    #     ok = True
+    # except subprocess.CalledProcessError as e:
+    #     print('CalledProcessorError', e)
+    #     ok = False
+    # return ok
 
 
 # WAIT: Se for flere gs argumenter: https://superuser.com/questions/360216/use-ghostscript-but-tell-it-to-not-reprocess-images
@@ -139,6 +176,7 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
 
     if not os.path.isfile(norm_file_full_path):
         pathlib.Path(norm_folder_full_path).mkdir(parents=True, exist_ok=True)
+        # print('Processing ' + norm_file_full_path) #TODO: Vises ikke i wb output
         norm_exists = False
         tmp_exists = False
         if (not os.path.isfile(tmp_file_full_path)
@@ -246,6 +284,8 @@ if not os.path.isfile(convert_done_file):
 
             if os_line_count > pd_line_count:
                 print("Filreferanser mangler i tsv")
+            else:
+                print('All files accounted for')
                 # TODO: Endre i melding med appjar på engelsk -> stop prosess
                 # TODO: Også finnes hvilken som mangler?
 
@@ -274,8 +314,13 @@ if not os.path.isfile(convert_done_file):
                 1)
             for index, row in row_iterator:
                 file_rel_path = str(row['tika_batch_fs_relative_path'])
+                # TODO: Sjekk tika kolonne om PDF/a allerede
                 if (file_rel_path != 'embedded file'):
                     file_full_path = folder + '/' + file_rel_path
+                    # print('Processing ' + os.path.basename(file_full_path))
+                    # TODO: Fiks at ikke slutter å vise (pga subprocess hvis konvertering startes?)
+                    # TODO: Bør også skrive ut kommando som brukes for konvertering heller enn bare filnavn
+                    # --> enklere å bare skrive til logg?
 
                     # print(str(index + 2), path)  # index +2 så ihht exel/libre
                     # TODO: Sjekk først at antall linjer stemmer med antall filer på disk -> dialog hvis ikke
