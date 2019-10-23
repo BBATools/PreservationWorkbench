@@ -285,6 +285,8 @@ if not os.path.isfile(convert_done_file):
             else:
                 print("Files listed in tsv-files doesn't match files on disk")
 
+            sys.stdout.flush()
+
             # TODO: For BIR trenger vi også disse typene (mulig at noen av de bare embedded):
             # text/plain, image/png, image/jpeg, application/x-msdownload,
             # application/vnd.wordperfect, application/vnd.ms-excel, application/pdf, application/msword,
