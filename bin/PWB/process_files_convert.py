@@ -86,8 +86,26 @@ def image2norm(image_path, norm_path):
     return ok
 
 
+def docbuilder2x(file_path, tmp_path, format, file_type):
+    docbuilder_file = tmp_dir + "/x2x.docbuilder"
+    docbuilder = None
+    if file_type in ('application/msword', 'application/rtf'):
+        docbuilder = [
+            'builder.OpenFile("' + file_path + '", "");',
+            'builder.SaveFile(("' + format + '", "' + tmp_path + '");',
+            'builder.CloseFile();',
+        ]
+
+    with open(docbuilder_file, "w+") as file:
+        file.write("\n".join(docbuilder))
+
+    command = ['documentbuilder', docbuilder_file]
+    ok = run_cmd(command)
+    return ok
+
+
 # WAIT: Test denne: https://github.com/xrmx/pylokit
-def office2x(file_path, norm_path, format, file_type):
+def unoconv2x(file_path, norm_path, format, file_type):
     command = ['unoconv', '-f', format]
 
     if file_type in (
@@ -182,22 +200,24 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             ):
                 if tmp_ext == None:
-                    norm_exists = office2x(file_full_path, norm_file_full_path,
-                                           'pdf', file_type)
+                    norm_exists = unoconv2x(
+                        file_full_path, norm_file_full_path, 'pdf', file_type)
                 else:
-                    tmp_exists = office2x(file_full_path, tmp_file_full_path,
-                                          'html', file_type)
+                    tmp_exists = unoconv2x(file_full_path, tmp_file_full_path,
+                                           'html', file_type)
             elif file_type.startswith('text/html'):
                 tmp_exists = html2pdf(file_full_path, tmp_file_full_path)
             elif file_type in ('application/msword', 'application/rtf'):
-                norm_exists = office2x(file_full_path, norm_file_full_path,
-                                       'pdf', file_type)
+                tmp_exists = docbuilder2x(file_full_path, tmp_file_full_path,
+                                          'pdf', file_type)
+                # norm_exists = unoconv2x(file_full_path, norm_file_full_path,
+                #                         'pdf', file_type)
         if tmp_exists:
             if tmp_ext == 'pdf':
                 norm_exists = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
             elif tmp_ext == 'html':
-                norm_exists = office2x(tmp_file_full_path, norm_file_full_path,
-                                       'pdf', file_type)
+                norm_exists = unoconv2x(tmp_file_full_path,
+                                        norm_file_full_path, 'pdf', file_type)
 
         if norm_exists and tmp_exists:
             os.remove(tmp_file_full_path)
@@ -354,8 +374,10 @@ if not os.path.isfile(convert_done_file):
                                                        file_type, 'pdf', 'pdf')
                     elif file_type in ('application/msword',
                                        'application/rtf'):
+                        # normalized_file = file_convert(file_full_path,
+                        #                                file_type, None, 'pdf')
                         normalized_file = file_convert(file_full_path,
-                                                       file_type, None, 'pdf')
+                                                       file_type, 'pdf', 'pdf')
                     elif file_type in ('application/x-tika-msoffice'):
                         # TODO: Er dette alltid Thumbs.db ?
                         print("office")
