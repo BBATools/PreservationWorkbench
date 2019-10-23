@@ -1,13 +1,10 @@
-import subprocess, os, shutil, argparse
+import subprocess, os, shutil, argparse, sys
 import pathlib
 import pandas as pd
 from pathlib import Path
 from configparser import SafeConfigParser
 from pgmagick.api import Image
 from pdfy import Pdfy
-import shlex
-import logging
-from io import StringIO
 
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tmp'))
@@ -23,36 +20,46 @@ sub_systems_path = mount_dir + "/content/sub_systems"
 convert_done = False
 
 
-def run_shell_command(command_line):
-    command_line_args = shlex.split(command_line)
+def run_cmd(command):
+    ok = False
+    os.environ['PYTHONUNBUFFERED'] = "1"
+    stdout = [' '.join(command)]
+    stderr = []
+    mix = []
 
-    logging.info('Subprocess: "' + command_line + '"')
+    print(''.join(stdout))
+    sys.stdout.flush()
 
-    try:
-        command_line_process = subprocess.Popen(
-            command_line_args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
+    proc = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
 
-        process_output, _ = command_line_process.communicate()
+    while proc.poll() is None:
+        line = proc.stdout.readline()
+        if line != "":
+            stdout.append(line)
+            mix.append(line)
+            print(line, end='')
 
-        # process_output is now a string, not a file,
-        # you may want to do:
-        # process_output = StringIO(process_output)
-        subprocess.log_subprocess_output(process_output)
-    except (OSError, subprocess.CalledProcessError) as exception:
-        logging.info('Exception occured: ' + str(exception))
-        logging.info('Subprocess failed')
-        return False
-    else:
-        # no exception was raised
-        logging.info('Subprocess finished')
+        line = proc.stderr.readline()
+        if line != "":
+            stderr.append(line)
+            mix.append(line)
+            print(line, end='')
+        else:
+            ok = True
 
-    return True
+    return ok
+    # return proc.returncode, stdout, stderr, mix
 
 
 def file_copy(src, dst):
+    print('cp ' + src + ' ' + dst)
+    sys.stdout.flush()
+
     ok = False
     try:
         if os.path.isdir(dst):
@@ -65,6 +72,9 @@ def file_copy(src, dst):
 
 
 def image2norm(image_path, norm_path):
+    print('image2norm(python) ' + image_path + ' ' + norm_path)
+    sys.stdout.flush()
+
     ok = False
     try:
         img = Image(image_path)
@@ -78,48 +88,26 @@ def image2norm(image_path, norm_path):
 
 # WAIT: Test denne: https://github.com/xrmx/pylokit
 def office2x(file_path, norm_path, format, file_type):
-    ok = False
-    # command = ['unoconv', '-f', format, '-o', '"' + norm_path + '"','"' + file_path + '"']
-    # command = ['unoconv', '-f', format, '-o', norm_path,file_path]
     command = ['unoconv', '-f', format]
 
     if file_type in (
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ):
         if format == 'pdf':
             command.extend([
                 '-d', 'spreadsheet', '-P', 'PaperOrientation=landscape',
                 '-eSelectPdfVersion=1'
             ])
-            # command.append('-eSelectPdfVersion=1')
-            # command.insert(1,'-eSelectPdfVersion=1')
         elif format == 'html':
             command.extend(
                 ['-d', 'spreadsheet', '-P', 'PaperOrientation=landscape'])
-            # command.insert(1, '-d')
-            # command.insert(2, 'spreadsheet')
-            # command.insert(1, '-d spreadsheet -P PaperOrientation=landscape')
-            # TODO: Noen av valgene her også når til pdf direkte
     elif file_type in ('application/msword', 'application/rtf'):
-        command.extend([
-            '-d', 'document',
-            '-eSelectPdfVersion=1'
-        ])
+        command.extend(['-d', 'document', '-eSelectPdfVersion=1'])
 
     command.extend(['-o', norm_path, file_path])
-    try:
-        run_shell_command(command)
-    except:
-        ok = False
+    ok = run_cmd(command)
     return ok
-    # try:
-    #     subprocess.check_call(command)
-    #     ok = True
-    # except subprocess.CalledProcessError as e:
-    #     print('CalledProcessorError', e)
-    #     ok = False
-    # return ok
 
 
 # WAIT: Se for flere gs argumenter: https://superuser.com/questions/360216/use-ghostscript-but-tell-it-to-not-reprocess-images
@@ -136,22 +124,20 @@ def pdf2pdfa(pdf_path, pdfa_path):
         '-dEncodeColorImages=false', '-dEncodeGrayImages=false',
         '-dEncodeMonoImages=false', '-dPDFACompatibilityPolicy=1'
     ]
-    try:
-        subprocess.check_output(
-            ghostScriptExec +
-            ['-sOutputFile=' + os.path.basename(pdfa_path), pdf_path])
-        ok = True
-    except subprocess.CalledProcessError as e:
-        ok = False
-        raise RuntimeError(
-            "command '{}' return with error (code {}): {}".format(
-                e.cmd, e.returncode, e.output))
+
+    command = ghostScriptExec + [
+        '-sOutputFile=' + os.path.basename(pdfa_path), pdf_path
+    ]
+    ok = run_cmd(command)
     os.chdir(cwd)
     return ok
 
 
 # WAIT: Brukes for annet enn html? Støtter alt chrome kan lese
 def html2pdf(file_path, tmp_path):
+    print('image2norm(python) ' + file_path + ' ' + tmp_path)
+    sys.stdout.flush()
+
     ok = False
     try:
         p = Pdfy()
@@ -164,6 +150,7 @@ def html2pdf(file_path, tmp_path):
 
 
 def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
+    normalized_file = None
     file_name = os.path.basename(file_full_path)
     if tmp_ext:
         tmp_file_full_path = folder + '_normalized/' + file_rel_path + '.tmp.' + tmp_ext
@@ -210,12 +197,17 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
                 norm_exists = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
             elif tmp_ext == 'html':
                 norm_exists = office2x(tmp_file_full_path, norm_file_full_path,
-                                       'pdf')
+                                       'pdf', file_type)
 
         if norm_exists and tmp_exists:
             os.remove(tmp_file_full_path)
         # TODO: Oppdater tsv her eller i kode som looper tsv under ?
         # TODO: Legg inn hvilken originalfiler som skal slettes
+
+    if os.path.isfile(norm_file_full_path):
+        normalized_file = norm_file_full_path
+
+    return normalized_file
 
 
 if not os.path.isfile(convert_done_file):
@@ -276,21 +268,22 @@ if not os.path.isfile(convert_done_file):
             if 'normalized_relative_path' not in df:
                 df['normalized_relative_path'] = 'Not processed'
 
-            pd_line_count = len(df)
-            print(pd_line_count)
-            # TODO: Teller line_count med header -> sjekk manuelt at stemmer
+            df.tika_batch_fs_relative_path = df.tika_batch_fs_relative_path.fillna(
+                'embedded file')
+
+            file_rows = df.apply(
+                lambda x: True if x['tika_batch_fs_relative_path'] != 'embedded file' else False,
+                axis=1)
+            pd_line_count = len(file_rows[file_rows == True].index)
+
             os_line_count = sum(
                 [len(files) for r, d, files in os.walk(folder)])
 
-            if os_line_count > pd_line_count:
-                print("Filreferanser mangler i tsv")
+            # TODO: Endre i melding med appjar på engelsk -> stop prosess
+            if os_line_count == pd_line_count:
+                print('Files listed in tsv-file matches files on disk')
             else:
-                print('All files accounted for')
-                # TODO: Endre i melding med appjar på engelsk -> stop prosess
-                # TODO: Også finnes hvilken som mangler?
-
-            df.tika_batch_fs_relative_path = df.tika_batch_fs_relative_path.fillna(
-                'embedded file')
+                print("Files listed in tsv-files doesn't match files on disk")
 
             # TODO: For BIR trenger vi også disse typene (mulig at noen av de bare embedded):
             # text/plain, image/png, image/jpeg, application/x-msdownload,
@@ -311,52 +304,68 @@ if not os.path.isfile(convert_done_file):
             # * jhove(https://github.com/AndreasPetter/PDF2PDFa/blob/master/de/pettersystems/pdf2pdfa/pdf2pdfa.py)
             row_iterator = df.iterrows()
             df['next_file_rel_path'] = df['tika_batch_fs_relative_path'].shift(
-                1)
+                -1)
             for index, row in row_iterator:
                 file_rel_path = str(row['tika_batch_fs_relative_path'])
                 # TODO: Sjekk tika kolonne om PDF/a allerede
                 if (file_rel_path != 'embedded file'):
                     file_full_path = folder + '/' + file_rel_path
+                    normalized_file = None
                     # print('Processing ' + os.path.basename(file_full_path))
                     # TODO: Fiks at ikke slutter å vise (pga subprocess hvis konvertering startes?)
                     # TODO: Bør også skrive ut kommando som brukes for konvertering heller enn bare filnavn
-                    # --> enklere å bare skrive til logg?
+                    # --> enklere å bare skrive til logg? -> åpne visning av fortløpende log i term eller annet?
 
-                    # print(str(index + 2), path)  # index +2 så ihht exel/libre
-                    # TODO: Sjekk først at antall linjer stemmer med antall filer på disk -> dialog hvis ikke
                     # TODO: Må ha sjekk på encoding og endre ved behov for de som ikke kan vises i ff (av rent tekst som ikke er html)
                     file_type = str(row['Content_Type'])
                     if file_type == 'application/pdf':
                         # TODO: Sjekke føst om allerede er pdf/a -> se lenker over
-                        file_convert(file_full_path, file_type, None, 'pdf')
+                        normalized_file = file_convert(file_full_path,
+                                                       file_type, None, 'pdf')
                     elif file_type in ('image/tiff', 'image/jpeg'):
-                        file_convert(file_full_path, file_type, 'pdf', 'pdf')
+                        normalized_file = file_convert(file_full_path,
+                                                       file_type, 'pdf', 'pdf')
                         # TODO: Oppdatere tsv her eller i funksjon?
                     elif file_type == 'image/png':
-                        file_convert(file_full_path, file_type, None, 'png')
+                        normalized_file = file_convert(file_full_path,
+                                                       file_type, None, 'png')
                     elif file_type in ('text/plain; charset=ISO-8859-1',
                                        'text/plain; charset=UTF-8'):
-                        file_convert(file_full_path, file_type, None, 'txt')
+                        normalized_file = file_convert(file_full_path,
+                                                       file_type, None, 'txt')
                     elif file_type == 'image/gif':
-                        file_convert(file_full_path, file_type, None, 'png')
+                        normalized_file = file_convert(file_full_path,
+                                                       file_type, None, 'png')
                     elif file_type in (
                             'application/vnd.ms-excel',
                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                     ):
                         next_file_rel_path = str(row['next_file_rel_path'])
                         if (next_file_rel_path == 'embedded file'):
-                            file_convert(file_full_path, file_type, None,
-                                         'pdf')
+                            normalized_file = file_convert(
+                                file_full_path, file_type, None, 'pdf')
                         else:
-                            file_convert(file_full_path, file_type, 'html',
-                                         'pdf')
+                            normalized_file = file_convert(
+                                file_full_path, file_type, 'html', 'pdf')
                     elif file_type.startswith('text/html'):
-                        file_convert(file_full_path, file_type, 'pdf', 'pdf')
+                        normalized_file = file_convert(file_full_path,
+                                                       file_type, 'pdf', 'pdf')
                     elif file_type in ('application/msword',
                                        'application/rtf'):
-                        file_convert(file_full_path, file_type, None, 'pdf')
+                        normalized_file = file_convert(file_full_path,
+                                                       file_type, None, 'pdf')
                     elif file_type in ('application/x-tika-msoffice'):
                         # TODO: Er dette alltid Thumbs.db ?
                         print("office")
                     else:
                         print(file_type)
+
+                    if normalized_file:
+                        # norm_rel_path = normalized_file + os.path.basename(
+                        #     normalized_file)
+                        norm_rel_path = Path(normalized_file).relative_to(
+                            folder + '_normalized/')
+                        df.loc[index,
+                               'normalized_relative_path'] = norm_rel_path
+
+            df.to_csv(header_file, index=False, sep="\t")
