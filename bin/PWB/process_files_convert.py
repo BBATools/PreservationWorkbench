@@ -1,4 +1,4 @@
-import subprocess, os, shutil, argparse, sys
+import subprocess, os, shutil, argparse, sys, signal
 import pathlib
 import pandas as pd
 from pathlib import Path
@@ -20,7 +20,11 @@ sub_systems_path = mount_dir + "/content/sub_systems"
 convert_done = False
 
 
-def run_cmd(command):
+def kill(proc_id):
+    os.kill(proc_id, signal.SIGINT)
+
+
+def run_shell_command(command, cwd=None, timeout=30):
     ok = False
     os.environ['PYTHONUNBUFFERED'] = "1"
     stdout = [' '.join(command)]
@@ -32,10 +36,16 @@ def run_cmd(command):
 
     proc = subprocess.Popen(
         command,
+        cwd=cwd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         universal_newlines=True,
     )
+
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        kill(proc.pid)
 
     while proc.poll() is None:
         line = proc.stdout.readline()
@@ -92,7 +102,7 @@ def docbuilder2x(file_path, tmp_path, format, file_type):
     if file_type in ('application/msword', 'application/rtf'):
         docbuilder = [
             'builder.OpenFile("' + file_path + '", "");',
-            'builder.SaveFile(("' + format + '", "' + tmp_path + '");',
+            'builder.SaveFile("' + format + '", "' + tmp_path + '");',
             'builder.CloseFile();',
         ]
 
@@ -100,7 +110,7 @@ def docbuilder2x(file_path, tmp_path, format, file_type):
         file.write("\n".join(docbuilder))
 
     command = ['documentbuilder', docbuilder_file]
-    ok = run_cmd(command)
+    ok = run_shell_command(command)
     return ok
 
 
@@ -124,7 +134,7 @@ def unoconv2x(file_path, norm_path, format, file_type):
         command.extend(['-d', 'document', '-eSelectPdfVersion=1'])
 
     command.extend(['-o', norm_path, file_path])
-    ok = run_cmd(command)
+    ok = run_shell_command(command)
     return ok
 
 
@@ -146,7 +156,7 @@ def pdf2pdfa(pdf_path, pdfa_path):
     command = ghostScriptExec + [
         '-sOutputFile=' + os.path.basename(pdfa_path), pdf_path
     ]
-    ok = run_cmd(command)
+    ok = run_shell_command(command)
     os.chdir(cwd)
     return ok
 
@@ -218,10 +228,11 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
             elif tmp_ext == 'html':
                 norm_exists = unoconv2x(tmp_file_full_path,
                                         norm_file_full_path, 'pdf', file_type)
+        else:
+            os.remove(tmp_file_full_path)
 
         if norm_exists and tmp_exists:
             os.remove(tmp_file_full_path)
-        # TODO: Oppdater tsv her eller i kode som looper tsv under ?
         # TODO: Legg inn hvilken originalfiler som skal slettes
 
     if os.path.isfile(norm_file_full_path):

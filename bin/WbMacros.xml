@@ -193,7 +193,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup2">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>File</string>
        </void>
@@ -205,12 +205,10 @@ WbMessage &quot;Not implemented yet&quot;;
        <void property="tooltip">
         <string>dispos...</string>
        </void>
-       <void id="Boolean0" method="isVisibleInMenu"/>
-       <void id="Boolean1" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="name">
         <string>Directory</string>
        </void>
@@ -224,6 +222,8 @@ WbMessage &quot;Not implemented yet&quot;;</string>
        <void property="tooltip">
         <string>dispos...</string>
        </void>
+       <void id="Boolean0" method="isVisibleInMenu"/>
+       <void id="Boolean1" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
