@@ -59,8 +59,9 @@ def run_shell_command(command, cwd=None, timeout=30):
             stderr.append(line)
             mix.append(line)
             print(line, end='')
-        else:
-            ok = True
+
+    if len(stderr) == 0:
+        ok = True
 
     return ok
     # return proc.returncode, stdout, stderr, mix
@@ -99,9 +100,24 @@ def image2norm(image_path, norm_path):
 def docbuilder2x(file_path, tmp_path, format, file_type):
     docbuilder_file = tmp_dir + "/x2x.docbuilder"
     docbuilder = None
+
+    # TODO: Annet for rtf?
     if file_type in ('application/msword', 'application/rtf'):
         docbuilder = [
             'builder.OpenFile("' + file_path + '", "");',
+            'builder.SaveFile("' + format + '", "' + tmp_path + '");',
+            'builder.CloseFile();',
+        ]
+    elif file_type in (
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ):
+        docbuilder = [
+            'builder.OpenFile("' + file_path + '", "");',
+            'var ws;',
+            'var sheets = Api.GetSheets();',
+            'var arrayLength = sheets.length;',
+            'for (var i = 0; i < arrayLength; i++) {ws = sheets[i];ws.SetPageOrientation("xlLandscape");}',
             'builder.SaveFile("' + format + '", "' + tmp_path + '");',
             'builder.CloseFile();',
         ]
@@ -110,6 +126,18 @@ def docbuilder2x(file_path, tmp_path, format, file_type):
         file.write("\n".join(docbuilder))
 
     command = ['documentbuilder', docbuilder_file]
+    ok = run_shell_command(command)
+    return ok
+
+
+def abi2x(file_path, tmp_path, format, file_type):
+    command = ['abiword', '--to=' + format]
+
+    if file_type == 'application/rtf':
+        command.append('--import-extension=rtf')
+
+    command.extend(['-o', tmp_path, file_path])
+
     ok = run_shell_command(command)
     return ok
 
@@ -138,6 +166,8 @@ def unoconv2x(file_path, norm_path, format, file_type):
     return ok
 
 
+# TODO: ps lager tom fil slik at tilsynelatende ok når tom path som input -> legg inn sjekk på dette
+# --> return ok= False bare da
 # WAIT: Se for flere gs argumenter: https://superuser.com/questions/360216/use-ghostscript-but-tell-it-to-not-reprocess-images
 def pdf2pdfa(pdf_path, pdfa_path):
     # because of a ghostscript bug, which does not allow parameters that are longer than 255 characters
@@ -192,46 +222,51 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
     if not os.path.isfile(norm_file_full_path):
         pathlib.Path(norm_folder_full_path).mkdir(parents=True, exist_ok=True)
         # print('Processing ' + norm_file_full_path) #TODO: Vises ikke i wb output
-        norm_exists = False
-        tmp_exists = False
+        norm_ok = False
+        tmp_ok = False
         if (not os.path.isfile(tmp_file_full_path)
                 or tmp_ext == None):  #TODO: Trengs ext-sjekk lenger?
             if file_type in ('image/tiff', 'image/jpeg'):
-                tmp_exists = image2norm(file_full_path, tmp_file_full_path)
+                tmp_ok = image2norm(file_full_path, tmp_file_full_path)
             elif file_type == 'image/gif':
-                norm_exists = image2norm(file_full_path, norm_file_full_path)
+                norm_ok = image2norm(file_full_path, norm_file_full_path)
             elif file_type == 'application/pdf':
-                norm_exists = pdf2pdfa(file_full_path, norm_file_full_path)
+                norm_ok = pdf2pdfa(file_full_path, norm_file_full_path)
             elif file_type in ('image/png', 'text/plain; charset=ISO-8859-1',
                                'text/plain; charset=UTF-8'):
-                norm_exists = file_copy(file_full_path, norm_file_full_path)
+                norm_ok = file_copy(file_full_path, norm_file_full_path)
             elif file_type in (
                     'application/vnd.ms-excel',
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             ):
                 if tmp_ext == None:
-                    norm_exists = unoconv2x(
-                        file_full_path, norm_file_full_path, 'pdf', file_type)
+                    norm_ok = unoconv2x(file_full_path, norm_file_full_path,
+                                        'pdf', file_type)
                 else:
-                    tmp_exists = unoconv2x(file_full_path, tmp_file_full_path,
-                                           'html', file_type)
-            elif file_type.startswith('text/html'):
-                tmp_exists = html2pdf(file_full_path, tmp_file_full_path)
-            elif file_type in ('application/msword', 'application/rtf'):
-                tmp_exists = docbuilder2x(file_full_path, tmp_file_full_path,
+                    tmp_ok = docbuilder2x(file_full_path, tmp_file_full_path,
                                           'pdf', file_type)
+                # tmp_exists = unoconv2x(file_full_path, tmp_file_full_path,
+                #                        'html', file_type)
+            elif file_type.startswith('text/html'):
+                tmp_ok = html2pdf(file_full_path, tmp_file_full_path)
+            elif file_type == 'application/msword':
+                tmp_ok = docbuilder2x(file_full_path, tmp_file_full_path,
+                                      'pdf', file_type)
                 # norm_exists = unoconv2x(file_full_path, norm_file_full_path,
                 #                         'pdf', file_type)
-        if tmp_exists:
+            elif file_type == 'application/rtf':
+                tmp_ok = abi2x(file_full_path, tmp_file_full_path, 'pdf',
+                               file_type)
+        if tmp_ok:
             if tmp_ext == 'pdf':
-                norm_exists = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
+                norm_ok = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
             elif tmp_ext == 'html':
-                norm_exists = unoconv2x(tmp_file_full_path,
-                                        norm_file_full_path, 'pdf', file_type)
-        else:
+                norm_ok = unoconv2x(tmp_file_full_path, norm_file_full_path,
+                                    'pdf', file_type)
+        elif os.path.exists(tmp_file_full_path):
             os.remove(tmp_file_full_path)
 
-        if norm_exists and tmp_exists:
+        if norm_ok and tmp_ok:
             os.remove(tmp_file_full_path)
         # TODO: Legg inn hvilken originalfiler som skal slettes
 
@@ -315,8 +350,11 @@ if not os.path.isfile(convert_done_file):
                 print('Files listed in tsv-file matches files on disk')
             else:
                 print("Files listed in tsv-files doesn't match files on disk")
+                # TODO: Oppdater i tsv når konvertering feiler
 
             sys.stdout.flush()
+
+            # TODO: Oppdater i tsv når konvertering feiler
 
             # TODO: For BIR trenger vi også disse typene (mulig at noen av de bare embedded):
             # text/plain, image/png, image/jpeg, application/x-msdownload,
@@ -379,7 +417,9 @@ if not os.path.isfile(convert_done_file):
                                 file_full_path, file_type, None, 'pdf')
                         else:
                             normalized_file = file_convert(
-                                file_full_path, file_type, 'html', 'pdf')
+                                file_full_path, file_type, 'pdf', 'pdf')
+                            # normalized_file = file_convert(
+                            #     file_full_path, file_type, 'html', 'pdf')
                     elif file_type.startswith('text/html'):
                         normalized_file = file_convert(file_full_path,
                                                        file_type, 'pdf', 'pdf')
