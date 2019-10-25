@@ -354,7 +354,7 @@ if not os.path.isfile(convert_done_file):
 
             sys.stdout.flush()
 
-            # TODO: Oppdater i tsv når konvertering feiler
+            # TODO: Oppdater i tsv når konvertering feiler - returner ok også på de som er konvertert tidligere
 
             # TODO: For BIR trenger vi også disse typene (mulig at noen av de bare embedded):
             # text/plain, image/png, image/jpeg, application/x-msdownload,
