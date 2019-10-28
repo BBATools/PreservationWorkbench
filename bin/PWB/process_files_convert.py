@@ -25,7 +25,7 @@ def kill(proc_id):
 
 
 def run_shell_command(command, cwd=None, timeout=30):
-    ok = False
+    # ok = False
     os.environ['PYTHONUNBUFFERED'] = "1"
     stdout = [' '.join(command)]
     stderr = []
@@ -60,10 +60,10 @@ def run_shell_command(command, cwd=None, timeout=30):
             mix.append(line)
             print(line, end='')
 
-    if len(stderr) == 0:
-        ok = True
+    # if len(stderr) == 0:
+    #     ok = True # TODO: Stemmer ikke alltid. Bare feil når abiword?
 
-    return ok
+    # return ok
     # return proc.returncode, stdout, stderr, mix
 
 
@@ -98,6 +98,7 @@ def image2norm(image_path, norm_path):
 
 
 def docbuilder2x(file_path, tmp_path, format, file_type):
+    ok = False
     docbuilder_file = tmp_dir + "/x2x.docbuilder"
     docbuilder = None
 
@@ -126,24 +127,33 @@ def docbuilder2x(file_path, tmp_path, format, file_type):
         file.write("\n".join(docbuilder))
 
     command = ['documentbuilder', docbuilder_file]
-    ok = run_shell_command(command)
+    run_shell_command(command)
+
+    if os.path.exists(tmp_path):
+        ok = True
+
     return ok
 
 
 def abi2x(file_path, tmp_path, format, file_type):
+    ok = False
     command = ['abiword', '--to=' + format]
 
     if file_type == 'application/rtf':
         command.append('--import-extension=rtf')
 
     command.extend(['-o', tmp_path, file_path])
+    run_shell_command(command)
 
-    ok = run_shell_command(command)
+    if os.path.exists(tmp_path):
+        ok = True
+
     return ok
 
 
 # WAIT: Test denne: https://github.com/xrmx/pylokit
 def unoconv2x(file_path, norm_path, format, file_type):
+    ok = False
     command = ['unoconv', '-f', format]
 
     if file_type in (
@@ -162,32 +172,40 @@ def unoconv2x(file_path, norm_path, format, file_type):
         command.extend(['-d', 'document', '-eSelectPdfVersion=1'])
 
     command.extend(['-o', norm_path, file_path])
-    ok = run_shell_command(command)
+    run_shell_command(command)
+
+    if os.path.exists(norm_path):
+        ok = True
+
     return ok
 
-
-# TODO: ps lager tom fil slik at tilsynelatende ok når tom path som input -> legg inn sjekk på dette
 # --> return ok= False bare da
 # WAIT: Se for flere gs argumenter: https://superuser.com/questions/360216/use-ghostscript-but-tell-it-to-not-reprocess-images
 def pdf2pdfa(pdf_path, pdfa_path):
     # because of a ghostscript bug, which does not allow parameters that are longer than 255 characters
     # we need to perform a directory changes, before we can actually return from the method
     ok = False
-    cwd = os.getcwd()
-    os.chdir(os.path.dirname(pdfa_path))
-    ghostScriptExec = [
-        'gs', '-dPDFA', '-dBATCH', '-dNOPAUSE',
-        '-sProcessColorModel=DeviceRGB', '-sDEVICE=pdfwrite',
-        '-dColorConversionStrategy=/LeaveColorUnchanged',
-        '-dEncodeColorImages=false', '-dEncodeGrayImages=false',
-        '-dEncodeMonoImages=false', '-dPDFACompatibilityPolicy=1'
-    ]
 
-    command = ghostScriptExec + [
-        '-sOutputFile=' + os.path.basename(pdfa_path), pdf_path
-    ]
-    ok = run_shell_command(command)
-    os.chdir(cwd)
+    if os.path.exists(pdf_path):
+        cwd = os.getcwd()
+        os.chdir(os.path.dirname(pdfa_path))
+        ghostScriptExec = [
+            'gs', '-dPDFA', '-dBATCH', '-dNOPAUSE',
+            '-sProcessColorModel=DeviceRGB', '-sDEVICE=pdfwrite',
+            '-dColorConversionStrategy=/LeaveColorUnchanged',
+            '-dEncodeColorImages=false', '-dEncodeGrayImages=false',
+            '-dEncodeMonoImages=false', '-dPDFACompatibilityPolicy=1'
+        ]
+
+        command = ghostScriptExec + [
+            '-sOutputFile=' + os.path.basename(pdfa_path), pdf_path
+        ]
+        run_shell_command(command)
+        os.chdir(cwd)
+
+    if os.path.exists(pdfa_path):
+        ok = True
+
     return ok
 
 
@@ -257,6 +275,7 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
             elif file_type == 'application/rtf':
                 tmp_ok = abi2x(file_full_path, tmp_file_full_path, 'pdf',
                                file_type)
+                print(tmp_ok) # TODO: For test på at er False alltid når konvertering (har endret kode over nå)
         if tmp_ok:
             if tmp_ext == 'pdf':
                 norm_ok = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
