@@ -194,10 +194,14 @@ def pdf2pdfa(pdf_path, pdfa_path):
         os.chdir(os.path.dirname(pdfa_path))
         ghostScriptExec = [
             'gs', '-dPDFA', '-dBATCH', '-dNOPAUSE',
-            '-sProcessColorModel=DeviceRGB', '-sDEVICE=pdfwrite',
-            '-dColorConversionStrategy=/LeaveColorUnchanged',
-            '-dEncodeColorImages=false', '-dEncodeGrayImages=false',
-            '-dEncodeMonoImages=false', '-dPDFACompatibilityPolicy=1'
+            '-sProcessColorModel=DeviceRGB', '-sDEVICE=pdfwrite', '-dSAFER',
+            '-sColorConversionStrategy=UseDeviceIndependentColor',
+            '-dEmbedAllFonts=true', '-dPrinted=true',
+            '-dPDFACompatibilityPolicy=1', '-dDetectDuplicateImages', '-r150',
+            '-dFastWebView=true'
+            # '-dColorConversionStrategy=/LeaveColorUnchanged',
+            # '-dEncodeColorImages=false', '-dEncodeGrayImages=false',
+            # '-dEncodeMonoImages=false', '-dPDFACompatibilityPolicy=1'
         ]
 
         command = ghostScriptExec + [
@@ -270,13 +274,16 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
                 #                        'html', file_type)
             elif file_type.startswith('text/html'):
                 tmp_ok = html2pdf(file_full_path, tmp_file_full_path)
-            elif file_type in ('application/msword', 'application/rtf'):
+            # elif file_type in ('application/msword', 'application/rtf'):
+            elif file_type == 'application/msword':
                 # tmp_ok = docbuilder2x(file_full_path, tmp_file_full_path,'pdf', file_type)
                 norm_ok = unoconv2x(file_full_path, norm_file_full_path, 'pdf',
                                     file_type)
-            # elif file_type == 'application/rtf':
-            #     tmp_ok = abi2x(file_full_path, tmp_file_full_path, 'pdf',
-            #                    file_type)
+            elif file_type == 'application/rtf':
+                # tmp_ok = docbuilder2x(file_full_path, tmp_file_full_path,
+                #                       'pdf', file_type)
+                tmp_ok = abi2x(file_full_path, tmp_file_full_path, 'pdf',
+                               file_type)
             #     print(tmp_ok) # TODO: For test på at er False alltid når konvertering (har endret kode over nå)
         if tmp_ok:
             if tmp_ext == 'pdf':
@@ -298,6 +305,7 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
 
 
 if not os.path.isfile(convert_done_file):
+    not_converted = []
     pathlib.Path(mount_dir).mkdir(parents=True, exist_ok=True)
     if len(os.listdir(mount_dir)) == 0:
         subprocess.run(
@@ -446,12 +454,13 @@ if not os.path.isfile(convert_done_file):
                     elif file_type.startswith('text/html'):
                         normalized_file = file_convert(file_full_path,
                                                        file_type, 'pdf', 'pdf')
-                    elif file_type in ('application/msword',
-                                       'application/rtf'):
+                    elif file_type == 'application/msword':
                         normalized_file = file_convert(file_full_path,
                                                        file_type, None, 'pdf')
-                        # normalized_file = file_convert(file_full_path,
-                        #                                file_type, 'pdf', 'pdf')
+                    elif file_type == 'application/rtf':
+                        # WAIT: Helst med abiword bare hvis de andre ikke klarer det? -> Mulig docbuilder enda bedre enn abi
+                        normalized_file = file_convert(file_full_path,
+                                                       file_type, 'pdf', 'pdf')
                     elif file_type in ('application/x-tika-msoffice'):
                         # TODO: Er dette alltid Thumbs.db ?
                         print("office")
@@ -459,11 +468,17 @@ if not os.path.isfile(convert_done_file):
                         print(file_type)
 
                     if normalized_file:
-                        # norm_rel_path = normalized_file + os.path.basename(
-                        #     normalized_file)
                         norm_rel_path = Path(normalized_file).relative_to(
                             folder + '_normalized/')
-                        df.loc[index,
-                               'normalized_relative_path'] = norm_rel_path
+                    else:
+                        norm_rel_path = "Conversion failed"
+                        not_converted.append(file_full_path)
+
+                    df.loc[index, 'normalized_relative_path'] = norm_rel_path
 
             df.to_csv(header_file, index=False, sep="\t")
+            # TODO: Fiks eller supress feilmelding/advarsel ved skriving til tsv -> eller fra lesing og FM kommer til slutt bare?
+            # FM: sys:1: DtypeWarning: Columns (2,3,4,5,6,.................) have mixed types. Specify dtype option on import or set low_memory=False.
+
+            print("Files not converted:")
+            print(*not_converted, sep="\n")
