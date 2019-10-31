@@ -152,6 +152,7 @@ def abi2x(file_path, tmp_path, format, file_type):
 
 
 # WAIT: Test denne: https://github.com/xrmx/pylokit
+# TODO: Legg inn en killall soffice.bin når tar for lang tid
 def unoconv2x(file_path, norm_path, format, file_type):
     ok = False
     command = ['unoconv', '-f', format]
@@ -179,6 +180,7 @@ def unoconv2x(file_path, norm_path, format, file_type):
 
     return ok
 
+
 # --> return ok= False bare da
 # WAIT: Se for flere gs argumenter: https://superuser.com/questions/360216/use-ghostscript-but-tell-it-to-not-reprocess-images
 def pdf2pdfa(pdf_path, pdfa_path):
@@ -186,6 +188,7 @@ def pdf2pdfa(pdf_path, pdfa_path):
     # we need to perform a directory changes, before we can actually return from the method
     ok = False
 
+    # TODO: Test om det er noen av valgene under som førte til stooore filer (dEncode-valgene)
     if os.path.exists(pdf_path):
         cwd = os.getcwd()
         os.chdir(os.path.dirname(pdfa_path))
@@ -267,15 +270,14 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
                 #                        'html', file_type)
             elif file_type.startswith('text/html'):
                 tmp_ok = html2pdf(file_full_path, tmp_file_full_path)
-            elif file_type == 'application/msword':
-                tmp_ok = docbuilder2x(file_full_path, tmp_file_full_path,
-                                      'pdf', file_type)
-                # norm_exists = unoconv2x(file_full_path, norm_file_full_path,
-                #                         'pdf', file_type)
-            elif file_type == 'application/rtf':
-                tmp_ok = abi2x(file_full_path, tmp_file_full_path, 'pdf',
-                               file_type)
-                print(tmp_ok) # TODO: For test på at er False alltid når konvertering (har endret kode over nå)
+            elif file_type in ('application/msword', 'application/rtf'):
+                # tmp_ok = docbuilder2x(file_full_path, tmp_file_full_path,'pdf', file_type)
+                norm_ok = unoconv2x(file_full_path, norm_file_full_path, 'pdf',
+                                    file_type)
+            # elif file_type == 'application/rtf':
+            #     tmp_ok = abi2x(file_full_path, tmp_file_full_path, 'pdf',
+            #                    file_type)
+            #     print(tmp_ok) # TODO: For test på at er False alltid når konvertering (har endret kode over nå)
         if tmp_ok:
             if tmp_ext == 'pdf':
                 norm_ok = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
@@ -388,6 +390,8 @@ if not os.path.isfile(convert_done_file):
 
             # -> fjerne kolonner: https://nitratine.net/blog/post/remove-columns-in-a-csv-file-with-python/
 
+            # TODO: Legg inn telleverk i konvertering -> noe sånt: (1/538)
+
             # TODO: Verifisere pdf/a:
             # * verapdf (i gammelt arkimintscript?)
             # * sally(https://github.com/CDSP/sallypy)
@@ -444,10 +448,10 @@ if not os.path.isfile(convert_done_file):
                                                        file_type, 'pdf', 'pdf')
                     elif file_type in ('application/msword',
                                        'application/rtf'):
-                        # normalized_file = file_convert(file_full_path,
-                        #                                file_type, None, 'pdf')
                         normalized_file = file_convert(file_full_path,
-                                                       file_type, 'pdf', 'pdf')
+                                                       file_type, None, 'pdf')
+                        # normalized_file = file_convert(file_full_path,
+                        #                                file_type, 'pdf', 'pdf')
                     elif file_type in ('application/x-tika-msoffice'):
                         # TODO: Er dette alltid Thumbs.db ?
                         print("office")
