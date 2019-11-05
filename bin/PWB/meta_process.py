@@ -34,6 +34,7 @@ if len(sys_name) == 0:
 
 # results = [process_item(item) for item in item_list]
 
+
 def blocks(files, size=65536):
     while True:
         b = files.read(size)
@@ -114,13 +115,15 @@ for folder in subfolders:
         table_def = tree.findall("table-def")
         for table in table_def:
             table_name = table.find("table-name")
-            file_name = base_path + "/content/data/" + table_name.text.lower() + ".txt"
+            file_name = base_path + "/content/data/" + table_name.text.lower(
+            ) + ".txt"
             # TODO: Menyvalg for dispose må rename txt-fil
             # TODO: Brukes denne lenger? Eller blir fil bare slettet nå?
             disposed_file_name = base_path + "/content/data/" + table_name.text.lower() + \
                 "__disposed.txt"
             # Add tables names too long for oracle to 'illegal_tables'
-            if len(table_name.text) > 30 and table_name.text not in illegal_tables:
+            if len(table_name.text
+                   ) > 30 and table_name.text not in illegal_tables:
                 t_count += 1
                 illegal_tables[table_name.text] = table_name.text[:25] + \
                     "_" + str(t_count) + "_"
@@ -134,11 +137,10 @@ for folder in subfolders:
             table_name.text = table_name.text.lower()
             table.insert(3, old_table_name)
 
-            # Rename tsv-files except when disposed:            
+            # Rename tsv-files except when disposed:
             new_file_name = (
-                base_path + "/content/data/" + table_name.text + ".tsv"
-            )
-            
+                base_path + "/content/data/" + table_name.text + ".tsv")
+
             if os.path.isfile(file_name):
                 os.rename(file_name, new_file_name)
             elif os.path.isfile(disposed_file_name):
@@ -154,7 +156,9 @@ for folder in subfolders:
             row_count = 0
             # TODO: Legg inn sjekk så ikke leser rader på nytt hvis gjort før
             if os.path.exists(new_file_name):
-                with open(new_file_name, "r", encoding="utf-8", errors='ignore') as f:
+                with open(
+                        new_file_name, "r", encoding="utf-8",
+                        errors='ignore') as f:
                     row_count = sum(bl.count("\n") for bl in blocks(f)) - 1
                 if row_count == 0:
                     os.remove(new_file_name)
@@ -166,7 +170,7 @@ for folder in subfolders:
                 disposed.text = "true"
                 disposal_comment.text = "No archival value"
                 empty_tables.append(table_name.text)
-                rows.text = "n/a" 
+                rows.text = "n/a"
 
             table.insert(5, rows)
             table.insert(6, disposed)
@@ -200,12 +204,11 @@ for folder in subfolders:
                                         if fkey_ref.tag == "table-name":
                                             ref_table = fkey_ref.text.lower()
                                             if ref_table not in table_deps and ref_table != table_name.text:
-                                                table_deps.append(
-                                                    ref_table)
+                                                table_deps.append(ref_table)
             deps_dict.update({table_name.text: table_deps})
 
         # Order tables by dependencies
-        deps_list = flatten(deps_dict) #Order according to deps
+        deps_list = flatten(deps_dict)  #Order according to deps
         for table in table_def:
             table_name = table.find("table-name")
             index = 0
@@ -222,7 +225,7 @@ for folder in subfolders:
                 if column_def.tag == "column-def":
                     for column in column_def:
                         if column.tag == "column-name":
-                            if column.text in illegal_columns:                        
+                            if column.text in illegal_columns:
                                 old_column_name = ET.Element(
                                     "original-column-name")
 
@@ -233,15 +236,20 @@ for folder in subfolders:
                                 new_file_name = base_path + "/content/data/" + table_name.text + ".tsv"
                                 if os.path.isfile(new_file_name):
                                     df = pd.read_csv(
-                                        new_file_name, sep="\t", low_memory=False)
+                                        new_file_name,
+                                        sep="\t",
+                                        low_memory=False)
                                     df.rename(
                                         columns={
-                                            old_column_name.text: column.text.lower(),
-                                            old_column_name.text.lower(): column.text.lower()
-                                            }, # For reruns
-                                        inplace=True, 
+                                            old_column_name.text:
+                                            column.text.lower(),
+                                            old_column_name.text.lower():
+                                            column.text.lower()
+                                        },  # For reruns
+                                        inplace=True,
                                     )
-                                    df.to_csv(new_file_name, index=False, sep="\t")
+                                    df.to_csv(
+                                        new_file_name, index=False, sep="\t")
                         # TODO: Fix feil med bigint:
                         # -> virket når jeg gjorde felt til "numeric" -> fiks i xsl -> se linje 663
                         # -> se også her: https://www.w3resource.com/sql/data-type.php#NUMERIC
@@ -254,8 +262,7 @@ for folder in subfolders:
                                 if ref.tag == "column-name":
                                     if ref.text in illegal_columns:
                                         old_column_ref = ET.Element(
-                                            "original-column-name"
-                                        )
+                                            "original-column-name")
                                         old_column_ref.text = ref.text
                                         # ref.text = ref.text + "_"
                                         ref.text = illegal_columns[ref.text]
@@ -266,27 +273,27 @@ for folder in subfolders:
 
                                     if ref.text in illegal_tables:
                                         old_table_ref = ET.Element(
-                                            "original-table-name"
-                                        )
+                                            "original-table-name")
                                         old_table_ref.text = ref.text
                                         ref.text = illegal_tables[ref.text]
                                         column.insert(3, old_table_ref)
                                 # if ref.tag == "deferrable":
-                                    # column.remove(ref)
+                                # column.remove(ref)
                 if column_def.tag == "index-def":
                     for index in column_def:
                         if index.tag == "column-list":
                             for ref in index:
                                 if ref.attrib["name"] in illegal_columns:
                                     # ref.attrib["name"] = ref.attrib["name"] + "_"
-                                    ref.attrib["name"] = illegal_columns[ref.attrib["name"]]
+                                    ref.attrib["name"] = illegal_columns[
+                                        ref.attrib["name"]]
                                     # TODO: Legge inn old_name også her?
                 if column_def.tag == "foreign-keys":
                     for fkey_def in column_def:
                         # disposed.text = "false"
                         # disposal_comment.text = " "
                         if fkey_def.tag == "foreign-key":
-                            for fkey in fkey_def:                                
+                            for fkey in fkey_def:
                                 if fkey.tag == "references":
                                     for fkey_ref in fkey:
                                         # Fix references to normalized table-names:
@@ -295,18 +302,21 @@ for folder in subfolders:
                                                 old_table_ref = ET.Element(
                                                     "original-table-name")
                                                 old_table_ref.text = fkey_ref.text
-                                                fkey_ref.text = illegal_tables[fkey_ref.text]
-                                                fkey.insert(3, old_table_ref)                                            
+                                                fkey_ref.text = illegal_tables[
+                                                    fkey_ref.text]
+                                                fkey.insert(3, old_table_ref)
                                             # Remove contraints depending on empty tables:
-                                            if fkey_ref.text.lower() in empty_tables:
+                                            if fkey_ref.text.lower(
+                                            ) in empty_tables:
                                                 column_def.remove(fkey_def)
                                                 # print(fkey_ref.text.lower())
                                                 # disposed.text = "true"
                                                 # disposal_comment.text = "References empty table"
                                             # Remove contraints pointing to same table:
                                             # TODO: Sjekk at det faktisk er tilfelle at ikke støttes av div databaser/iso-sql
-                                            
-                                            if fkey_ref.text.lower() == table_name.text:
+
+                                            if fkey_ref.text.lower(
+                                            ) == table_name.text:
                                                 column_def.remove(fkey_def)
 
                                                 # disposed.text = "true"
@@ -318,23 +328,21 @@ for folder in subfolders:
                                 # fkey.insert(1, disposed)
                                 # fkey.insert(2, disposal_comment)
 
-
-                                if fkey.tag in ("source-columns", "referenced-columns"):
+                                if fkey.tag in ("source-columns",
+                                                "referenced-columns"):
                                     for column in fkey:
-                                        if (
-                                            column.tag == "column"
-                                            and column.text in illegal_columns
-                                        ):
+                                        if (column.tag == "column" and
+                                                column.text in illegal_columns
+                                            ):
                                             old_column_ref = ET.Element(
-                                                "original-column-name"
-                                            )
+                                                "original-column-name")
                                             old_column_ref.text = column.text
                                             # column.text = column.text + "_"
-                                            column.text = illegal_columns[column.text]
+                                            column.text = illegal_columns[
+                                                column.text]
                                             fkey.insert(1, old_column_ref)
                                 # fkey_def.insert(1, disposed)
                                 # fkey_def.insert(2, disposal_comment)
-
 
                 # table-constraints (constraints of type "check")
                 if column_def.tag == "table-constraints":
@@ -344,8 +352,7 @@ for folder in subfolders:
                                 word = word.replace("(", "")
                                 if word in illegal_columns:
                                     constraint_def.text = constraint_def.text.replace(
-                                        word, illegal_columns[word]
-                                    )
+                                        word, illegal_columns[word])
 
         #Write data to new xml-file:
         root = tree.getroot()

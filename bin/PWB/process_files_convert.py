@@ -7,7 +7,9 @@ from pgmagick.api import Image
 from pdfy import Pdfy
 
 config = SafeConfigParser()
-tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tmp'))
+pwb_dir = os.path.dirname(__file__)
+corrupt_file_pdf = pwb_dir + '/corrupt_file_nb.pdf'
+tmp_dir = os.path.abspath(os.path.join(pwb_dir, '..', 'tmp'))
 conf_file = tmp_dir + "/pwb.ini"
 config.read(conf_file)
 data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
@@ -233,7 +235,7 @@ def html2pdf(file_path, tmp_path):
 
 
 def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
-    normalized_file = None
+    normalized_file = 0  # Not converted
     file_name = os.path.basename(file_full_path)
     if tmp_ext:
         tmp_file_full_path = folder + '_normalized/' + file_rel_path + '.tmp.' + tmp_ext
@@ -298,10 +300,12 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
             os.remove(tmp_file_full_path)
         # TODO: Legg inn hvilken originalfiler som skal slettes
 
-    if os.path.isfile(norm_file_full_path):
-        normalized_file = norm_file_full_path
+        if os.path.isfile(norm_file_full_path):
+            normalized_file = 1  # Converted now
+    else:
+        normalized_file = 2  # Converted earlier
 
-    return normalized_file
+    return normalized_file, norm_file_full_path
 
 
 if not os.path.isfile(convert_done_file):
@@ -359,9 +363,12 @@ if not os.path.isfile(convert_done_file):
             # Filtrere tsv: https://kanoki.org/2019/03/27/pandas-select-rows-by-condition-and-string-operations/
             #		    https://kite.com/blog/python/pandas-tutorial
 
-            df = pd.read_csv(header_file, sep="\t")
+            df = pd.read_csv(header_file, sep="\t", low_memory=False)
             if 'normalized_relative_path' not in df:
-                df['normalized_relative_path'] = 'Not processed'
+                df['normalized_relative_path'] = 'na'
+
+            if 'normalization' not in df:
+                df['normalization'] = 'not processed'
 
             df.tika_batch_fs_relative_path = df.tika_batch_fs_relative_path.fillna(
                 'embedded file')
@@ -376,10 +383,11 @@ if not os.path.isfile(convert_done_file):
 
             # TODO: Endre i melding med appjar på engelsk -> stop prosess
             if os_line_count == pd_line_count:
-                print('Files listed in tsv-file matches files on disk')
+                print("Files listed in '" + header_file +
+                      "' matches files on disk. \n")
             else:
-                print("Files listed in tsv-files doesn't match files on disk")
-                # TODO: Oppdater i tsv når konvertering feiler
+                print("Files listed in '" + header_file +
+                      "' doesn't match files on disk. \n")
 
             sys.stdout.flush()
 
@@ -412,7 +420,7 @@ if not os.path.isfile(convert_done_file):
                 # TODO: Sjekk tika kolonne om PDF/a allerede
                 if (file_rel_path != 'embedded file'):
                     file_full_path = folder + '/' + file_rel_path
-                    normalized_file = None
+                    normalized = None
                     # print('Processing ' + os.path.basename(file_full_path))
                     # TODO: Fiks at ikke slutter å vise (pga subprocess hvis konvertering startes?)
                     # TODO: Bør også skrive ut kommando som brukes for konvertering heller enn bare filnavn
@@ -422,63 +430,71 @@ if not os.path.isfile(convert_done_file):
                     file_type = str(row['Content_Type'])
                     if file_type == 'application/pdf':
                         # TODO: Sjekke føst om allerede er pdf/a -> se lenker over
-                        normalized_file = file_convert(file_full_path,
-                                                       file_type, None, 'pdf')
+                        normalized = file_convert(file_full_path, file_type,
+                                                  None, 'pdf')
                     elif file_type in ('image/tiff', 'image/jpeg'):
-                        normalized_file = file_convert(file_full_path,
-                                                       file_type, 'pdf', 'pdf')
+                        normalized = file_convert(file_full_path, file_type,
+                                                  'pdf', 'pdf')
                         # TODO: Oppdatere tsv her eller i funksjon?
                     elif file_type == 'image/png':
-                        normalized_file = file_convert(file_full_path,
-                                                       file_type, None, 'png')
+                        normalized = file_convert(file_full_path, file_type,
+                                                  None, 'png')
                     elif file_type in ('text/plain; charset=ISO-8859-1',
                                        'text/plain; charset=UTF-8'):
-                        normalized_file = file_convert(file_full_path,
-                                                       file_type, None, 'txt')
+                        normalized = file_convert(file_full_path, file_type,
+                                                  None, 'txt')
                     elif file_type == 'image/gif':
-                        normalized_file = file_convert(file_full_path,
-                                                       file_type, None, 'png')
+                        normalized = file_convert(file_full_path, file_type,
+                                                  None, 'png')
                     elif file_type in (
                             'application/vnd.ms-excel',
                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                     ):
                         next_file_rel_path = str(row['next_file_rel_path'])
                         if (next_file_rel_path == 'embedded file'):
-                            normalized_file = file_convert(
-                                file_full_path, file_type, None, 'pdf')
+                            normalized = file_convert(file_full_path,
+                                                      file_type, None, 'pdf')
                         else:
-                            normalized_file = file_convert(
-                                file_full_path, file_type, 'pdf', 'pdf')
+                            normalized = file_convert(file_full_path,
+                                                      file_type, 'pdf', 'pdf')
                             # normalized_file = file_convert(
                             #     file_full_path, file_type, 'html', 'pdf')
                     elif file_type.startswith('text/html'):
-                        normalized_file = file_convert(file_full_path,
-                                                       file_type, 'pdf', 'pdf')
+                        normalized = file_convert(file_full_path, file_type,
+                                                  'pdf', 'pdf')
                     elif file_type == 'application/msword':
-                        normalized_file = file_convert(file_full_path,
-                                                       file_type, None, 'pdf')
+                        normalized = file_convert(file_full_path, file_type,
+                                                  None, 'pdf')
                     elif file_type == 'application/rtf':
                         # WAIT: Helst med abiword bare hvis de andre ikke klarer det? -> Mulig docbuilder enda bedre enn abi
-                        normalized_file = file_convert(file_full_path,
-                                                       file_type, 'pdf', 'pdf')
+                        normalized = file_convert(file_full_path, file_type,
+                                                  'pdf', 'pdf')
                     elif file_type in ('application/x-tika-msoffice'):
                         # TODO: Er dette alltid Thumbs.db ?
                         print("office")
                     else:
                         print(file_type)
 
-                    if normalized_file:
-                        norm_rel_path = Path(normalized_file).relative_to(
-                            folder + '_normalized/')
-                    else:
-                        norm_rel_path = "Conversion failed"
-                        not_converted.append(file_full_path)
+                    # TODO: Lag egen kolonne for konverteringsresultat så enklere brukt i innsyn etterpå
 
-                    df.loc[index, 'normalized_relative_path'] = norm_rel_path
+                    if normalized[0] in (0, 1):  # Not processed on earlier run
+                        norm_rel_path = Path(
+                            normalized[1]).relative_to(folder + '_normalized/')
+                        df.loc[index,
+                               'normalized_relative_path'] = norm_rel_path
+
+                        if normalized[0] == 0:  # Corrupt file
+                            not_converted.append(file_full_path)
+                            file_copy(corrupt_file_pdf, normalized[1])
+                            df.loc[index, 'normalization'] = "Failed"
+                        elif normalized[0] == 1:  # Converted now
+                            df.loc[index, 'normalization'] = "Ok"
 
             df.to_csv(header_file, index=False, sep="\t")
-            # TODO: Fiks eller supress feilmelding/advarsel ved skriving til tsv -> eller fra lesing og FM kommer til slutt bare?
-            # FM: sys:1: DtypeWarning: Columns (2,3,4,5,6,.................) have mixed types. Specify dtype option on import or set low_memory=False.
 
-            print("Files not converted:")
-            print(*not_converted, sep="\n")
+            if len(not_converted) > 0:
+                print("Files not converted:")
+                print(*not_converted, sep="\n")
+                print("\n")
+            else:
+                print('All files converted successfully. \n')
