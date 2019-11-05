@@ -308,7 +308,6 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
                 #                       'pdf', file_type)
                 tmp_ok = abi2x(file_full_path, tmp_file_full_path, 'pdf',
                                file_type)
-            #     print(tmp_ok) # TODO: For test på at er False alltid når konvertering (har endret kode over nå)
         if tmp_ok:
             if tmp_ext == 'pdf':
                 norm_ok = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
@@ -331,7 +330,8 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
 
 
 if not os.path.isfile(convert_done_file):
-    not_converted = []
+    conversion_failed = []
+    conversion_not_supported = []
     pathlib.Path(mount_dir).mkdir(parents=True, exist_ok=True)
     if len(os.listdir(mount_dir)) == 0:
         subprocess.run(
@@ -465,6 +465,7 @@ if not os.path.isfile(convert_done_file):
                                        'text/plain; charset=UTF-8'):
                         normalized = file_convert(file_full_path, file_type,
                                                   None, 'txt')
+                        # TODO: Legg inn endring av encoding hvis ikke av godkjent type
                     elif file_type == 'image/gif':
                         normalized = file_convert(file_full_path, file_type,
                                                   None, 'png')
@@ -495,7 +496,8 @@ if not os.path.isfile(convert_done_file):
                         # TODO: Er dette alltid Thumbs.db ?
                         print("office")
                     else:
-                        print(file_type)
+                        conversion_not_supported.append(
+                            file_full_path + ' (' + file_type + ')')
 
                     if normalized[0] in (0, 1):  # Not processed on earlier run
                         norm_rel_path = Path(
@@ -504,7 +506,8 @@ if not os.path.isfile(convert_done_file):
                                'normalized_relative_path'] = norm_rel_path
 
                         if normalized[0] == 0:  # Corrupt file
-                            not_converted.append(file_full_path)
+                            conversion_failed.append(
+                                file_full_path + ' (' + file_type + ')')
                             file_copy(corrupt_file_pdf, normalized[1])
                             df.loc[index, 'normalization'] = "Failed"
                         elif normalized[0] == 1:  # Converted now
@@ -512,9 +515,16 @@ if not os.path.isfile(convert_done_file):
 
             df.to_csv(header_file, index=False, sep="\t")
 
-            if len(not_converted) > 0:
-                print("Files not converted:")
-                print(*not_converted, sep="\n")
+            if len(conversion_failed) > 0:
+                print("Files not converted (conversion failed):")
+                print(*conversion_failed, sep="\n")
                 print("\n")
-            else:
+
+            if len(conversion_not_supported) > 0:
+                print("Files not converted (conversion failed):")
+                print(*conversion_not_supported, sep="\n")
+                print("\n")
+
+            if len(conversion_failed) == 0 and len(
+                    conversion_not_supported) == 0:
                 print('All files converted successfully. \n')

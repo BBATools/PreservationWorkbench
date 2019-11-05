@@ -193,7 +193,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup2">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="name">
         <string>File</string>
        </void>
@@ -205,10 +205,12 @@ WbMessage &quot;Not implemented yet&quot;;
        <void property="tooltip">
         <string>dispos...</string>
        </void>
+       <void id="Boolean0" method="isVisibleInMenu"/>
+       <void id="Boolean1" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>Directory</string>
        </void>
@@ -222,8 +224,6 @@ WbMessage &quot;Not implemented yet&quot;;</string>
        <void property="tooltip">
         <string>dispos...</string>
        </void>
-       <void id="Boolean0" method="isVisibleInMenu"/>
-       <void id="Boolean1" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
@@ -275,7 +275,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
 -- Virus check and metadata extract															
 WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Convert files			
--- WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_convert.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_convert.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Save log/unmount wim image																			
 WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Clean up																	
@@ -407,7 +407,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean1"/>
     </void>
    </object>
   </void>
