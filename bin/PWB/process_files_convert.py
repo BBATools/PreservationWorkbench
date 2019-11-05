@@ -21,6 +21,28 @@ convert_done_file = in_dir + sys_name + "_convert_done"
 sub_systems_path = mount_dir + "/content/sub_systems"
 convert_done = False
 
+# TODO: Juster kode under så returnerer mer dos, unix mm heller for
+# newline = None
+# eol = get_newline(file_full_path)
+# if eol == '\n': newline = 'unix'
+# elif eol == '\r\n': newline = 'dos'
+# elif eol == '+r': newline = 'mac'
+
+# # print(repr(eol))
+
+
+def get_newline(filename):
+    with open(filename, "rb") as f:
+        while True:
+            c = f.read(1)
+            if not c or c == b'\n':
+                break
+            if c == b'\r':
+                if f.read(1) == b'\n':
+                    return '\r\n'
+                return '\r'
+    return '\n'
+
 
 def kill(proc_id):
     os.kill(proc_id, signal.SIGINT)
@@ -251,8 +273,7 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
         # print('Processing ' + norm_file_full_path) #TODO: Vises ikke i wb output
         norm_ok = False
         tmp_ok = False
-        if (not os.path.isfile(tmp_file_full_path)
-                or tmp_ext == None):  #TODO: Trengs ext-sjekk lenger?
+        if (not os.path.isfile(tmp_file_full_path) or tmp_ext == None):
             if file_type in ('image/tiff', 'image/jpeg'):
                 tmp_ok = image2norm(file_full_path, tmp_file_full_path)
             elif file_type == 'image/gif':
@@ -262,6 +283,7 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
             elif file_type in ('image/png', 'text/plain; charset=ISO-8859-1',
                                'text/plain; charset=UTF-8'):
                 norm_ok = file_copy(file_full_path, norm_file_full_path)
+                # TODO: Bruk get_newline og legg inn endring til unix hvis er på dos eller mac
             elif file_type in (
                     'application/vnd.ms-excel',
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -474,8 +496,6 @@ if not os.path.isfile(convert_done_file):
                         print("office")
                     else:
                         print(file_type)
-
-                    # TODO: Lag egen kolonne for konverteringsresultat så enklere brukt i innsyn etterpå
 
                     if normalized[0] in (0, 1):  # Not processed on earlier run
                         norm_rel_path = Path(
