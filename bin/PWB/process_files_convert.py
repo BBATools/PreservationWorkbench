@@ -492,12 +492,13 @@ if not os.path.isfile(convert_done_file):
                         # WAIT: Helst med abiword bare hvis de andre ikke klarer det? -> Mulig docbuilder enda bedre enn abi
                         normalized = file_convert(file_full_path, file_type,
                                                   'pdf', 'pdf')
-                    elif file_type in ('application/x-tika-msoffice'):
-                        # TODO: Er dette alltid Thumbs.db ?
-                        print("office")
+                    # elif file_type in ('application/x-tika-msoffice'):
+                    #     # TODO: Er dette alltid Thumbs.db ?
+                    #     print("office")
                     else:
                         conversion_not_supported.append(
                             file_full_path + ' (' + file_type + ')')
+                        df.loc[index, 'normalization'] = "Format not supported"
 
                     if normalized[0] in (0, 1):  # Not processed on earlier run
                         norm_rel_path = Path(

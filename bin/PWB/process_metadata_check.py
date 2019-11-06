@@ -99,7 +99,7 @@ for folder in subfolders:
             "-- PostgreSQL 12",
             "WbDisconnect;",
             'WbConnect -url="jdbc:postgresql://localhost:5432/" -username="postgres" -password="P@ssw0rd";',
-            "DROP SCHEMA IF EXISTS postgresql_test CASCADE; COMMIT; CREATE SCHEMA pwb; COMMIT; SET search_path TO pwb;",
+            "DROP SCHEMA IF EXISTS pwb CASCADE; COMMIT; CREATE SCHEMA pwb; COMMIT; SET search_path TO pwb;",
             "WbSysExec touch '" + pg_done + "';",
             "WbVarDef -contentFile='" + pg_done + "' -variable=pg_done;",
             "WbInclude -ifNotDefined=pg_done -file='"
@@ -117,7 +117,7 @@ for folder in subfolders:
             "-- MySQL 8.0",
             "WbDisconnect;",
             'WbConnect -url="jdbc:mysql://localhost:3306?zeroDateTimeBehavior=CONVERT_TO_NULL&serverTimezone=UTC" -username="root" -password="P@ssw0rd";',
-            "DROP DATABASE IF EXISTS MySQL_test; CREATE DATABASE pwb; ALTER DATABASE pwb CHARACTER SET = utf8mb4 COLLATE = utf8mb4_da_0900_as_cs; USE pwb;",
+            "DROP DATABASE IF EXISTS pwb; CREATE DATABASE pwb; ALTER DATABASE pwb CHARACTER SET = utf8mb4 COLLATE = utf8mb4_da_0900_as_cs; USE pwb;",
             "RESET MASTER;"
             "WbSysExec touch '" + my_done + "';",
             "WbVarDef -contentFile='" + my_done + "' -variable=my_done;",
