@@ -442,7 +442,7 @@ if not os.path.isfile(convert_done_file):
                 # TODO: Sjekk tika kolonne om PDF/a allerede
                 if (file_rel_path != 'embedded file'):
                     file_full_path = folder + '/' + file_rel_path
-                    normalized = None
+                    normalized = (3, "")
                     # print('Processing ' + os.path.basename(file_full_path))
                     # TODO: Fiks at ikke slutter å vise (pga subprocess hvis konvertering startes?)
                     # TODO: Bør også skrive ut kommando som brukes for konvertering heller enn bare filnavn
