@@ -5,6 +5,7 @@ from pathlib import Path
 from configparser import SafeConfigParser
 from pgmagick.api import Image
 from pdfy import Pdfy
+from extract_user_input import add_config_section
 
 config = SafeConfigParser()
 pwb_dir = os.path.dirname(__file__)
@@ -84,11 +85,7 @@ def run_shell_command(command, cwd=None, timeout=30):
             mix.append(line)
             print(line, end='')
 
-    # if len(stderr) == 0:
-    #     ok = True # TODO: Stemmer ikke alltid. Bare feil når abiword?
-
-    # return ok
-    # return proc.returncode, stdout, stderr, mix
+    return proc.returncode, stdout, stderr, mix
 
 
 def file_copy(src, dst):
@@ -430,10 +427,6 @@ if not os.path.isfile(convert_done_file):
 
             # TODO: Legg inn telleverk i konvertering -> noe sånt: (1/538)
 
-            # TODO: Verifisere pdf/a:
-            # * verapdf (i gammelt arkimintscript?)
-            # * sally(https://github.com/CDSP/sallypy)
-            # * jhove(https://github.com/AndreasPetter/PDF2PDFa/blob/master/de/pettersystems/pdf2pdfa/pdf2pdfa.py)
             row_iterator = df.iterrows()
             df['next_file_rel_path'] = df['tika_batch_fs_relative_path'].shift(
                 -1)
@@ -443,51 +436,56 @@ if not os.path.isfile(convert_done_file):
                 if (file_rel_path != 'embedded file'):
                     file_full_path = folder + '/' + file_rel_path
                     normalized = (3, "")
-                    # print('Processing ' + os.path.basename(file_full_path))
-                    # TODO: Fiks at ikke slutter å vise (pga subprocess hvis konvertering startes?)
-                    # TODO: Bør også skrive ut kommando som brukes for konvertering heller enn bare filnavn
-                    # --> enklere å bare skrive til logg? -> åpne visning av fortløpende log i term eller annet?
+                    norm_ext = None
 
                     # TODO: Må ha sjekk på encoding og endre ved behov for de som ikke kan vises i ff (av rent tekst som ikke er html)
                     file_type = str(row['Content_Type'])
                     if file_type == 'application/pdf':
-                        # TODO: Sjekke føst om allerede er pdf/a -> se lenker over
+                        # TODO: Sjekke føst om allerede er pdf/a? -> se lenker over
+                        norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
-                                                  None, 'pdf')
+                                                  None, norm_ext)
                     elif file_type in ('image/tiff', 'image/jpeg'):
+                        norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
-                                                  'pdf', 'pdf')
+                                                  'pdf', norm_ext)
                         # TODO: Oppdatere tsv her eller i funksjon?
                     elif file_type == 'image/png':
+                        norm_ext = 'png'
                         normalized = file_convert(file_full_path, file_type,
-                                                  None, 'png')
+                                                  None, norm_ext)
                     elif file_type in ('text/plain; charset=ISO-8859-1',
                                        'text/plain; charset=UTF-8'):
+                        norm_ext = 'txt'
                         normalized = file_convert(file_full_path, file_type,
-                                                  None, 'txt')
+                                                  None, norm_ext)
                         # TODO: Legg inn endring av encoding hvis ikke av godkjent type
                     elif file_type == 'image/gif':
+                        norm_ext = 'png'
                         normalized = file_convert(file_full_path, file_type,
-                                                  None, 'png')
+                                                  None, norm_ext)
                     elif file_type in (
                             'application/vnd.ms-excel',
                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                     ):
+                        norm_ext = 'pdf'
                         next_file_rel_path = str(row['next_file_rel_path'])
                         if (next_file_rel_path == 'embedded file'):
-                            normalized = file_convert(file_full_path,
-                                                      file_type, None, 'pdf')
+                            normalized = file_convert(
+                                file_full_path, file_type, None, norm_ext)
                         else:
-                            normalized = file_convert(file_full_path,
-                                                      file_type, 'pdf', 'pdf')
+                            normalized = file_convert(
+                                file_full_path, file_type, 'pdf', norm_ext)
                             # normalized_file = file_convert(
                             #     file_full_path, file_type, 'html', 'pdf')
                     elif file_type.startswith('text/html'):
+                        norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
-                                                  'pdf', 'pdf')
+                                                  'pdf', norm_ext)
                     elif file_type == 'application/msword':
+                        norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
-                                                  None, 'pdf')
+                                                  None, norm_ext)
                     elif file_type == 'application/rtf':
                         # WAIT: Helst med abiword bare hvis de andre ikke klarer det? -> Mulig docbuilder enda bedre enn abi
                         normalized = file_convert(file_full_path, file_type,
@@ -512,6 +510,16 @@ if not os.path.isfile(convert_done_file):
                             file_copy(corrupt_file_pdf, normalized[1])
                             df.loc[index, 'normalization'] = "Failed"
                         elif normalized[0] == 1:  # Converted now
+                            if norm_ext == 'pdf':
+                                command = [
+                                    'verapdf.sh', '--format', 'text',
+                                    normalized[1]
+                                ]
+                                result = run_shell_command(command)
+                                print(result[2])
+                                # TODO: Ikke pakk til wim igjen hvis det er filer som ikke har blitt konvertert riktig
+                                #return proc.returncode, stdout, stderr, mix
+
                             df.loc[index, 'normalization'] = "Ok"
 
             df.to_csv(header_file, index=False, sep="\t")
@@ -522,10 +530,18 @@ if not os.path.isfile(convert_done_file):
                 print("\n")
 
             if len(conversion_not_supported) > 0:
-                print("Files not converted (conversion failed):")
+                print("Files not converted (conversion not supported):")
                 print(*conversion_not_supported, sep="\n")
                 print("\n")
 
             if len(conversion_failed) == 0 and len(
                     conversion_not_supported) == 0:
                 print('All files converted successfully. \n')
+
+            not_converted = len(conversion_failed) + len(
+                conversion_not_supported)
+            if not_converted > 0:
+                add_config_section(config, 'ENV')
+                config.set('ENV', 'wim_path', "")
+                with open(conf_file, "w+") as configfile:
+                    config.write(configfile, space_around_delimiters=False)

@@ -155,7 +155,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="name">
         <string>Make Copies</string>
        </void>
@@ -175,6 +175,8 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
        <void property="tooltip">
         <string>Copy data to processing folder and backup</string>
        </void>
+       <void id="Boolean0" method="isVisibleInMenu"/>
+       <void id="Boolean1" method="isAppendResult"/>
       </object>
      </void>
     </void>
@@ -193,7 +195,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup2">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>File</string>
        </void>
@@ -205,11 +207,10 @@ WbMessage &quot;Not implemented yet&quot;;
        <void property="tooltip">
         <string>dispos...</string>
        </void>
-       <void id="Boolean0" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition1">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>Directory</string>
        </void>
@@ -223,7 +224,6 @@ WbMessage &quot;Not implemented yet&quot;;</string>
        <void property="tooltip">
         <string>dispos...</string>
        </void>
-       <void id="Boolean1" method="isVisibleInMenu"/>
       </object>
      </void>
      <void method="add">
@@ -262,25 +262,20 @@ WbMessage &quot;Not implemented yet&quot;;</string>
        <void property="text">
         <string>-- PROCESS FILES:
 
--- Read env variables from config-file
-WbVarDef -file=tmp/pwb.ini;
 -- Fix directories and generate sql if needed
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
--- Read env variables from config-file
-WbVarDef -file=tmp/pwb.ini;
+WbVarDef -file=tmp/pwb.ini; WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Run generated sql (if sql_proc variable exists in config file)																																									
-WbInclude -ifNotEmpty=sql_proc -file=tmp/file_process.sql -displayResult=false -verbose=false -continueOnError=false; 																
+WbVarDef -file=tmp/pwb.ini; WbInclude -ifNotEmpty=sql_proc -file=tmp/file_process.sql -displayResult=false -verbose=false -continueOnError=false; 																
 -- Fix directories post sql-run
-WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_post.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+WbVarDef -file=tmp/pwb.ini; WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_post.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Virus check and metadata extract															
-WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+WbVarDef -file=tmp/pwb.ini; WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Convert files			
-WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_convert.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+WbVarDef -file=tmp/pwb.ini; WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_files_convert.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Save log/unmount wim image																			
-WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
+WbVarDef -file=tmp/pwb.ini; WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Clean up																	
-WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
-
+WbVarDef -file=tmp/pwb.ini; WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;			
 </string>
        </void>
        <void property="tooltip">
@@ -381,7 +376,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
-        <object idref="Boolean1"/>
+        <object idref="Boolean0"/>
        </void>
        <void property="name">
         <string>MD5sum File</string>
@@ -407,7 +402,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean1"/>
     </void>
    </object>
   </void>
@@ -420,7 +415,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>6</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <object idref="Boolean1"/>
     </void>
    </object>
   </void>
@@ -433,7 +428,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>7</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <object idref="Boolean1"/>
     </void>
    </object>
   </void>
@@ -446,7 +441,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>8</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <object idref="Boolean1"/>
     </void>
    </object>
   </void>
@@ -459,7 +454,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>9</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <object idref="Boolean1"/>
     </void>
    </object>
   </void>
@@ -472,7 +467,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>10</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <object idref="Boolean1"/>
     </void>
    </object>
   </void>
