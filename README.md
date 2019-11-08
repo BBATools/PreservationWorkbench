@@ -38,7 +38,7 @@ Use *Create System Data Package* when all parts of the system have been extracte
 ##### Verify:
 *Verify checksum and make backup of raw SIP before processing.*
 ##### Dispose:
-*Dispose/remove parts of the extracted data that has no archival value*
+*Dispose/remove parts of the extracted data that has no archival value*   
 WIP
 
 ##### Process:
