@@ -52,11 +52,12 @@ def kill(proc_id):
 def run_shell_command(command, cwd=None, timeout=30):
     # ok = False
     os.environ['PYTHONUNBUFFERED'] = "1"
-    stdout = [' '.join(command)]
+    cmd = [' '.join(command)]
+    stdout = []
     stderr = []
     mix = []
 
-    print(''.join(stdout))
+    print(''.join(cmd))
     sys.stdout.flush()
 
     proc = subprocess.Popen(
@@ -72,18 +73,21 @@ def run_shell_command(command, cwd=None, timeout=30):
     except subprocess.TimeoutExpired:
         kill(proc.pid)
 
-    while proc.poll() is None:
-        line = proc.stdout.readline()
-        if line != "":
-            stdout.append(line)
-            mix.append(line)
-            print(line, end='')
+    # while proc.poll() is None:
+    #     line = proc.stdout.readline()
+    #     if line != "":
+    #         stdout.append(line)
+    #         mix.append(line)
+    #         print(line, end='')
 
-        line = proc.stderr.readline()
-        if line != "":
-            stderr.append(line)
-            mix.append(line)
-            print(line, end='')
+    #     line = proc.stderr.readline()
+    #     if line != "":
+    #         stderr.append(line)
+    #         mix.append(line)
+    #         print(line, end='')
+
+    for line in proc.stdout:
+        stdout.append(line.rstrip())
 
     return proc.returncode, stdout, stderr, mix
 
@@ -402,11 +406,11 @@ if not os.path.isfile(convert_done_file):
 
             # TODO: Endre i melding med appjar på engelsk -> stop prosess
             if os_line_count == pd_line_count:
-                print("Files listed in '" + header_file +
-                      "' matches files on disk. \n")
+                print("*** Files listed in '" + header_file +
+                      "' matches files on disk. *** \n")
             else:
-                print("Files listed in '" + header_file +
-                      "' doesn't match files on disk. \n")
+                print("*** Files listed in '" + header_file +
+                      "' doesn't match files on disk. *** \n")
 
             sys.stdout.flush()
 
@@ -499,44 +503,49 @@ if not os.path.isfile(convert_done_file):
                         df.loc[index, 'normalization'] = "Format not supported"
 
                     if normalized[0] in (0, 1):  # Not processed on earlier run
+                        norm_ok = True
                         norm_rel_path = Path(
                             normalized[1]).relative_to(folder + '_normalized/')
                         df.loc[index,
                                'normalized_relative_path'] = norm_rel_path
 
                         if normalized[0] == 0:  # Corrupt file
-                            conversion_failed.append(
-                                file_full_path + ' (' + file_type + ')')
-                            file_copy(corrupt_file_pdf, normalized[1])
-                            df.loc[index, 'normalization'] = "Failed"
+                            norm_ok = False
                         elif normalized[0] == 1:  # Converted now
-                            if norm_ext == 'pdf':
+                            if norm_ext == 'pdf':  # WAIT: Legg inn sjekk for andre arkivformat? Bruke mediaconch?
                                 command = [
                                     'verapdf.sh', '--format', 'text',
                                     normalized[1]
                                 ]
                                 result = run_shell_command(command)
-                                print(result[2])
-                                # TODO: Ikke pakk til wim igjen hvis det er filer som ikke har blitt konvertert riktig
-                                #return proc.returncode, stdout, stderr, mix
+                                stdout = ''.join(result[1])
+                                if "does not appear to be a valid PDF file and could not be parsed" in stdout:
+                                    norm_ok = False
 
+                        if norm_ok:
                             df.loc[index, 'normalization'] = "Ok"
+                        else:
+                            conversion_failed.append(
+                                file_full_path + ' (' + file_type + ')')
+                            file_copy(corrupt_file_pdf, normalized[1])
+                            df.loc[index, 'normalization'] = "Failed"
 
             df.to_csv(header_file, index=False, sep="\t")
 
             if len(conversion_failed) > 0:
-                print("Files not converted (conversion failed):")
+                print("\n")
+                print("*** Files not converted (conversion failed) ***")
                 print(*conversion_failed, sep="\n")
                 print("\n")
 
             if len(conversion_not_supported) > 0:
-                print("Files not converted (conversion not supported):")
+                print("*** Files not converted (conversion not supported) ***")
                 print(*conversion_not_supported, sep="\n")
                 print("\n")
 
             if len(conversion_failed) == 0 and len(
                     conversion_not_supported) == 0:
-                print('All files converted successfully. \n')
+                print('*** All files converted successfully. *** \n')
 
             not_converted = len(conversion_failed) + len(
                 conversion_not_supported)
