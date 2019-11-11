@@ -1,4 +1,4 @@
-import subprocess, os, shutil, argparse, sys, signal
+import subprocess, os, shutil, argparse, sys, signal, zipfile, re
 import pathlib
 import pandas as pd
 from pathlib import Path
@@ -21,6 +21,22 @@ mount_dir = data_dir + "/" + sys_name + "_mount"
 convert_done_file = in_dir + sys_name + "_convert_done"
 sub_systems_path = mount_dir + "/content/sub_systems"
 convert_done = False
+
+
+def extract_nested_zip(zippedFile, toFolder):
+    """ Extract a zip file including any nested zip files
+        Delete the zip file(s) after extraction
+    """
+    # pathlib.Path(toFolder).mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(zippedFile, 'r') as zfile:
+        zfile.extractall(path=toFolder)
+    os.remove(zippedFile)
+    for root, dirs, files in os.walk(toFolder):
+        for filename in files:
+            if re.search(r'\.zip$', filename):
+                fileSpec = os.path.join(root, filename)
+                extract_nested_zip(fileSpec, root)
+
 
 # TODO: Juster kode under så returnerer mer dos, unix mm heller for
 # newline = None
@@ -257,7 +273,10 @@ def html2pdf(file_path, tmp_path):
     return ok
 
 
-def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
+# file_full_path = folder + '/' + file_rel_path
+# TODO: Feil at ikke file_rel_path er arg i def under
+def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
+    # file_full_path = folder + '/' + file_rel_path
     normalized_file = 0  # Not converted
     file_name = os.path.basename(file_full_path)
     if tmp_ext:
@@ -282,7 +301,7 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext):
             elif file_type == 'application/pdf':
                 norm_ok = pdf2pdfa(file_full_path, norm_file_full_path)
             elif file_type in ('image/png', 'text/plain; charset=ISO-8859-1',
-                               'text/plain; charset=UTF-8'):
+                               'text/plain; charset=UTF-8', 'application/xml'):
                 norm_ok = file_copy(file_full_path, norm_file_full_path)
                 # TODO: Bruk get_newline og legg inn endring til unix hvis er på dos eller mac
             elif file_type in (
@@ -397,7 +416,7 @@ if not os.path.isfile(convert_done_file):
                 'embedded file')
 
             file_rows = df.apply(
-                lambda x: True if x['tika_batch_fs_relative_path'] != 'embedded file' else False,
+                lambda x: True if (x['tika_batch_fs_relative_path'] != 'embedded file' and 'zip:' not in x['tika_batch_fs_relative_path']) else False,
                 axis=1)
             pd_line_count = len(file_rows[file_rows == True].index)
 
@@ -414,8 +433,6 @@ if not os.path.isfile(convert_done_file):
 
             sys.stdout.flush()
 
-            # TODO: Oppdater i tsv når konvertering feiler - returner ok også på de som er konvertert tidligere
-
             # TODO: For BIR trenger vi også disse typene (mulig at noen av de bare embedded):
             # text/plain, image/png, image/jpeg, application/x-msdownload,
             # application/vnd.wordperfect, application/vnd.ms-excel, application/pdf, application/msword,
@@ -431,16 +448,54 @@ if not os.path.isfile(convert_done_file):
 
             # TODO: Legg inn telleverk i konvertering -> noe sånt: (1/538)
 
+            zip_row_iterator = df.iterrows()
+            zip_rel_dir = None
+            for index, row in zip_row_iterator:
+                file_rel_path = str(row['tika_batch_fs_relative_path'])
+                if file_rel_path != 'embedded file' and 'zip:' not in file_rel_path:  # TODO: Håndtere zip i zip-fil hvordan?
+                    if str(row['Content_Type']) == 'application/zip':
+                        zip_dir = folder + '_normalized/' + os.path.dirname(
+                            file_rel_path) + '/' + os.path.splitext(
+                                os.path.basename(file_rel_path))[0] + '.norm'
+                        zip_rel_dir = str(
+                            Path(zip_dir).relative_to(folder + '_normalized/'))
+
+                        zippedFileTmp = "/tmp/tmp.zip"
+                        file_copy(folder + '/' + file_rel_path, zippedFileTmp)
+                        extract_nested_zip(zippedFileTmp, zip_dir)
+
+                        # with zipfile.ZipFile(folder + '/' + file_rel_path,
+                        #                      "r") as zip_ref:
+                        #     zip_ref.extractall(zip_dir)
+                    else:
+                        zip_rel_dir = None
+                else:
+                    if zip_rel_dir:
+                        df.loc[
+                            index,
+                            'tika_batch_fs_relative_path'] = 'zip:' + zip_rel_dir + '/' + str(
+                                row['resourceName'])
+
             row_iterator = df.iterrows()
             df['next_file_rel_path'] = df['tika_batch_fs_relative_path'].shift(
                 -1)
+            in_zip = False
             for index, row in row_iterator:
                 file_rel_path = str(row['tika_batch_fs_relative_path'])
                 # TODO: Sjekk tika kolonne om PDF/a allerede
-                if (file_rel_path != 'embedded file'):
-                    file_full_path = folder + '/' + file_rel_path
+                if file_rel_path != 'embedded file':
+                    if 'zip:' in file_rel_path:
+                        file_rel_path = file_rel_path[4:]
+                        file_full_path = folder + '_normalized/' + file_rel_path
+                        in_zip = True  # TODO: Legg inn sjekk på denne i file_convert(at alltid slettes etterpå)
+                    else:
+                        file_full_path = folder + '/' + file_rel_path
+
                     normalized = (3, "")
                     norm_ext = None
+
+                    # if in_zip:
+                    #     continue
 
                     # TODO: Må ha sjekk på encoding og endre ved behov for de som ikke kan vises i ff (av rent tekst som ikke er html)
                     file_type = str(row['Content_Type'])
@@ -448,26 +503,27 @@ if not os.path.isfile(convert_done_file):
                         # TODO: Sjekke føst om allerede er pdf/a? -> se lenker over
                         norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
-                                                  None, norm_ext)
+                                                  None, norm_ext, in_zip)
                     elif file_type in ('image/tiff', 'image/jpeg'):
                         norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
-                                                  'pdf', norm_ext)
+                                                  'pdf', norm_ext, in_zip)
                         # TODO: Oppdatere tsv her eller i funksjon?
                     elif file_type == 'image/png':
                         norm_ext = 'png'
                         normalized = file_convert(file_full_path, file_type,
-                                                  None, norm_ext)
+                                                  None, norm_ext, in_zip)
                     elif file_type in ('text/plain; charset=ISO-8859-1',
-                                       'text/plain; charset=UTF-8'):
+                                       'text/plain; charset=UTF-8',
+                                       'application/xml'):
                         norm_ext = 'txt'
                         normalized = file_convert(file_full_path, file_type,
-                                                  None, norm_ext)
+                                                  None, norm_ext, in_zip)
                         # TODO: Legg inn endring av encoding hvis ikke av godkjent type
                     elif file_type == 'image/gif':
                         norm_ext = 'png'
                         normalized = file_convert(file_full_path, file_type,
-                                                  None, norm_ext)
+                                                  None, norm_ext, in_zip)
                     elif file_type in (
                             'application/vnd.ms-excel',
                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -475,28 +531,34 @@ if not os.path.isfile(convert_done_file):
                         norm_ext = 'pdf'
                         next_file_rel_path = str(row['next_file_rel_path'])
                         if (next_file_rel_path == 'embedded file'):
-                            normalized = file_convert(
-                                file_full_path, file_type, None, norm_ext)
+                            normalized = file_convert(file_full_path,
+                                                      file_type, None,
+                                                      norm_ext, in_zip)
                         else:
-                            normalized = file_convert(
-                                file_full_path, file_type, 'pdf', norm_ext)
+                            normalized = file_convert(file_full_path,
+                                                      file_type, 'pdf',
+                                                      norm_ext, in_zip)
                             # normalized_file = file_convert(
                             #     file_full_path, file_type, 'html', 'pdf')
                     elif file_type.startswith('text/html'):
                         norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
-                                                  'pdf', norm_ext)
+                                                  'pdf', norm_ext, in_zip)
                     elif file_type == 'application/msword':
                         norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
-                                                  None, norm_ext)
+                                                  None, norm_ext, in_zip)
                     elif file_type == 'application/rtf':
                         # WAIT: Helst med abiword bare hvis de andre ikke klarer det? -> Mulig docbuilder enda bedre enn abi
                         normalized = file_convert(file_full_path, file_type,
-                                                  'pdf', 'pdf')
-                    # elif file_type in ('application/x-tika-msoffice'):
+                                                  'pdf', 'pdf', in_zip)
+                    # elif file_type == ('application/x-tika-msoffice'):
                     #     # TODO: Er dette alltid Thumbs.db ?
                     #     print("office")
+                    # TODO: Hvis zip, bare sjekk at pakket ut riktig og angi så som ok (husk distinksjon med zip i zip)
+                    # elif file_type == 'application/zip':
+                    #     normalized = file_convert(file_full_path, file_type,
+                    #                               'pdf', 'pdf')
                     else:
                         conversion_not_supported.append(
                             file_full_path + ' (' + file_type + ')')

@@ -274,8 +274,8 @@ WbVarDef -file=tmp/pwb.ini; WbSysExec -ifNotEmpty=wim_path -program=&apos;python
 -- Save log/unmount wim image																			
 WbVarDef -file=tmp/pwb.ini; WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Clean up																	
-WbVarDef -file=tmp/pwb.ini; WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
-WbSysExec -ifEmpty=wim_path -program=&apos;echo &quot;*** SOME FILES WERE NOT NORMALIZED. SCROLL UP TO SEE LIST. ***&quot;&apos;					
+WbVarDef -file=tmp/pwb.ini; WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;		
+WbSysExec -ifEmpty=wim_path -program=&apos;echo &quot;*** Some files not converted. Scroll up to see the list. ***&quot;&apos;					
 </string>
        </void>
        <void property="tooltip">
