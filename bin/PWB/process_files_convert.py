@@ -23,6 +23,23 @@ sub_systems_path = mount_dir + "/content/sub_systems"
 convert_done = False
 
 
+# iconv -f ISO88592 -t UTF8 < input.txt > output.txt
+def x2utf8(file_path, norm_path, file_type):
+    ok = False
+    command = ['iconv', '-f']
+
+    if file_type == 'text/plain; charset=windows-1252':
+        command.append('windows-1252')
+
+    command.extend(['-t', 'UTF8', '<', file_path, '>', norm_path])
+    run_shell_command(command)
+
+    if os.path.exists(norm_path):
+        ok = True
+
+    return ok
+
+
 def extract_nested_zip(zippedFile, toFolder):
     """ Extract a zip file including any nested zip files
         Delete the zip file(s) after extraction
@@ -144,7 +161,10 @@ def docbuilder2x(file_path, tmp_path, format, file_type):
     docbuilder = None
 
     # TODO: Annet for rtf?
-    if file_type in ('application/msword', 'application/rtf'):
+    if file_type in (
+            'application/msword', 'application/rtf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ):
         docbuilder = [
             'builder.OpenFile("' + file_path + '", "");',
             'builder.SaveFile("' + format + '", "' + tmp_path + '");',
@@ -304,6 +324,10 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
                                'text/plain; charset=UTF-8', 'application/xml'):
                 norm_ok = file_copy(file_full_path, norm_file_full_path)
                 # TODO: Bruk get_newline og legg inn endring til unix hvis er på dos eller mac
+            elif file_type == 'text/plain; charset=windows-1252':
+                norm_ok = x2utf8(file_full_path, norm_file_full_path,
+                                 file_type)
+                # norm_ok = file_copy(file_full_path, norm_file_full_path)
             elif file_type in (
                     'application/vnd.ms-excel',
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -319,7 +343,10 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
             elif file_type.startswith('text/html'):
                 tmp_ok = html2pdf(file_full_path, tmp_file_full_path)
             # elif file_type in ('application/msword', 'application/rtf'):
-            elif file_type == 'application/msword':
+            elif file_type in (
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ):
                 # tmp_ok = docbuilder2x(file_full_path, tmp_file_full_path,'pdf', file_type)
                 norm_ok = unoconv2x(file_full_path, norm_file_full_path, 'pdf',
                                     file_type)
@@ -463,10 +490,7 @@ if not os.path.isfile(convert_done_file):
                         zippedFileTmp = "/tmp/tmp.zip"
                         file_copy(folder + '/' + file_rel_path, zippedFileTmp)
                         extract_nested_zip(zippedFileTmp, zip_dir)
-
-                        # with zipfile.ZipFile(folder + '/' + file_rel_path,
-                        #                      "r") as zip_ref:
-                        #     zip_ref.extractall(zip_dir)
+                        # TODO: Oppdater i tsv for zip-linje etter unzip
                     else:
                         zip_rel_dir = None
                 else:
@@ -491,11 +515,10 @@ if not os.path.isfile(convert_done_file):
                     else:
                         file_full_path = folder + '/' + file_rel_path
 
-                    normalized = (3, "")
+                    normalized = (
+                        3,
+                        "")  # WAIT: Endre slik at 0 og ikke 3 er default verdi
                     norm_ext = None
-
-                    # if in_zip:
-                    #     continue
 
                     # TODO: Må ha sjekk på encoding og endre ved behov for de som ikke kan vises i ff (av rent tekst som ikke er html)
                     file_type = str(row['Content_Type'])
@@ -519,7 +542,12 @@ if not os.path.isfile(convert_done_file):
                         norm_ext = 'txt'
                         normalized = file_convert(file_full_path, file_type,
                                                   None, norm_ext, in_zip)
-                        # TODO: Legg inn endring av encoding hvis ikke av godkjent type
+
+                    elif file_type == 'text/plain; charset=windows-1252':
+                        norm_ext = 'txt'
+                        normalized = file_convert(file_full_path, file_type,
+                                                  None, norm_ext, in_zip)
+
                     elif file_type == 'image/gif':
                         norm_ext = 'png'
                         normalized = file_convert(file_full_path, file_type,
@@ -544,7 +572,10 @@ if not os.path.isfile(convert_done_file):
                         norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
                                                   'pdf', norm_ext, in_zip)
-                    elif file_type == 'application/msword':
+                    elif file_type in (
+                            'application/msword',
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                    ):
                         norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
                                                   None, norm_ext, in_zip)
