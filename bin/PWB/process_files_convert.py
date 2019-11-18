@@ -6,6 +6,7 @@ from configparser import SafeConfigParser
 from pgmagick.api import Image
 from pdfy import Pdfy
 from extract_user_input import add_config_section
+from functools import reduce
 
 config = SafeConfigParser()
 pwb_dir = os.path.dirname(__file__)
@@ -22,20 +23,41 @@ convert_done_file = in_dir + sys_name + "_convert_done"
 sub_systems_path = mount_dir + "/content/sub_systems"
 convert_done = False
 
+# elif file_type in ('text/plain; charset=windows-1252',
+#                     'text/plain; charset=ISO-8859-1',
+#                     'text/plain; charset=UTF-8', 'application/xml'):
 
-# iconv -f ISO88592 -t UTF8 < input.txt > output.txt
-def x2utf8(file_path, norm_path, file_type):
+
+def x2utf8(file_path, norm_path, tmp_path, file_type):
     ok = False
-    command = ['iconv', '-f']
 
-    if file_type == 'text/plain; charset=windows-1252':
-        command.append('windows-1252')
+    if file_type in ('text/plain; charset=windows-1252','text/plain; charset=ISO-8859-1'):
+        # WAIT: Juster så mindre repetisjon under
+        if file_type == 'text/plain; charset=windows-1252':
+            command = ['iconv', '-f', 'windows-1252']
+        elif file_type == 'text/plain; charset=ISO-8859-1':
+            command = ['iconv', '-f', 'ISO-8859-1']
 
-    command.extend(['-t', 'UTF8', '<', file_path, '>', norm_path])
-    run_shell_command(command)
+        command.extend(['-t', 'UTF8', file_path, '-o', tmp_path])
+        run_shell_command(command)
+    else:
+        file_copy(file_path, tmp_path)
 
-    if os.path.exists(norm_path):
-        ok = True
+    if os.path.exists(tmp_path):
+        repls = (
+            ('‘', 'æ'),
+            ('›', 'ø'),
+            ('†', 'å'),
+        )
+
+        # WAIT: Legg inn validering av utf8 -> https://pypi.org/project/validate-utf8/
+        file = open(norm_path, "w")
+        with open(tmp_path, 'r') as file_r:
+            for line in file_r:
+                file.write(reduce(lambda a, kv: a.replace(*kv), repls, line))
+
+        if os.path.exists(norm_path):
+            ok = True
 
     return ok
 
@@ -53,29 +75,6 @@ def extract_nested_zip(zippedFile, toFolder):
             if re.search(r'\.zip$', filename):
                 fileSpec = os.path.join(root, filename)
                 extract_nested_zip(fileSpec, root)
-
-
-# TODO: Juster kode under så returnerer mer dos, unix mm heller for
-# newline = None
-# eol = get_newline(file_full_path)
-# if eol == '\n': newline = 'unix'
-# elif eol == '\r\n': newline = 'dos'
-# elif eol == '+r': newline = 'mac'
-
-# # print(repr(eol))
-
-
-def get_newline(filename):
-    with open(filename, "rb") as f:
-        while True:
-            c = f.read(1)
-            if not c or c == b'\n':
-                break
-            if c == b'\r':
-                if f.read(1) == b'\n':
-                    return '\r\n'
-                return '\r'
-    return '\n'
 
 
 def kill(proc_id):
@@ -122,6 +121,10 @@ def run_shell_command(command, cwd=None, timeout=30):
     for line in proc.stdout:
         stdout.append(line.rstrip())
 
+    for line in proc.stderr:
+        stderr.append(line.rstrip())
+
+    # print(stderr)
     return proc.returncode, stdout, stderr, mix
 
 
@@ -140,6 +143,7 @@ def file_copy(src, dst):
     return ok
 
 
+# TODO: Stopper opp med Exit code: 137 noen ganger -> fiks
 def image2norm(image_path, norm_path):
     print('image2norm(python) ' + image_path + ' ' + norm_path)
     sys.stdout.flush()
@@ -279,7 +283,7 @@ def pdf2pdfa(pdf_path, pdfa_path):
 
 # WAIT: Brukes for annet enn html? Støtter alt chrome kan lese
 def html2pdf(file_path, tmp_path):
-    print('image2norm(python) ' + file_path + ' ' + tmp_path)
+    print('html2pdf(python) ' + file_path + ' ' + tmp_path)
     sys.stdout.flush()
 
     ok = False
@@ -320,14 +324,14 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
                 norm_ok = image2norm(file_full_path, norm_file_full_path)
             elif file_type == 'application/pdf':
                 norm_ok = pdf2pdfa(file_full_path, norm_file_full_path)
-            elif file_type in ('image/png', 'text/plain; charset=ISO-8859-1',
+            elif file_type in ('text/plain; charset=windows-1252',
+                               'text/plain; charset=ISO-8859-1',
                                'text/plain; charset=UTF-8', 'application/xml'):
-                norm_ok = file_copy(file_full_path, norm_file_full_path)
-                # TODO: Bruk get_newline og legg inn endring til unix hvis er på dos eller mac
-            elif file_type == 'text/plain; charset=windows-1252':
                 norm_ok = x2utf8(file_full_path, norm_file_full_path,
-                                 file_type)
-                # norm_ok = file_copy(file_full_path, norm_file_full_path)
+                                 tmp_file_full_path, file_type)
+
+            elif file_type == 'image/png':
+                norm_ok = file_copy(file_full_path, norm_file_full_path)
             elif file_type in (
                     'application/vnd.ms-excel',
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -338,7 +342,7 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
                 else:
                     tmp_ok = docbuilder2x(file_full_path, tmp_file_full_path,
                                           'pdf', file_type)
-                # tmp_exists = unoconv2x(file_full_path, tmp_file_full_path,
+                # tmp_ok = unoconv2x(file_full_path, tmp_file_full_path,
                 #                        'html', file_type)
             elif file_type.startswith('text/html'):
                 tmp_ok = html2pdf(file_full_path, tmp_file_full_path)
@@ -409,14 +413,11 @@ if not os.path.isfile(convert_done_file):
                 os.path.dirname(folder + "/")) + ".tsv")
 
             # TODO: Oppdatere tsv først med hva som skal bli og så loope gjennom og så sjekke på disk?
-            # TODO: Bruk for å legge til rette extension på .data-filer? https://github.com/timothyryanwalsh/addext
-            # WAIT: Test denne for filer Tika ikke tar? https://github.com/h2non/filetype.py/blob/master/README.rst
+            # WAIT: Test denne for filer Tika ikke tar? https://github.com/h2non/filetype.py/blob/master/README.rst, evt 'file' bare
             # TODO: Generer DDL for "header_file" -> må først legge til kode for fjerning av flere kolonner
             # TODO: Generer også (samtidig som telle antall filer) en tsv som bare inneholder viktigste kolonner
             # --> legge denne i data-mappe for import til innsyn mens den originale med alt blir liggende i header?
-            # TODO: Gå gjennom alle pdf til slutt og konvertere til pdf/a hvis ikke allerede?
             # tika_file_ext er det som var på filen og sier ikke at det stemmer med formatet
-            # TODO: Fjern alle Thumbs.db
             # TODO: Testede formater med unoconv (eg unoconv -f pdf test.doc):
             #  Virker bra: doc, wp, wps, odt, xls/xlsm/xlsx (unoconv -P PaperOrientation=landscape)
             # Virker ikke bra: tif, mht
@@ -520,7 +521,6 @@ if not os.path.isfile(convert_done_file):
                         "")  # WAIT: Endre slik at 0 og ikke 3 er default verdi
                     norm_ext = None
 
-                    # TODO: Må ha sjekk på encoding og endre ved behov for de som ikke kan vises i ff (av rent tekst som ikke er html)
                     file_type = str(row['Content_Type'])
                     if file_type == 'application/pdf':
                         # TODO: Sjekke føst om allerede er pdf/a? -> se lenker over
@@ -538,16 +538,11 @@ if not os.path.isfile(convert_done_file):
                                                   None, norm_ext, in_zip)
                     elif file_type in ('text/plain; charset=ISO-8859-1',
                                        'text/plain; charset=UTF-8',
+                                       'text/plain; charset=windows-1252',
                                        'application/xml'):
                         norm_ext = 'txt'
                         normalized = file_convert(file_full_path, file_type,
                                                   None, norm_ext, in_zip)
-
-                    elif file_type == 'text/plain; charset=windows-1252':
-                        norm_ext = 'txt'
-                        normalized = file_convert(file_full_path, file_type,
-                                                  None, norm_ext, in_zip)
-
                     elif file_type == 'image/gif':
                         norm_ext = 'png'
                         normalized = file_convert(file_full_path, file_type,
@@ -583,9 +578,10 @@ if not os.path.isfile(convert_done_file):
                         # WAIT: Helst med abiword bare hvis de andre ikke klarer det? -> Mulig docbuilder enda bedre enn abi
                         normalized = file_convert(file_full_path, file_type,
                                                   'pdf', 'pdf', in_zip)
-                    # elif file_type == ('application/x-tika-msoffice'):
-                    #     # TODO: Er dette alltid Thumbs.db ?
-                    #     print("office")
+                    elif (file_type == 'application/x-tika-msoffice'
+                          and os.path.basename(file_full_path) == 'Thumbs.db'):
+                        os.remove(file_full_path)
+                        df.drop(index, inplace=True)
                     # TODO: Hvis zip, bare sjekk at pakket ut riktig og angi så som ok (husk distinksjon med zip i zip)
                     # elif file_type == 'application/zip':
                     #     normalized = file_convert(file_full_path, file_type,
@@ -620,7 +616,9 @@ if not os.path.isfile(convert_done_file):
                         else:
                             conversion_failed.append(
                                 file_full_path + ' (' + file_type + ')')
-                            file_copy(corrupt_file_pdf, normalized[1])
+                            # WAIT: Legge inn tilsvarende for andre filtyper eller pdf da også (må justere i tsv i så tilfelle?)
+                            if norm_ext == 'pdf':
+                                file_copy(corrupt_file_pdf, normalized[1])
                             df.loc[index, 'normalization'] = "Failed"
 
             df.to_csv(header_file, index=False, sep="\t")
@@ -632,6 +630,7 @@ if not os.path.isfile(convert_done_file):
                 print("\n")
 
             if len(conversion_not_supported) > 0:
+                print("\n")
                 print("*** Files not converted (conversion not supported) ***")
                 print(*conversion_not_supported, sep="\n")
                 print("\n")

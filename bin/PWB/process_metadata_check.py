@@ -69,7 +69,6 @@ for folder in subfolders:
             for line in file_r:
                 mssql_ddl_w.write(
                     reduce(lambda a, kv: a.replace(*kv), mssql_repls, line))
-        mssql_ddl_w.close()
 
         oracle_repls = (
             (" text", " clob"),
@@ -85,7 +84,6 @@ for folder in subfolders:
             for line in file_r:
                 oracle_ddl_w.write(
                     reduce(lambda a, kv: a.replace(*kv), oracle_repls, line))
-        oracle_ddl_w.close()
 
         mysql_repls = ((" timestamp", " datetime"), )
         mysql_ddl_w = open(mysql_ddl, "w")
@@ -93,7 +91,6 @@ for folder in subfolders:
             for line in file_r:
                 mysql_ddl_w.write(
                     reduce(lambda a, kv: a.replace(*kv), mysql_repls, line))
-        mysql_ddl_w.close()
 
         sql = [
             "\n",
