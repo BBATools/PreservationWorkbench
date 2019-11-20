@@ -42,7 +42,8 @@ Use *Create System Data Package* when all parts of the system have been extracte
 WIP
 
 ##### Process:
-*Normalize documents and metadata. Generate AIP.*
+*Normalize documents (convert to archival formats) and metadata (convert to ISO/SQL and TSV).  
+Generate AIP.*
 
 ##### Other:
 SQL Workbench/J standard features are described here:  
