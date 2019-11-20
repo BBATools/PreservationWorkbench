@@ -54,7 +54,6 @@ if config.has_option('SYSTEM', 'sys_name'):
     f.write(check)
     f.close()
     
-    # TODO: Henger på denne noen ganger på windows -> legge inn timeout eller sjekk om filelock?
     shutil.rmtree(data_dir + sys_name, ignore_errors=True) 
     pwb_message("'Done!'", "info")
 else:
