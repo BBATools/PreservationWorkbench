@@ -47,14 +47,15 @@ if config.has_option('SYSTEM', 'sys_name'):
                 " --no-acls --compress=none", shell=True)
 
     md5sumFile = os.path.splitext(wim_file)[0] + "_md5sum.txt"
-    check = md5sum(wim_file)
+    check = md5sum(wim_file) # TODO: Finn raskere løsning
     print(check)
 
     f = open(md5sumFile, "w+")
     f.write(check)
     f.close()
-
-    shutil.rmtree(data_dir + sys_name, ignore_errors=True)
+    
+    # TODO: Henger på denne noen ganger på windows -> legge inn timeout eller sjekk om filelock?
+    shutil.rmtree(data_dir + sys_name, ignore_errors=True) 
     pwb_message("'Done!'", "info")
 else:
     pwb_message("'No data to package!'", "error")
