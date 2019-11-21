@@ -5,7 +5,7 @@
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -59,6 +59,7 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
        <void property="tooltip">
         <string>XML/TSV-export</string>
        </void>
+       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
@@ -86,39 +87,23 @@ WbVarDef -file=tmp/pwb.ini;
 WbConfirm -ifNotEmpty=db_args -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
 -- Create schemareport
 WbInclude -ifNotEmpty=db_args -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
--- Create DDL
--- WbXslt 
--- -inputfile=../_DATA/$[sys_name]/content/sub_systems/$[subsys_name]/header/metadata.xml
--- -stylesheet=PWB/metadata2h2ddl.xslt
--- -xsltOutput=tmp/metadata_h2.sql;
+-- Generate WbCopy statements
+WbXslt 
+-inputfile=../_DATA/$[sys_name]/content/sub_systems/$[subsys_name]/header/metadata.xml
+-stylesheet=PWB/metadata2wbcopy.xslt
+-xsltOutput=tmp/wbcopy.sql;
 -- Generate target connection
 WbVarDef TargetCon=&apos;username=,password=,url=jdbc:h2:../_DATA/$[sys_name]/content/sub_systems/$[subsys_name]/documentation/$[db_name]_$[db_schema]&apos;;
--- Generate schema in H2 database --&gt; Virker ikke som definert under -&gt; fiks hvis trengs -&gt; wbconnect som del av denerert ddl da?
--- WbConnect -url=&quot;jdbc:h2:../_DATA/$[sys_name]/content/sub_systems/$[subsys_name]/documentation/$[db_name]_$[db_schema]&quot; -username=&quot;&quot; -password=&quot;&quot;;
--- WbInclude -file=tmp/metadata_h2.sql -displayResult=true -verbose=true -continueOnError=false;
 -- Copy data to H2 database in data package
-WbCopy  
--ifNotEmpty=db_args
--sourceSchema=$[db_schema]
--targetConnection=$[TargetCon]
--mode=INSERT
--ignoreIdentityColumns=false
--removeDefaults=true
--continueOnError=false
--showProgress=10000
- -targetSchema=PUBLIC
--createTarget=true;
+WbInclude -ifNotEmpty=db_args -file=tmp/wbcopy.sql -displayResult=true -verbose=true -continueOnError=false;
 -- Create archives from directories
-WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
-
-
-</string>
+WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;</string>
        </void>
        <void property="tooltip">
         <string>XML/H2-export</string>
        </void>
        <void property="visibleInPopup">
-        <boolean>false</boolean>
+        <object idref="Boolean0"/>
        </void>
       </object>
      </void>
@@ -160,7 +145,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/create_
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup1">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -179,11 +164,10 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
        <void property="tooltip">
         <string>Verify data is unchanged</string>
        </void>
-       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition1">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>Make Copies</string>
        </void>
@@ -203,7 +187,6 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
        <void property="tooltip">
         <string>Copy data to processing folder and backup</string>
        </void>
-       <void id="Boolean1" method="isVisibleInMenu"/>
       </object>
      </void>
     </void>
@@ -394,7 +377,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <int>4</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -404,7 +387,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
-        <object idref="Boolean1"/>
+        <boolean>true</boolean>
        </void>
        <void property="name">
         <string>MD5sum File</string>
