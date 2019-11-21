@@ -42,7 +42,7 @@ Use *Create System Data Package* when all parts of the system have been extracte
 WIP
 
 ##### Process:
-*Normalize documents (convert to archival formats) and metadata (convert to ISO/SQL and TSV).  
+*Normalize documents (convert to archival formats) and data (convert to ISO/SQL and TSV).  
 Generate AIP.*
 
 ##### Other:
