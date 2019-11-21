@@ -7,6 +7,11 @@ WshShell.CurrentDirectory = wbpath
 javaPath = wbpath & "jre\bin\javaw.exe"
 
 configFile="tmp\pwb.ini"
+
+if (FSO.FileExists(configFile)) then
+   FSO.DeleteFile(configFile)
+end if
+
 Set objFile = FSO.OpenTextFile(configFile, 2, True)
 objFile.WriteLine "[ENV]"
 objFile.WriteLine "py_path=" & wbpath & "python"
