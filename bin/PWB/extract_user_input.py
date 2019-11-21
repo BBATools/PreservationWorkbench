@@ -32,9 +32,9 @@ def add_config_section(s, section_name):
 
 
 def submit(btn):
-    data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
+    wb_dir = os.path.abspath(os.path.join(tmp_dir, '../../'))
     add_config_section(config, 'ENV')
-    config.set('ENV', 'data_dir', data_dir)
+    config.set('ENV', 'wb_dir', wb_dir)
     config.set('ENV', 'quit', "")
 
     add_config_section(config, 'SYSTEM')

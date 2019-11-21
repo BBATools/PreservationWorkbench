@@ -35,8 +35,8 @@ config.read(conf_file)
 sys_name = None
 subsys_name = None
 
-if config.has_option('ENV', 'data_dir'):
-    basepath = config.get('ENV', 'data_dir') + "/"
+if config.has_option('ENV', 'wb_dir'):
+    basepath = config.get('ENV', 'wb_dir') + "_DATA/"
 if config.has_option('SYSTEM', 'sys_name'):
     sys_name = config.get('SYSTEM', 'sys_name')
 if config.has_option('DATABASE', 'db_name'):

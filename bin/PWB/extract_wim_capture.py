@@ -24,8 +24,8 @@ tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp')
 conf_file = tmp_dir + "/pwb.ini"
 config.read(conf_file)
 
-if config.has_option('ENV', 'data_dir'):
-    data_dir = config.get('ENV', 'data_dir') + "/"
+if config.has_option('ENV', 'wb_dir'):
+    data_dir = config.get('ENV', 'wb_dir') + "/_DATA/"
 
 if config.has_option('SYSTEM', 'sys_name'):
     sys_name = config.get('SYSTEM', 'sys_name')
