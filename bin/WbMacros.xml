@@ -88,10 +88,7 @@ WbConfirm -ifNotEmpty=db_args -message=&quot;Is database connection correct?&quo
 -- Create schemareport
 WbInclude -ifNotEmpty=db_args -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
 -- Generate WbCopy statements
-WbXslt 
--inputfile=../_DATA/$[sys_name]/content/sub_systems/$[subsys_name]/header/metadata.xml
--stylesheet=PWB/metadata2wbcopy.xslt
--xsltOutput=tmp/wbcopy.sql;
+WbInclude -ifNotEmpty=db_args -file=PWB/metadata2wbcopy.sql -displayResult=true -verbose=true -continueOnError=false;
 -- Generate target connection
 WbVarDef TargetCon=&apos;username=,password=,url=jdbc:h2:../_DATA/$[sys_name]/content/sub_systems/$[subsys_name]/documentation/$[db_name]_$[db_schema]&apos;;
 -- Copy data to H2 database in data package
