@@ -32,8 +32,8 @@ def md5sum(filename, blocksize=65536):
     return hash.hexdigest()
 
 
-if config.has_option('ENV', 'data_dir'):
-    data_dir = config.get('ENV', 'data_dir') + "/"
+if config.has_option('ENV', 'wb_dir'):
+    data_dir = config.get('ENV', 'wb_dir') + "/_DATA/"
 
 if config.has_option('SYSTEM', 'sys_name'):
     sys_name = config.get('SYSTEM', 'sys_name')
