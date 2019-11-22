@@ -43,6 +43,7 @@ if log_file != None:
 
 if process == 'file':
     subprocess.run("wimunmount --commit --force " + mount_dir, shell=True)
+
 elif process == 'meta':
     shutil.copytree(
         mount_dir,

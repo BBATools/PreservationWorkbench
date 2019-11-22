@@ -31,7 +31,8 @@ convert_done = False
 def x2utf8(file_path, norm_path, tmp_path, file_type):
     ok = False
 
-    if file_type in ('text/plain; charset=windows-1252','text/plain; charset=ISO-8859-1'):
+    if file_type in ('text/plain; charset=windows-1252',
+                     'text/plain; charset=ISO-8859-1'):
         # WAIT: Juster så mindre repetisjon under
         if file_type == 'text/plain; charset=windows-1252':
             command = ['iconv', '-f', 'windows-1252']
@@ -134,8 +135,8 @@ def file_copy(src, dst):
 
     ok = False
     try:
-        if os.path.isdir(dst):
-            dst = os.path.join(dst, os.path.basename(src))
+        # if os.path.isdir(dst):
+        #     dst = os.path.join(dst, os.path.basename(src))
         shutil.copyfile(src, dst)
     except Exception as e:
         print(e)
@@ -309,9 +310,10 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
         tmp_file_full_path = folder + '_normalized/' + file_rel_path + '.tmp.pwb'
     norm_folder_full_path = folder + '_normalized/' + os.path.dirname(
         file_rel_path)
-    norm_file_full_path = norm_folder_full_path + '/' + os.path.splitext(
+    norm_file_full_path = norm_folder_full_path + os.path.splitext(
         file_name)[0] + '.norm.' + norm_ext
 
+    # TODO: Bør heller sjekke på annet enn at fil finnes slik at evt corrupt-file kan overskrives ved nytt forsøk
     if not os.path.isfile(norm_file_full_path):
         pathlib.Path(norm_folder_full_path).mkdir(parents=True, exist_ok=True)
         # print('Processing ' + norm_file_full_path) #TODO: Vises ikke i wb output
@@ -346,7 +348,6 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
                 #                        'html', file_type)
             elif file_type.startswith('text/html'):
                 tmp_ok = html2pdf(file_full_path, tmp_file_full_path)
-            # elif file_type in ('application/msword', 'application/rtf'):
             elif file_type in (
                     'application/msword',
                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -355,10 +356,13 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
                 norm_ok = unoconv2x(file_full_path, norm_file_full_path, 'pdf',
                                     file_type)
             elif file_type == 'application/rtf':
+                # TODO: Bør først prøve med abiword og så unoconv for de den ikke klarer -> eller omvendt hvis kan forhindre heng av LO
                 # tmp_ok = docbuilder2x(file_full_path, tmp_file_full_path,
                 #                       'pdf', file_type)
-                tmp_ok = abi2x(file_full_path, tmp_file_full_path, 'pdf',
-                               file_type)
+                norm_ok = unoconv2x(file_full_path, norm_file_full_path, 'pdf',
+                                    file_type)
+                # tmp_ok = abi2x(file_full_path, tmp_file_full_path, 'pdf',
+                #                file_type)
         if tmp_ok:
             if tmp_ext == 'pdf':
                 norm_ok = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
@@ -401,14 +405,6 @@ if not os.path.isfile(convert_done_file):
         ]
 
         for folder in doc_folders:
-            tmp_folder = folder + "_tmp"
-            pathlib.Path(tmp_folder).mkdir(parents=True, exist_ok=True)
-
-            for dirpath, dirnames, filenames in os.walk(folder):
-                structure = os.path.join(tmp_folder,
-                                         os.path.relpath(dirpath, folder))
-                pathlib.Path(structure).mkdir(parents=True, exist_ok=True)
-
             header_file = (dir + "/header/" + os.path.basename(
                 os.path.dirname(folder + "/")) + ".tsv")
 
@@ -575,7 +571,8 @@ if not os.path.isfile(convert_done_file):
                         normalized = file_convert(file_full_path, file_type,
                                                   None, norm_ext, in_zip)
                     elif file_type == 'application/rtf':
-                        # WAIT: Helst med abiword bare hvis de andre ikke klarer det? -> Mulig docbuilder enda bedre enn abi
+                        # WAIT: Abiword best å bruke først. Docbuilder klarer bare noen få ekstra som ikke abiword klarer (og sikkert en del motsatt)
+                        norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
                                                   'pdf', 'pdf', in_zip)
                     elif (file_type == 'application/x-tika-msoffice'
@@ -613,12 +610,28 @@ if not os.path.isfile(convert_done_file):
 
                         if norm_ok:
                             df.loc[index, 'normalization'] = "Ok"
+
+                            # if file_type in (
+                            #         'application/msword',
+                            #         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                            # ):
+                            #     print("test")
+                            #     # TODO: Legg inn at kopier original til originals også når konv ok for visse formater
+
                         else:
                             conversion_failed.append(
                                 file_full_path + ' (' + file_type + ')')
-                            # WAIT: Legge inn tilsvarende for andre filtyper eller pdf da også (må justere i tsv i så tilfelle?)
+                            # TODO: Legge inn tilsvarende for andre filtyper eller pdf da også (må justere i tsv i så tilfelle?)
                             if norm_ext == 'pdf':
                                 file_copy(corrupt_file_pdf, normalized[1])
+
+                            originals = folder + '_normalized/original_documents/'
+                            pathlib.Path(originals).mkdir(
+                                parents=True, exist_ok=True
+                            )  # TODO: Håndtere navnekonflikt ved utflating best hvordan?
+                            file_copy(
+                                file_full_path,
+                                originals + os.path.basename(file_full_path))
                             df.loc[index, 'normalization'] = "Failed"
 
             df.to_csv(header_file, index=False, sep="\t")
@@ -635,10 +648,6 @@ if not os.path.isfile(convert_done_file):
                 print(*conversion_not_supported, sep="\n")
                 print("\n")
 
-            if len(conversion_failed) == 0 and len(
-                    conversion_not_supported) == 0:
-                print('*** All files converted successfully. *** \n')
-
             not_converted = len(conversion_failed) + len(
                 conversion_not_supported)
             if not_converted > 0:
@@ -646,3 +655,10 @@ if not os.path.isfile(convert_done_file):
                 config.set('ENV', 'wim_path', "")
                 with open(conf_file, "w+") as configfile:
                     config.write(configfile, space_around_delimiters=False)
+                print(
+                    '*** Verify or fix manually any non-converted files and re-run process *** \n'
+                )
+            else:
+                print('*** All files converted successfully. *** \n')
+                # TODO: Legg inn auto sletting + renaming av mapper etter at kode for kopiering av org for visse formater på plass
+                # shutil.rmtree(folder)
