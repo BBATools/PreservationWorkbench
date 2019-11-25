@@ -310,7 +310,8 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
         tmp_file_full_path = folder + '_normalized/' + file_rel_path + '.tmp.pwb'
     norm_folder_full_path = folder + '_normalized/' + os.path.dirname(
         file_rel_path)
-    norm_file_full_path = norm_folder_full_path + os.path.splitext(
+    norm_folder_full_path = norm_folder_full_path.replace('//', '/')
+    norm_file_full_path = norm_folder_full_path + '/' + os.path.splitext(
         file_name)[0] + '.norm.' + norm_ext
 
     # TODO: Bør heller sjekke på annet enn at fil finnes slik at evt corrupt-file kan overskrives ved nytt forsøk
@@ -577,8 +578,9 @@ if not os.path.isfile(convert_done_file):
                                                   'pdf', 'pdf', in_zip)
                     elif (file_type == 'application/x-tika-msoffice'
                           and os.path.basename(file_full_path) == 'Thumbs.db'):
-                        os.remove(file_full_path)
-                        df.drop(index, inplace=True)
+                        if os.path.exists(file_full_path):
+                            os.remove(file_full_path)
+                            df.drop(index, inplace=True)
                     # TODO: Hvis zip, bare sjekk at pakket ut riktig og angi så som ok (husk distinksjon med zip i zip)
                     # elif file_type == 'application/zip':
                     #     normalized = file_convert(file_full_path, file_type,
