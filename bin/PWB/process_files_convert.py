@@ -201,6 +201,17 @@ def docbuilder2x(file_path, tmp_path, format, file_type):
     return ok
 
 
+def wkhtmltopdf(file_path, tmp_path):
+    ok = False
+    command = ['wkhtmltopdf', '-O', 'Landscape', file_path, tmp_path]
+    run_shell_command(command)
+
+    if os.path.exists(tmp_path):
+        ok = True
+
+    return ok
+
+
 def abi2x(file_path, tmp_path, format, file_type):
     ok = False
     command = ['abiword', '--to=' + format]
@@ -282,7 +293,6 @@ def pdf2pdfa(pdf_path, pdfa_path):
     return ok
 
 
-# WAIT: Brukes for annet enn html? Støtter alt chrome kan lese
 def html2pdf(file_path, tmp_path):
     print('html2pdf(python) ' + file_path + ' ' + tmp_path)
     sys.stdout.flush()
@@ -349,10 +359,12 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
                 #                        'html', file_type)
             elif file_type.startswith('text/html'):
                 tmp_ok = html2pdf(file_full_path, tmp_file_full_path)
+            elif file_type == 'application/xhtml+xml; charset=UTF-8':
+                tmp_ok = wkhtmltopdf(file_full_path, tmp_file_full_path)
             elif file_type in (
                     'application/msword',
                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            ):
+                    'application/vnd.wordperfect'):
                 # tmp_ok = docbuilder2x(file_full_path, tmp_file_full_path,'pdf', file_type)
                 norm_ok = unoconv2x(file_full_path, norm_file_full_path, 'pdf',
                                     file_type)
@@ -364,6 +376,9 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
                                     file_type)
                 # tmp_ok = abi2x(file_full_path, tmp_file_full_path, 'pdf',
                 #                file_type)
+            elif file_type == 'application/x-msdownload':
+                norm_ok = False
+
         if tmp_ok:
             if tmp_ext == 'pdf':
                 norm_ok = pdf2pdfa(tmp_file_full_path, norm_file_full_path)
@@ -398,7 +413,7 @@ if not os.path.isfile(convert_done_file):
     sub_folders = [
         f.path for f in os.scandir(sub_systems_path)
         if f.is_dir() and len(os.listdir(f)) != 0
-    ]  # TODO: samme lengdesjekk i "file_check.py"?
+    ]
     for dir in sub_folders:
         doc_folders = [
             f.path for f in os.scandir(dir + "/content")
@@ -517,6 +532,7 @@ if not os.path.isfile(convert_done_file):
                         3,
                         "")  # WAIT: Endre slik at 0 og ikke 3 er default verdi
                     norm_ext = None
+                    keep_original = False
 
                     file_type = str(row['Content_Type'])
                     if file_type == 'application/pdf':
@@ -549,7 +565,9 @@ if not os.path.isfile(convert_done_file):
                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                     ):
                         norm_ext = 'pdf'
+                        keep_original = True
                         next_file_rel_path = str(row['next_file_rel_path'])
+
                         if (next_file_rel_path == 'embedded file'):
                             normalized = file_convert(file_full_path,
                                                       file_type, None,
@@ -564,10 +582,14 @@ if not os.path.isfile(convert_done_file):
                         norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
                                                   'pdf', norm_ext, in_zip)
+                    elif file_type == 'application/xhtml+xml; charset=UTF-8':  # TODO: Slå sammen med den over?
+                        norm_ext = 'pdf'
+                        normalized = file_convert(file_full_path, file_type,
+                                                  'pdf', norm_ext, in_zip)
                     elif file_type in (
                             'application/msword',
-                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                    ):
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'application/vnd.wordperfect'):
                         norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
                                                   None, norm_ext, in_zip)
@@ -575,16 +597,26 @@ if not os.path.isfile(convert_done_file):
                         # WAIT: Abiword best å bruke først. Docbuilder klarer bare noen få ekstra som ikke abiword klarer (og sikkert en del motsatt)
                         norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
-                                                  'pdf', 'pdf', in_zip)
+                                                  'pdf', norm_ext, in_zip)
                     elif (file_type == 'application/x-tika-msoffice'
                           and os.path.basename(file_full_path) == 'Thumbs.db'):
                         if os.path.exists(file_full_path):
                             os.remove(file_full_path)
-                            df.drop(index, inplace=True)
+                        df.drop(index, inplace=True)
                     # TODO: Hvis zip, bare sjekk at pakket ut riktig og angi så som ok (husk distinksjon med zip i zip)
                     # elif file_type == 'application/zip':
                     #     normalized = file_convert(file_full_path, file_type,
                     #                               'pdf', 'pdf')
+
+                    elif file_type == 'application/x-msdownload':
+                        norm_ext = 'pdf'
+                        normalized = file_convert(file_full_path, file_type,
+                                                  None, norm_ext, in_zip)
+                    elif file_type == 'application/vnd.ms-project':
+                        norm_ext = 'pdf'
+                        normalized = file_convert(file_full_path, file_type,
+                                                  None, norm_ext, in_zip)
+                        # TODO: Not implemented yet but detects it if normalized file with correct filename has been generated manually
                     else:
                         conversion_not_supported.append(
                             file_full_path + ' (' + file_type + ')')
@@ -592,10 +624,6 @@ if not os.path.isfile(convert_done_file):
 
                     if normalized[0] in (0, 1):  # Not processed on earlier run
                         norm_ok = True
-                        norm_rel_path = Path(
-                            normalized[1]).relative_to(folder + '_normalized/')
-                        df.loc[index,
-                               'normalized_relative_path'] = norm_rel_path
 
                         if normalized[0] == 0:  # Corrupt file
                             norm_ok = False
@@ -613,54 +641,61 @@ if not os.path.isfile(convert_done_file):
                         if norm_ok:
                             df.loc[index, 'normalization'] = "Ok"
 
-                            # if file_type in (
-                            #         'application/msword',
-                            #         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                            # ):
-                            #     print("test")
-                            #     # TODO: Legg inn at kopier original til originals også når konv ok for visse formater
+                            norm_rel_path = Path(normalized[1]).relative_to(
+                                folder + '_normalized/')
 
                         else:
                             conversion_failed.append(
                                 file_full_path + ' (' + file_type + ')')
-                            # TODO: Legge inn tilsvarende for andre filtyper eller pdf da også (må justere i tsv i så tilfelle?)
-                            if norm_ext == 'pdf':
-                                file_copy(corrupt_file_pdf, normalized[1])
 
+                            corrupt_norm_file = os.path.splitext(
+                                normalized[1])[0] + '.pdf'
+                            norm_rel_path = Path(
+                                corrupt_norm_file).relative_to(
+                                    folder + '_normalized/')
+
+                            file_copy(corrupt_file_pdf, corrupt_norm_file)
+                            df.loc[index, 'normalization'] = "Failed"
+
+                        if (not norm_ok or keep_original):
                             originals = folder + '_normalized/original_documents/'
                             pathlib.Path(originals).mkdir(
-                                parents=True, exist_ok=True
-                            )  # TODO: Håndtere navnekonflikt ved utflating best hvordan?
+                                parents=True, exist_ok=True)
+
+                            # TODO: Håndtere navnekonflikt ved utflating best hvordan?
+
                             file_copy(
                                 file_full_path,
                                 originals + os.path.basename(file_full_path))
-                            df.loc[index, 'normalization'] = "Failed"
+
+                        df.loc[index,
+                               'normalized_relative_path'] = norm_rel_path
 
             df.to_csv(header_file, index=False, sep="\t")
 
-            if len(conversion_failed) > 0:
-                print("\n")
-                print("*** Files not converted (conversion failed) ***")
-                print(*conversion_failed, sep="\n")
-                print("\n")
+    # TODO: Fix at ved ny kjøring så blir en informert om "all successfully" selv om feil ved forrige? (er logget riktig i kolonne 'failed)
+    if len(conversion_failed) > 0:
+        print("\n")
+        print("*** Files not converted (conversion failed) ***")
+        print(*conversion_failed, sep="\n")
+        print("\n")
 
-            if len(conversion_not_supported) > 0:
-                print("\n")
-                print("*** Files not converted (conversion not supported) ***")
-                print(*conversion_not_supported, sep="\n")
-                print("\n")
+    if len(conversion_not_supported) > 0:
+        print("\n")
+        print("*** Files not converted (conversion not supported) ***")
+        print(*conversion_not_supported, sep="\n")
+        print("\n")
 
-            not_converted = len(conversion_failed) + len(
-                conversion_not_supported)
-            if not_converted > 0:
-                add_config_section(config, 'ENV')
-                config.set('ENV', 'wim_path', "")
-                with open(conf_file, "w+") as configfile:
-                    config.write(configfile, space_around_delimiters=False)
-                print(
-                    '*** Verify or fix manually any non-converted files and re-run process *** \n'
-                )
-            else:
-                print('*** All files converted successfully. *** \n')
-                # TODO: Legg inn auto sletting + renaming av mapper etter at kode for kopiering av org for visse formater på plass
-                # shutil.rmtree(folder)
+    not_converted = len(conversion_failed) + len(conversion_not_supported)
+    if not_converted > 0:
+        add_config_section(config, 'ENV')
+        config.set('ENV', 'wim_path', "")
+        with open(conf_file, "w+") as configfile:
+            config.write(configfile, space_around_delimiters=False)
+        print(
+            '*** Verify or fix manually any non-converted files and re-run process *** \n'
+        )
+    else:
+        print('*** All files converted successfully. *** \n')
+        # TODO: Legg inn auto sletting + renaming av mapper etter at kode for kopiering av org for visse formater på plass
+        # shutil.rmtree(folder)
