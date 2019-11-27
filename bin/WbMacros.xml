@@ -5,7 +5,7 @@
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -47,8 +47,8 @@ WbExport -ifNotEmpty=db_args
 -clobAsFile=true              -- export huge text fields as separate files
 -blobType=file                -- export binary fields as separate files
 -delimiter=\t                 -- tab-separated  
--replaceExpression=&apos;(\n|\r\n|\r|\t|^$)&apos; -replaceWith=&apos; &apos; -- To space heller?
--nullString=&apos; &apos; -- Endre til &apos;NULL&apos;?
+-replaceExpression=&apos;(\n|\r\n|\r|\t|^$)&apos; -replaceWith=&apos; &apos;
+-nullString=&apos; &apos;
 -showProgress=10000;  
 -- Create archives from directories
 WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
@@ -59,6 +59,7 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
        <void property="tooltip">
         <string>XML/TSV-export</string>
        </void>
+       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
@@ -70,39 +71,29 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
         <int>1</int>
        </void>
        <void property="text">
-        <string>-- EXPORT DATABASE SCHEMA/FILES --
+        <string>
+WbMessage &quot;Not implemented yet&quot;;
 
--- Read env variables from config-file
-WbVarDef -file=tmp/pwb.ini;
--- User input
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_user_input.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
--- Read user variables from config-file
-WbVarDef -file=tmp/pwb.ini;
--- create base directories
-WbSysExec -ifEmpty=quit -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_sip_paths.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
--- Read user variables from config-file
-WbVarDef -file=tmp/pwb.ini;
--- Check connection
-WbConfirm -ifNotEmpty=db_args -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
--- Create schemareport
-WbInclude -ifNotEmpty=db_args -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
--- Generate WbCopy statements
-WbInclude -ifNotEmpty=db_args -file=PWB/metadata2wbcopy.sql -displayResult=true -verbose=true -continueOnError=false;
--- Generate target connection
-WbVarDef TargetCon=&apos;username=,password=,url=jdbc:h2:../_DATA/$[sys_name]/content/sub_systems/$[subsys_name]/documentation/$[db_name]_$[db_schema]&apos;;
--- Copy data to H2 database in data package
-WbInclude -ifNotEmpty=db_args -file=tmp/wbcopy.sql -displayResult=true -verbose=true -continueOnError=false;
--- Create archives from directories
-WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/extract_wim_capture.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
-
-
-</string>
+-- WbVarDef TargetCon=&apos;username=,password=,url=jdbc:h2:../_DATA/$[SystemName]/content/sub_systems/$[SubSystemName]/documentation/code/$[databaseName]_$[databaseSchema]&apos;;
+-- Copy data to H2 database under code-folder --
+--  WbCopy  
+--  -ifDefined=DatabaseSchema
+--  -sourceSchema=$[DatabaseSchema]
+--  -targetConnection=$[TargetCon]
+--  -mode=INSERT
+--  -commitEvery=10000
+--  -ignoreIdentityColumns=false
+--  -continueOnError=false
+--  -showProgress=10000
+--  -targetSchema=PUBLIC
+--  -createTarget=true;
+-------------------------------------------------</string>
        </void>
        <void property="tooltip">
         <string>XML/H2-export</string>
        </void>
        <void property="visibleInPopup">
-        <boolean>false</boolean>
+        <object idref="Boolean0"/>
        </void>
       </object>
      </void>
@@ -156,7 +147,6 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/create_
 
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
--- TODO: Finn raskere løsning
 -- md5sum check
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_md5sum.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;</string>
        </void>
@@ -204,7 +194,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup2">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>File</string>
        </void>
@@ -216,8 +206,6 @@ WbMessage &quot;Not implemented yet&quot;;
        <void property="tooltip">
         <string>dispos...</string>
        </void>
-       <void id="Boolean0" method="isVisibleInMenu"/>
-       <void id="Boolean1" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
@@ -306,14 +294,10 @@ WbSysExec -ifEmpty=wim_path -program=&apos;echo &quot;*** Some files not convert
        <void property="text">
         <string>-- PROCESS METADATA:
 
--- Read env variables from config-file
-WbVarDef -file=tmp/pwb.ini;
 -- Normalize metadata and generate sql	
-WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_metadata_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
--- Read env variables from config-file
-WbVarDef -file=tmp/pwb.ini;
+WbVarDef -file=tmp/pwb.ini; WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_metadata_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Generate DDL from xml																																					
-WbInclude -ifNotEmpty=wim_path -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false; 		
+WbVarDef -file=tmp/pwb.ini; WbInclude -ifNotEmpty=wim_path -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false; 		
 -- Generate sql for testing metadata
 WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_metadata_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Generate schemas and import metadata (5 db-engines)															
@@ -321,10 +305,7 @@ WbInclude -ifNotEmpty=wim_path -file=tmp/meta_check.sql -displayResult=false -ve
 -- Save log/unmount wim image																			
 WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/wim_umount.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;	
 -- Clean up																	
-WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;																									
-
-
-</string>
+WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/cleanup.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;		</string>
        </void>
        <void property="tooltip">
         <string>Normalize metadata</string>
@@ -378,7 +359,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <int>4</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -388,7 +369,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
-        <object idref="Boolean0"/>
+        <boolean>true</boolean>
        </void>
        <void property="name">
         <string>MD5sum File</string>
@@ -414,7 +395,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -427,7 +408,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>6</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -440,7 +421,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>7</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -453,7 +434,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>8</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -466,7 +447,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>9</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -479,7 +460,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>10</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>

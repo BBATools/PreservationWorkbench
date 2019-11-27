@@ -1,4 +1,4 @@
-import subprocess, os, shutil, argparse, sys, signal, zipfile, re
+import subprocess, os, shutil, argparse, sys, signal, zipfile, re, glob
 import pathlib
 import pandas as pd
 from pathlib import Path
@@ -392,7 +392,8 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
             os.remove(tmp_file_full_path)
         # TODO: Legg inn hvilken originalfiler som skal slettes
 
-        if os.path.isfile(norm_file_full_path):
+        # if os.path.isfile(norm_file_full_path):
+        if glob.glob((norm_file_full_path)[0] + '.*'):
             normalized_file = 1  # Converted now
     else:
         normalized_file = 2  # Converted earlier
@@ -612,12 +613,12 @@ if not os.path.isfile(convert_done_file):
                         norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
                                                   None, norm_ext, in_zip)
-                    elif file_type == 'application/vnd.ms-project':
-                        norm_ext = 'pdf'
-                        normalized = file_convert(file_full_path, file_type,
-                                                  None, norm_ext, in_zip)
-                        # TODO: Not implemented yet but detects it if normalized file with correct filename has been generated manually
+                    # elif file_type == 'application/vnd.ms-project':
+                    #     norm_ext = 'pdf'
+                    #     normalized = file_convert(file_full_path, file_type,
+                    #                               None, norm_ext, in_zip)
                     else:
+                        # TODO: Legg inn her så detekterer hvis manuelt konvertert
                         conversion_not_supported.append(
                             file_full_path + ' (' + file_type + ')')
                         df.loc[index, 'normalization'] = "Format not supported"
