@@ -376,8 +376,10 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
                                     file_type)
                 # tmp_ok = abi2x(file_full_path, tmp_file_full_path, 'pdf',
                 #                file_type)
-            elif file_type == 'application/x-msdownload':
+            elif file_type == 'application/x-msdownload':  # TODO: Trengs denne?
                 norm_ok = False
+            else:
+                normalized_file = 3  # Conversion not supported
 
         if tmp_ok:
             if tmp_ext == 'pdf':
@@ -393,10 +395,13 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
         # TODO: Legg inn hvilken originalfiler som skal slettes
 
         # if os.path.isfile(norm_file_full_path):
-        if glob.glob((norm_file_full_path)[0] + '.*'):
-            normalized_file = 1  # Converted now
+        if glob.glob(os.path.splitext(norm_file_full_path)[0] + '.*'):
+            if norm_ok:
+                normalized_file = 1  # Converted now automatically
+            else:
+                normalized_file = 2  # Converted now manually
     else:
-        normalized_file = 2  # Converted earlier
+        normalized_file = 4  # Converted earlier
 
     return normalized_file, norm_file_full_path
 
@@ -530,7 +535,7 @@ if not os.path.isfile(convert_done_file):
                         file_full_path = folder + '/' + file_rel_path
 
                     normalized = (
-                        3,
+                        0,
                         "")  # WAIT: Endre slik at 0 og ikke 3 er default verdi
                     norm_ext = None
                     keep_original = False
@@ -618,17 +623,21 @@ if not os.path.isfile(convert_done_file):
                     #     normalized = file_convert(file_full_path, file_type,
                     #                               None, norm_ext, in_zip)
                     else:
-                        # TODO: Legg inn her så detekterer hvis manuelt konvertert
+                        normalized = file_convert(file_full_path, file_type,
+                                                  None, 'pwb', in_zip)
+
+                    if normalized[0] == 3:  # Conversion not supported
                         conversion_not_supported.append(
                             file_full_path + ' (' + file_type + ')')
                         df.loc[index, 'normalization'] = "Format not supported"
+                        norm_ok = False
 
-                    if normalized[0] in (0, 1):  # Not processed on earlier run
-                        norm_ok = True
-
+                    elif normalized[0] in (0, 1, 2):  # Not converted earlier
                         if normalized[0] == 0:  # Corrupt file
                             norm_ok = False
-                        elif normalized[0] == 1:  # Converted now
+
+                        elif normalized[0] == 1:  # Converted now automatically
+                            norm_ok = True
                             if norm_ext == 'pdf':  # WAIT: Legg inn sjekk for andre arkivformat? Bruke mediaconch?
                                 command = [
                                     'verapdf.sh', '--format', 'text',
@@ -638,6 +647,9 @@ if not os.path.isfile(convert_done_file):
                                 stdout = ''.join(result[1])
                                 if "does not appear to be a valid PDF file and could not be parsed" in stdout:
                                     norm_ok = False
+
+                        elif normalized[0] == 2:  # Converted now manually
+                            norm_ok = True
 
                         if norm_ok:
                             df.loc[index, 'normalization'] = "Ok"
