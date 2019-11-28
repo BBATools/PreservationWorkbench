@@ -109,15 +109,6 @@ if __name__ == "__main__":
                     "\n",
                     "WbConnect -url=" + "jdbc:h2:" + h2_file +
                     " -password='';",
-                    '''WbVarDef fixColumns= @"SELECT GROUP_CONCAT('ALTER TABLE ' || TABLE_NAME  || ' ALTER COLUMN ' || COLUMN_NAME || ' RENAME TO ' || COLUMN_NAME || '_;') FROM (
-                        SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-                        WHERE TABLE_SCHEMA='PUBLIC'
-                        AND COLUMN_NAME='INTERVAL')";''',
-                    '''WbSysExec basename '$[fixColumns]' > ~/bin/PWB/bin/tmp/wim_h2_fix.sql;''',
-                    '''WbSysExec sed -i 's/ INTERVAL / "INTERVAL" /' ~/bin/PWB/bin/tmp/wim_h2_fix.sql;''',
-                    # '''WbSysExec -program="sed" -argument="-i 's/\INTERVAL\/"INTERVAL"/' ~/bin/PWB/bin/tmp/wim_h2_fix.sql";''',
-                    "WbInclude -file=tmp/wim_h2_fix.sql -displayResult=false -verbose=false -continueOnError=false;",
-                    "COMMIT;",
                     "WbExport",
                     "-type=text",
                     "-schema=PUBLIC",
@@ -132,13 +123,47 @@ if __name__ == "__main__":
                     "-lineEnding=crlf",
                     "-clobAsFile=true",
                     "-blobType=file",
-                    "-delimiter=\t",
-                    "-replaceExpression='(\\n|\\r\\n|\\r|\\t)' -replaceWith=' '",
+                    "-delimiter=\\t",
+                    "-replaceExpression='(\\n|\\r\\n|\\r|\\t|^$)' -replaceWith=' '",
+                    "-nullString=' '",
                     "-showProgress=10000;",
-                    "-nullString=''",
                     "WbDisconnect;",
                     "WbSysExec touch " + documentation_folder + "done;",
                 ]
+                # sql = [
+                #     "\n",
+                #     "WbConnect -url=" + "jdbc:h2:" + h2_file +
+                #     " -password='';",
+                #     '''WbVarDef fixColumns= @"SELECT GROUP_CONCAT('ALTER TABLE ' || TABLE_NAME  || ' ALTER COLUMN ' || COLUMN_NAME || ' RENAME TO ' || COLUMN_NAME || '_;') FROM (
+                #         SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                #         WHERE TABLE_SCHEMA='PUBLIC'
+                #         AND COLUMN_NAME='INTERVAL')";''',
+                #     '''WbSysExec basename '$[fixColumns]' > ~/bin/PWB/bin/tmp/wim_h2_fix.sql;''',
+                #     '''WbSysExec sed -i 's/ INTERVAL / "INTERVAL" /' ~/bin/PWB/bin/tmp/wim_h2_fix.sql;''',
+                #     # '''WbSysExec -program="sed" -argument="-i 's/\INTERVAL\/"INTERVAL"/' ~/bin/PWB/bin/tmp/wim_h2_fix.sql";''',
+                #     "WbInclude -file=tmp/wim_h2_fix.sql -displayResult=false -verbose=false -continueOnError=false;",
+                #     "COMMIT;",
+                #     "WbExport",
+                #     "-type=text",
+                #     "-schema=PUBLIC",
+                #     "-types=TABLE",
+                #     "-sourceTable=*",
+                #     "-outputdir=" + data_folder,
+                #     "-continueOnError=false",
+                #     "-encoding=UTF8",
+                #     "-header=true",
+                #     "-decimal='.'",
+                #     "-maxDigits=0",
+                #     "-lineEnding=crlf",
+                #     "-clobAsFile=true",
+                #     "-blobType=file",
+                #     "-delimiter=\t",
+                #     "-replaceExpression='(\\n|\\r\\n|\\r|\\t)' -replaceWith=' '",
+                #     "-showProgress=10000;",
+                #     "-nullString=''",
+                #     "WbDisconnect;",
+                #     "WbSysExec touch " + documentation_folder + "done;",
+                # ]
 
                 with open(sql_file, "a+") as file:
                     file.write("\n".join(sql))
