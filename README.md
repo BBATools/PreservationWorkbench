@@ -30,25 +30,25 @@ https://docs.oracle.com/javase/9/tools/jlink.htm
 Start SQL Workbench/J with  *PWB.vbs* (Windows) or  *PWB.sh* (Linux).
 PWB specific features are started via macros and are thus found under the *Macros* menu. 
 ##### Extract:
-*Extract data from database and/or disk.*
+Extract data from database and/or disk.
 If database export, Use *File->Connect window* first to connect to database/schema.
 Use *Export to Disk* once per database schema (and any files on disk that are connected to schema) *or* (if no database) any collection of files on disk that constitute a separate part of the system.
 Use *Create System Data Package* when all parts of the system have been extracted to package the data as one data package (packaged as a wim file to retain file metadata) and generate checksum. 
 
 ##### Verify:
-*Verify checksum and make backup of raw SIP before processing.*
+Verify checksum and make backup of raw SIP before processing.
 ##### Dispose:
-*Dispose/remove parts of the extracted data that has no archival value*   
+Dispose/remove parts of the extracted data that has no archival value  
 WIP
 
 ##### Process:
-*Normalize documents (convert to archival formats) and data (convert to ISO/SQL and TSV). Generate AIP.  
+Normalize documents (convert to archival formats) and data (convert to ISO/SQL and TSV). Generate AIP.  
 Generated SQL and tsv-data are automatically tested for compatibility with the following databases:
 - PostgreSQL 12  
 - MySQL 8.0  
 - Oracle 11.2  
 - SQL Server 2019  
-- SQLite 3.27*
+- SQLite 3.27
 
 ##### Other:
 SQL Workbench/J standard features are described here:  
