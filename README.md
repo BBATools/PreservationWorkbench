@@ -42,7 +42,13 @@ Use *Create System Data Package* when all parts of the system have been extracte
 WIP
 
 ##### Process:
-*Normalize documents (convert to archival formats) and data (convert to ISO/SQL and TSV).  
+*Normalize documents (convert to archival formats) and data (convert to ISO/SQL and TSV).   
+Generated SQL and tsv-data are automatically tested for compatibility with the following databases:
+- PostgreSQL 12  
+- MySQL 8.0  
+- Oracle 11.2  
+- SQL Server 2019  
+- SQLite 3.27   
 Generate AIP.*
 
 ##### Other:
