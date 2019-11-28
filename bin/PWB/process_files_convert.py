@@ -378,6 +378,9 @@ def file_convert(file_full_path, file_type, tmp_ext, norm_ext, in_zip):
                 #                file_type)
             elif file_type == 'application/x-msdownload':  # TODO: Trengs denne?
                 norm_ok = False
+            elif (file_type == 'application/x-tika-msoffice'
+                  and os.path.basename(file_full_path) == 'Thumbs.db'):
+                norm_ok = False
             else:
                 normalized_file = 3  # Conversion not supported
 
@@ -604,11 +607,13 @@ if not os.path.isfile(convert_done_file):
                         norm_ext = 'pdf'
                         normalized = file_convert(file_full_path, file_type,
                                                   'pdf', norm_ext, in_zip)
-                    elif (file_type == 'application/x-tika-msoffice'
-                          and os.path.basename(file_full_path) == 'Thumbs.db'):
-                        if os.path.exists(file_full_path):
-                            os.remove(file_full_path)
-                        df.drop(index, inplace=True)
+                    elif (
+                            file_type == 'application/x-tika-msoffice'
+                            and os.path.basename(file_full_path) == 'Thumbs.db'
+                    ):  # TODO: Gjør på bedre måte så unngår problem hvis krasj før tsv skrives
+                        norm_ext = 'pdf'
+                        normalized = file_convert(file_full_path, file_type,
+                                                  None, norm_ext, in_zip)
                     # TODO: Hvis zip, bare sjekk at pakket ut riktig og angi så som ok (husk distinksjon med zip i zip)
                     # elif file_type == 'application/zip':
                     #     normalized = file_convert(file_full_path, file_type,
