@@ -107,7 +107,7 @@ for folder in subfolders:
             "WbImport -ifNotDefined=pg_done -type=text -extension=tsv -mode=insert -sourceDir='"
             + sub_systems_path
             + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=pwb -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
+            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=pwb -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
             "DROP SCHEMA pwb CASCADE; COMMIT;",
             "WbSysExec echo 'done' > '" + pg_done + "';",
             "WbDisconnect;",
@@ -125,7 +125,7 @@ for folder in subfolders:
             "WbImport -ifNotDefined=my_done -type=text -extension=tsv -mode=insert -sourceDir='"
             + sub_systems_path
             + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=pwb -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
+            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=pwb -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
             "DROP DATABASE pwb;",
             "WbSysExec echo 'done' > '" + my_done + "';",
             "WbDisconnect;",
@@ -142,7 +142,7 @@ for folder in subfolders:
             "WbImport -ifNotDefined=ora_done -type=text -extension=tsv -mode=insert -sourceDir='"
             + sub_systems_path
             + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=oracle -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
+            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=oracle -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
             "WbInclude -ifNotDefined=ora_done -file='../PWB/ora_schema_reset.sql' -displayResult=true -verbose=true -continueOnError=false;",
             "WbSysExec echo 'done' > '" + ora_done + "';",
             "WbDisconnect;",
@@ -161,7 +161,7 @@ for folder in subfolders:
             "WbImport -ifNotDefined=ms_done -type=text -extension=tsv -mode=insert -sourceDir='"
             + sub_systems_path
             + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=dbo -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
+            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=dbo -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
             "WbDisconnect;",
             'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
             "DROP DATABASE IF EXISTS pwb;",
@@ -182,7 +182,7 @@ for folder in subfolders:
             "WbImport -ifNotDefined=lite_done -type=text -extension=tsv -mode=insert -sourceDir='"
             + sub_systems_path
             + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema= -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=false -trimValues=false -showProgress=10000;",
+            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema= -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
             "WbSysExec echo 'done' > '" + lite_done + "';",
             "WbDisconnect;",
         ]

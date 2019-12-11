@@ -15,20 +15,118 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess, os, pathlib, glob, sys, fileinput
+import subprocess, os, pathlib, glob, sys, fileinput, copy, collections
 if os.name == "posix":
     from lxml import etree as ET
     import pandas as pd
 
-from depgen import flatten
 from functools import reduce
 from configparser import SafeConfigParser
 from verify_make_copies import add_wim_file
 from extract_user_input import add_config_section
 from appJar import gui
 from process_files_pre import mount_wim, quit
+from lxml import etree
+from toposort import toposort, toposort_flatten
 
 # TODO: Endre så en logg pr subsystem heller
+
+
+def toposort2(data):
+    """Dependencies are expressed as a dictionary whose keys are items
+and whose values are a set of dependent items. Output is a list of
+sets in topological order. The first set consists of items with no
+dependences, each subsequent set consists of items that depend upon
+items in the preceeding sets.
+
+>>> print '\\n'.join(repr(sorted(x)) for x in toposort2({
+...     2: set([11]),
+...     9: set([11,8]),
+...     10: set([11,3]),
+...     11: set([7,5]),
+...     8: set([7,3]),
+...     }) )
+[3, 5, 7]
+[8, 11]
+[2, 9, 10]
+
+"""
+
+    # Ignore self dependencies.
+    for k, v in data.items():
+        v.discard(k)
+    # Find all items that don't depend on anything.
+    extra_items_in_deps = reduce(set.union, data.itervalues()) - set(
+        data.iterkeys())
+    # Add empty dependences where needed
+    data.update({item: set() for item in extra_items_in_deps})
+    while True:
+        ordered = set(item for item, dep in data.iteritems() if not dep)
+        if not ordered:
+            break
+        yield ordered
+        data = {
+            item: (dep - ordered)
+            for item, dep in data.iteritems() if item not in ordered
+        }
+    assert not data, "Cyclic dependencies exist among these items:\n%s" % '\n'.join(
+        repr(x) for x in data.iteritems())
+
+
+# def sortchildrenby(parent, attr):
+#     parent[:] = sorted(parent, key=lambda child: child.get(attr))
+
+# def dependency_order(dep_list):
+#     rem_tables = list(set([t[0] for t in dep_list] + [t[1] for t in dep_list]))
+#     rem_dep = copy.copy(dep_list)
+#     sortkey = 1
+#     ret_list = []
+#     while len(rem_dep) > 0:
+#         tbls = [
+#             tbl for tbl in rem_tables
+#             if tbl not in [dep[0] for dep in rem_dep]
+#         ]
+#         ret_list.extend([(tb, sortkey) for tb in tbls])
+#         rem_tables = [tbl for tbl in rem_tables if tbl not in tbls]
+#         rem_dep = [dep for dep in rem_dep if dep[1] not in tbls]
+#         sortkey += 1
+#     if len(rem_tables) > 0:
+#         ret_list.extend([(tb, sortkey) for tb in rem_tables])
+#     ret_list.sort(cmp=lambda x, y: cmp(x[1], y[1]))
+#     return [item[0] for item in ret_list]
+
+
+# TODO: Denne ikke god nok -> får flere med samme -> eller er feil lenger nede når flere constraints pr tabell?
+def tsort(pairs):
+    """topological sort
+
+    Just like unix tsort(1)
+
+    >>> tsort([(1, 2), (7, 8), (8, 10), (7, 4), (2, 3), (4, 10)])
+    [1, 7, 2, 8, 4, 3, 10]
+    >>> try:
+    ...     tsort([(1,2), (2,1)])
+    ... except CycleError as e:
+    ...     print(e)
+    ([], Counter({1: 1, 2: 1}), {1: [2], 2: [1]})
+    """
+    # inspired by http://mail.python.org/pipermail/python-list/1999-July/002831.html
+    successors = {}
+    predecessor_counts = collections.Counter()
+    for x, y in pairs:
+        successors.setdefault(x, []).append(y)
+        predecessor_counts.setdefault(x, 0)
+        predecessor_counts[y] += 1
+    ordered = [x for x in predecessor_counts if predecessor_counts[x] == 0]
+    for x in ordered:
+        del predecessor_counts[x]
+        for y in successors.get(x, ()):
+            predecessor_counts[y] -= 1
+            if predecessor_counts[y] == 0:
+                ordered.append(y)
+    # if predecessor_counts:
+    #     raise CycleError(ordered, predecessor_counts, successors)
+    return ordered
 
 
 def blocks(files, size=65536):
@@ -156,8 +254,10 @@ for folder in subfolders:
             table_name = table.find("table-name")
             file_name = base_path + "/content/data/" + table_name.text.lower(
             ) + ".txt"
-            # TODO: Menyvalg for dispose må rename txt-fil
+            # TODO: Menyvalg for dispose bare må rename txt-fil
             # TODO: Brukes denne lenger? Eller blir fil bare slettet nå?
+            # TODO: Må dette gjøres senere så håndterer at gjør disposed i etterkant av at endret ext til tsv ?
+            # TODO: ---> eller heller skrive til xml-fil at disposed? --> Holder å bare slette tsv. Også før endre ext?
             disposed_file_name = base_path + "/content/data/" + table_name.text.lower() + \
                 "__disposed.txt"
             # Add tables names too long for oracle to 'illegal_tables'
@@ -228,26 +328,81 @@ for folder in subfolders:
 
         # TODO: Mulig senere å kutte ut en egen loop for dette?
         deps_dict = {}
-        dep_count = 0
+
+        deps_list = []  # TESTKODE
+        # deps_list.append(['no_dependencies', 'test'])
+        table_list = []
         for table in table_def:
+            dep_count = 0
             table_name = table.find("table-name")
+            # table_list.append(table_name.text.lower())
             children = table.getchildren()
-            table_deps = []
+            # table_deps = []
+            table_deps = set()
             for column_def in children:
                 if column_def.tag == "foreign-keys":
                     for fkey_def in column_def:
                         if fkey_def.tag == "foreign-key":
                             for fkey in fkey_def:
+                                if fkey.tag == "constraint-name":
+                                    c_name = str(fkey.text).lower()
+                                    # Ignore Oracle check constraints
+                                    if c_name.startswith("sys_c"):
+                                        break
                                 if fkey.tag == "references":
                                     for fkey_ref in fkey:
                                         if fkey_ref.tag == "table-name":
                                             ref_table = fkey_ref.text.lower()
+                                            # if ref_table != table_name.text:  # TESTKODE
+                                            #     dep_count += 1
+                                            #     deps_list.append([
+                                            #         table_name.text.lower(),
+                                            #         ref_table
+                                            #     ])
+
                                             if ref_table not in table_deps and ref_table != table_name.text:
-                                                table_deps.append(ref_table)
+                                                table_deps.add(ref_table)
+                                                # table_deps.append(ref_table)
+
+            # TODO: Trengs denne og håndterer toposort den? Tom verdi heller?
+            if len(table_deps) == 0:
+                table_deps.add(table_name.text)
+            # if table_deps == []:
+            #     table_deps.append("")
+            # if dep_count == 0:
+            # deps_list.append([table_name.text.lower(), 'no_dependencies'])
+
             deps_dict.update({table_name.text: table_deps})
 
+        # deps_list = tsort(deps_list)
+        # deps_list = deps_list[::-1]
+
+        # for i in deps_dict:
+        #     print(i, deps_dict[i])
+
         # Order tables by dependencies
-        deps_list = flatten(deps_dict)  #Order according to deps
+        # deps_list = flatten(deps_dict)  #Order according to deps
+
+        # deps_set = toposort2(deps_dict)
+
+        # print(deps_set)
+        # deps_list = list(deps_set)
+
+        # deps_list = dependency_order(deps_list)
+        # dep_tree = DepenendcieTree()
+        # dep_tree.add_proj_list(table_list)
+        # dep_tree.add_depenendcie_list(deps_list)
+        # print(dep_tree.list())
+        # deps_list = dep_tree.list()
+
+        # deps_list = DepenOrder(table_list, deps_list)
+
+        # TODO: Legg til toposort pip linje i arkimint hvis ender opp med å bruke den
+        deps_list = toposort_flatten(deps_dict)
+        # deps_list = toposort_flatten(deps_dict)
+
+        # print(*testlist, sep="\n")
+        # print(*deps_list, sep="\n")
         for table in table_def:
             table_name = table.find("table-name")
             index = 0
@@ -333,6 +488,12 @@ for folder in subfolders:
                         # disposal_comment.text = " "
                         if fkey_def.tag == "foreign-key":
                             for fkey in fkey_def:
+                                # ora_check_constraint = False
+                                # if fkey.tag == "constraint-name":
+                                #     c_name = str(fkey.text).lower()
+                                #     # Ignore Oracle check constraints
+                                #     if c_name.startswith("sys_c"):
+                                #         ora_check_constraint = True
                                 if fkey.tag == "references":
                                     for fkey_ref in fkey:
                                         # Fix references to normalized table-names:
@@ -356,13 +517,15 @@ for folder in subfolders:
 
                                             if fkey_ref.text.lower(
                                             ) == table_name.text:
-                                                column_def.remove(fkey_def)
+                                                # print(table_name.text)
+                                                # TODO: Tester uten linje under -> ga feil for profdoc
+                                                # column_def.remove(fkey_def)
 
-                                                # disposed.text = "true"
-                                                # disposal_comment.text = "Self-referencing constraint"
+                                                disposed.text = "true"
+                                                disposal_comment.text = "Self-referencing constraint"
                                                 # TODO: Bruk dispos-tag heller enn å fjerne også andre steder
-                                        # fkey_ref.insert(1, disposed)
-                                        # fkey_ref.insert(2, disposal_comment)
+                                        fkey_ref.insert(1, disposed)
+                                        fkey_ref.insert(2, disposal_comment)
 
                                 # fkey.insert(1, disposed)
                                 # fkey.insert(2, disposal_comment)
@@ -393,7 +556,6 @@ for folder in subfolders:
                                     constraint_def.text = constraint_def.text.replace(
                                         word, illegal_columns[word])
 
-        #Write data to new xml-file:
         root = tree.getroot()
         indent(root)
         tree.write(mod_xml_file)

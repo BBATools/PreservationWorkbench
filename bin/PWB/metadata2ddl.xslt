@@ -62,60 +62,22 @@ Supported parameters:
 * includeIndexes       - generate DDL for index definitions (current value: <xsl:value-of select="$includeIndexes"/>)
     </xsl:message>
 
-    <!-- <xsl:apply-templates select="/schema-report/sequence-def"> -->
-      <!-- <xsl:with-param name="definition-part" select="'create'"/> -->
-    <!-- </xsl:apply-templates> -->
-
-    <!-- <xsl:apply-templates select="/schema-report/table-def[disposed !='true']"/> -->
-
-    <xsl:apply-templates select="/schema-report/table-def[disposed !='true']"> 
-      <xsl:sort select="dep-position" data-type="number" order="ascending"/>
-    </xsl:apply-templates>
-
-    <!-- <xsl:apply-templates select="/schema-report/sequence-def"> -->
-      <!-- <xsl:with-param name="definition-part" select="'owner'"/> -->
-    <!-- </xsl:apply-templates> -->
-
-    <!-- <xsl:apply-templates select="/schema-report/view-def"/> --> 
-    <!-- TODO: Fjernet linje over da det i hvert fall i først omgang er vanskelig å få til for alle dbtyper -->
-    <!-- <xsl:call-template name="process-fk"/> -->
+    <xsl:for-each select="/schema-report/table-def[disposed !='true']">
+      <xsl:sort select="dep-position" data-type="number" order="ascending"/>   
+      <xsl:apply-templates select="." />
+    </xsl:for-each>    
 
     <xsl:value-of select="$newline"/>
   </xsl:template>
-<!-- 
-  <xsl:template match="node()|@*">
-    <xsl:copy>
-        <xsl:apply-templates select="node()|@*"/>
-    </xsl:copy>
-  </xsl:template>
 
-  <xsl:template match="schema-report">
-      <xsl:copy>
-          <xsl:apply-templates select="table-def">
-            <xsl:sort select="dep-position" data-type="number" order="ascending"/>
-          </xsl:apply-templates>
-      </xsl:copy>
-  </xsl:template> -->
 
   <xsl:template match="table-def">
-
-    <!-- <xsl:for-each select="table-def"> -->
-      <!-- <xsl:sort select="dep-position" data-type="number" order="ascending"/> -->
-    <!-- </xsl:for-each> -->
 
     <xsl:variable name="tablename">
       <xsl:call-template name="write-object-name">
         <xsl:with-param name="objectname" select="table-name"/>
       </xsl:call-template>
     </xsl:variable>
-
-    <!-- <xsl:text>DROP TABLE IF EXISTS </xsl:text>
-    <xsl:value-of select="$tablename"/>
-    <xsl:text>;</xsl:text> -->
-    <!-- TODO: Fjernet de 3 over da sql server før 2016 ikke støtter den -->
-    <!-- <xsl:text> CASCADE;</xsl:text> -->
-    <!-- TODO: Cascade virker ikke i sqlite - byttet ut linje over med bare ";" til evt finner løsning på det -->
-    <!-- <xsl:value-of select="$newline"/> -->
 
     <xsl:text>CREATE TABLE </xsl:text>
     <xsl:value-of select="$tablename"/>
@@ -436,8 +398,9 @@ Supported parameters:
       <xsl:if test="count(foreign-keys) &gt; 0">
         <!-- <xsl:value-of select="$table"/> -->
         <xsl:if test="$tblname = $table">
-          <xsl:for-each select="foreign-keys/foreign-key">
-          <!-- <xsl:for-each select="foreign-keys/foreign-key[disposed !='true']"> -->
+          <!-- <xsl:for-each select="foreign-keys/foreign-key"> -->
+          <!-- Ignore Oracle check constraints -->
+          <xsl:for-each select="foreign-keys/foreign-key[not(starts-with(constraint-name,'SYS_C'))]">
             <xsl:variable name="targetTable" select="references/table-name"/>
             <!-- <xsl:value-of select="$newline"/> -->
             <!-- <xsl:text>ALTER TABLE </xsl:text> -->
@@ -510,17 +473,17 @@ Supported parameters:
 
 
   <xsl:template name="add-defer-rule">
-    <xsl:variable name="defer" select="deferrable"/>
+    <!-- <xsl:variable name="defer" select="deferrable"/>
     <xsl:choose>
-      <xsl:when test="$defer='INITIALLY DEFERRED'">
+      <xsl:when test="$defer='INITIALLY DEFERRED'"> -->
         <xsl:value-of select="$newline"/>
         <xsl:text>  DEFERRABLE INITIALLY DEFERRED</xsl:text>
-      </xsl:when>
+      <!-- </xsl:when>
       <xsl:when test="$defer='INITIALLY IMMEDIATE'">
         <xsl:value-of select="$newline"/>
         <xsl:text>  DEFERRABLE INITIALLY IMMEDIATE</xsl:text>
       </xsl:when>
-    </xsl:choose>
+    </xsl:choose> -->
   </xsl:template>
 
   <xsl:template match="view-def">
@@ -593,19 +556,19 @@ Supported parameters:
 
     <xsl:choose>
       <xsl:when test="$type-id = 2005"> <!-- CLOB -->
-        <xsl:text>varchar(255)</xsl:text>
+        <xsl:text>text</xsl:text>
       </xsl:when>
       <xsl:when test="$type-id = 2011"> <!-- NCLOB -->
-        <xsl:text>varchar(255)</xsl:text>
+        <xsl:text>text</xsl:text>
       </xsl:when>
       <xsl:when test="$type-id = 2004"> <!-- BLOB -->
-        <xsl:text>varchar(255)</xsl:text>       <!-- TODO: Test. Endret denne fra bytea-->
+        <xsl:text>text</xsl:text>       <!-- TODO: Test. Endret denne fra bytea-->
       </xsl:when>
       <xsl:when test="$type-id = -3"> <!-- VARBINARY -->
-        <xsl:text>varchar(255)</xsl:text>    <!-- TODO: Test. Endret denne fra bytea-->
+        <xsl:text>text</xsl:text>    <!-- TODO: Test. Endret denne fra bytea-->
       </xsl:when>
       <xsl:when test="$type-id = -4"> <!-- LONGVARBINARY -->
-        <xsl:text>varchar(255)</xsl:text>    <!-- TODO: Endret denne fra bytea-->
+        <xsl:text>text</xsl:text>    <!-- TODO: Endret denne fra bytea-->
       </xsl:when>
       <xsl:when test="$type-id = -1"> <!-- LONGVARCHAR -->
         <xsl:text>text</xsl:text>

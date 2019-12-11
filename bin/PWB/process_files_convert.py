@@ -496,6 +496,7 @@ if not os.path.isfile(convert_done_file):
             # -> fjerne kolonner: https://nitratine.net/blog/post/remove-columns-in-a-csv-file-with-python/
 
             # TODO: Legg inn telleverk i konvertering -> noe sånt: (1/538)
+            # TODO: Må håndtere filer av type text/plain -> betyr at tika ikke klarte å identifisere encoding
 
             zip_row_iterator = df.iterrows()
             zip_rel_dir = None
