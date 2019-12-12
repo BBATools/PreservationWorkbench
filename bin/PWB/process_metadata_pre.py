@@ -32,103 +32,6 @@ from toposort import toposort, toposort_flatten
 # TODO: Endre så en logg pr subsystem heller
 
 
-def toposort2(data):
-    """Dependencies are expressed as a dictionary whose keys are items
-and whose values are a set of dependent items. Output is a list of
-sets in topological order. The first set consists of items with no
-dependences, each subsequent set consists of items that depend upon
-items in the preceeding sets.
-
->>> print '\\n'.join(repr(sorted(x)) for x in toposort2({
-...     2: set([11]),
-...     9: set([11,8]),
-...     10: set([11,3]),
-...     11: set([7,5]),
-...     8: set([7,3]),
-...     }) )
-[3, 5, 7]
-[8, 11]
-[2, 9, 10]
-
-"""
-
-    # Ignore self dependencies.
-    for k, v in data.items():
-        v.discard(k)
-    # Find all items that don't depend on anything.
-    extra_items_in_deps = reduce(set.union, data.itervalues()) - set(
-        data.iterkeys())
-    # Add empty dependences where needed
-    data.update({item: set() for item in extra_items_in_deps})
-    while True:
-        ordered = set(item for item, dep in data.iteritems() if not dep)
-        if not ordered:
-            break
-        yield ordered
-        data = {
-            item: (dep - ordered)
-            for item, dep in data.iteritems() if item not in ordered
-        }
-    assert not data, "Cyclic dependencies exist among these items:\n%s" % '\n'.join(
-        repr(x) for x in data.iteritems())
-
-
-# def sortchildrenby(parent, attr):
-#     parent[:] = sorted(parent, key=lambda child: child.get(attr))
-
-# def dependency_order(dep_list):
-#     rem_tables = list(set([t[0] for t in dep_list] + [t[1] for t in dep_list]))
-#     rem_dep = copy.copy(dep_list)
-#     sortkey = 1
-#     ret_list = []
-#     while len(rem_dep) > 0:
-#         tbls = [
-#             tbl for tbl in rem_tables
-#             if tbl not in [dep[0] for dep in rem_dep]
-#         ]
-#         ret_list.extend([(tb, sortkey) for tb in tbls])
-#         rem_tables = [tbl for tbl in rem_tables if tbl not in tbls]
-#         rem_dep = [dep for dep in rem_dep if dep[1] not in tbls]
-#         sortkey += 1
-#     if len(rem_tables) > 0:
-#         ret_list.extend([(tb, sortkey) for tb in rem_tables])
-#     ret_list.sort(cmp=lambda x, y: cmp(x[1], y[1]))
-#     return [item[0] for item in ret_list]
-
-
-# TODO: Denne ikke god nok -> får flere med samme -> eller er feil lenger nede når flere constraints pr tabell?
-def tsort(pairs):
-    """topological sort
-
-    Just like unix tsort(1)
-
-    >>> tsort([(1, 2), (7, 8), (8, 10), (7, 4), (2, 3), (4, 10)])
-    [1, 7, 2, 8, 4, 3, 10]
-    >>> try:
-    ...     tsort([(1,2), (2,1)])
-    ... except CycleError as e:
-    ...     print(e)
-    ([], Counter({1: 1, 2: 1}), {1: [2], 2: [1]})
-    """
-    # inspired by http://mail.python.org/pipermail/python-list/1999-July/002831.html
-    successors = {}
-    predecessor_counts = collections.Counter()
-    for x, y in pairs:
-        successors.setdefault(x, []).append(y)
-        predecessor_counts.setdefault(x, 0)
-        predecessor_counts[y] += 1
-    ordered = [x for x in predecessor_counts if predecessor_counts[x] == 0]
-    for x in ordered:
-        del predecessor_counts[x]
-        for y in successors.get(x, ()):
-            predecessor_counts[y] -= 1
-            if predecessor_counts[y] == 0:
-                ordered.append(y)
-    # if predecessor_counts:
-    #     raise CycleError(ordered, predecessor_counts, successors)
-    return ordered
-
-
 def blocks(files, size=65536):
     while True:
         b = files.read(size)
@@ -323,86 +226,48 @@ for folder in subfolders:
                             col_length = len(column.text)
                             if col_length > 30 and column.text not in illegal_columns:
                                 c_count += 1
-                                illegal_columns[column.text] = column.text[:26] + \
-                                    "_" + str(c_count)
+                                illegal_columns[column.text] = column.text[:26] + "_" + str(c_count)
 
         # TODO: Mulig senere å kutte ut en egen loop for dette?
         deps_dict = {}
-
-        deps_list = []  # TESTKODE
-        # deps_list.append(['no_dependencies', 'test'])
-        table_list = []
         for table in table_def:
             dep_count = 0
+            disp_value = table.find("disposed").text
+            if disp_value == "true":
+                continue
+
             table_name = table.find("table-name")
-            # table_list.append(table_name.text.lower())
             children = table.getchildren()
-            # table_deps = []
             table_deps = set()
             for column_def in children:
                 if column_def.tag == "foreign-keys":
                     for fkey_def in column_def:
                         if fkey_def.tag == "foreign-key":
+                            c_name = fkey_def.find("constraint-name")                       
                             for fkey in fkey_def:
-                                if fkey.tag == "constraint-name":
-                                    c_name = str(fkey.text).lower()
-                                    # Ignore Oracle check constraints
-                                    if c_name.startswith("sys_c"):
-                                        break
                                 if fkey.tag == "references":
                                     for fkey_ref in fkey:
                                         if fkey_ref.tag == "table-name":
                                             ref_table = fkey_ref.text.lower()
-                                            # if ref_table != table_name.text:  # TESTKODE
-                                            #     dep_count += 1
-                                            #     deps_list.append([
-                                            #         table_name.text.lower(),
-                                            #         ref_table
-                                            #     ])
 
-                                            if ref_table not in table_deps and ref_table != table_name.text:
+                                            if (ref_table not in table_deps and ref_table != table_name.text):
+                                                if ref_table in deps_dict.keys():
+                                                    if table_name.text in deps_dict[ref_table]:
+                                                        c_name.text = "_disabled_" + c_name.text
+                                                        continue
                                                 table_deps.add(ref_table)
-                                                # table_deps.append(ref_table)
 
-            # TODO: Trengs denne og håndterer toposort den? Tom verdi heller?
             if len(table_deps) == 0:
                 table_deps.add(table_name.text)
-            # if table_deps == []:
-            #     table_deps.append("")
-            # if dep_count == 0:
-            # deps_list.append([table_name.text.lower(), 'no_dependencies'])
 
             deps_dict.update({table_name.text: table_deps})
 
-        # deps_list = tsort(deps_list)
-        # deps_list = deps_list[::-1]
-
-        # for i in deps_dict:
-        #     print(i, deps_dict[i])
-
-        # Order tables by dependencies
-        # deps_list = flatten(deps_dict)  #Order according to deps
-
-        # deps_set = toposort2(deps_dict)
-
-        # print(deps_set)
-        # deps_list = list(deps_set)
-
-        # deps_list = dependency_order(deps_list)
-        # dep_tree = DepenendcieTree()
-        # dep_tree.add_proj_list(table_list)
-        # dep_tree.add_depenendcie_list(deps_list)
-        # print(dep_tree.list())
-        # deps_list = dep_tree.list()
-
-        # deps_list = DepenOrder(table_list, deps_list)
-
-        # TODO: Legg til toposort pip linje i arkimint hvis ender opp med å bruke den
         deps_list = toposort_flatten(deps_dict)
-        # deps_list = toposort_flatten(deps_dict)
 
-        # print(*testlist, sep="\n")
-        # print(*deps_list, sep="\n")
+        with open(base_path + '/documentation/import_order.txt', 'w') as file:
+            for val in deps_list:
+                file.write('%s\n' % val)
+
         for table in table_def:
             table_name = table.find("table-name")
             index = 0

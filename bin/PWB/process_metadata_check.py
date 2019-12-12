@@ -36,6 +36,10 @@ if not filepath:
 with open(sql_file, "w+") as file:  # Blank out between runs
     file.write(" ")
 
+# with open(base_path + '/documentation/import_order.txt', 'w') as file:
+#     for val in deps_list:
+#         file.write('%s\n' % val)    
+
 sub_systems_path = mount_dir + "/content/sub_systems/"
 subfolders = os.listdir(sub_systems_path)
 for folder in subfolders:

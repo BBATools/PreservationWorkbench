@@ -400,7 +400,8 @@ Supported parameters:
         <xsl:if test="$tblname = $table">
           <!-- <xsl:for-each select="foreign-keys/foreign-key"> -->
           <!-- Ignore Oracle check constraints -->
-          <xsl:for-each select="foreign-keys/foreign-key[not(starts-with(constraint-name,'SYS_C'))]">
+          <!-- <xsl:for-each select="foreign-keys/foreign-key[not(starts-with(constraint-name,'SYS_C'))]"> -->
+          <xsl:for-each select="foreign-keys/foreign-key[not(starts-with(constraint-name,'_disabled_'))]">                    
             <xsl:variable name="targetTable" select="references/table-name"/>
             <!-- <xsl:value-of select="$newline"/> -->
             <!-- <xsl:text>ALTER TABLE </xsl:text> -->
