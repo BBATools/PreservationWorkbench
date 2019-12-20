@@ -34,11 +34,7 @@ if not filepath:
     exit()
 
 with open(sql_file, "w+") as file:  # Blank out between runs
-    file.write(" ")
-
-# with open(base_path + '/documentation/import_order.txt', 'w') as file:
-#     for val in deps_list:
-#         file.write('%s\n' % val)    
+    file.write(" ")  
 
 sub_systems_path = mount_dir + "/content/sub_systems/"
 subfolders = os.listdir(sub_systems_path)
@@ -48,6 +44,8 @@ for folder in subfolders:
     and os.path.isfile(header_xml_file) \
     and os.listdir(sub_systems_path + folder + '/content/data/'):
         documentation_folder = sub_systems_path + folder + "/documentation/"
+        sub_data_folder = sub_systems_path + folder + "/content/data/"
+        import_order_file = documentation_folder + 'import_order.txt'
         isosql_ddl = documentation_folder + "metadata.sql"
         oracle_ddl = documentation_folder + "metadata_oracle.sql"
         mysql_ddl = documentation_folder + "metadata_mysql.sql"
@@ -63,6 +61,7 @@ for folder in subfolders:
         mssql_repls = (
             (" timestamp", " datetime"),
             (" varchar(", " nvarchar("),
+            ("  DEFERRABLE INITIALLY DEFERRED", "  ")            
             #    (" boolean", " varchar(5)"),
             #  (" bigint", " numeric"), #TODO: Ser ikke ut til at bigint kan ha desimaler i alle dbtyper
         )
@@ -89,106 +88,147 @@ for folder in subfolders:
                 oracle_ddl_w.write(
                     reduce(lambda a, kv: a.replace(*kv), oracle_repls, line))
 
-        mysql_repls = ((" timestamp", " datetime"), )
-        mysql_ddl_w = open(mysql_ddl, "w")
-        with open(isosql_ddl, 'r') as file_r:
-            for line in file_r:
-                mysql_ddl_w.write(
-                    reduce(lambda a, kv: a.replace(*kv), mysql_repls, line))
+        # mysql_repls = (
+        #     (" timestamp", " datetime"),
+        #     (" varchar(4000)", " text"),            
+        #     ("  DEFERRABLE INITIALLY DEFERRED", "  ")
+        # )
+        # mysql_ddl_w = open(mysql_ddl, "w")
+        # with open(isosql_ddl, 'r') as file_r:
+        #     for line in file_r:
+        #         mysql_ddl_w.write(
+        #             reduce(lambda a, kv: a.replace(*kv), mysql_repls, line))
 
-        sql = [
-            "\n",
-            "-- PostgreSQL 12",
-            "WbDisconnect;",
-            'WbConnect -url="jdbc:postgresql://localhost:5432/" -username="postgres" -password="P@ssw0rd";',
-            "DROP SCHEMA IF EXISTS pwb CASCADE; COMMIT; CREATE SCHEMA pwb; COMMIT; SET search_path TO pwb;",
-            "WbSysExec touch '" + pg_done + "';",
-            "WbVarDef -contentFile='" + pg_done + "' -variable=pg_done;",
-            "WbInclude -ifNotDefined=pg_done -file='"
-            + isosql_ddl
-            + "' -displayResult=true -verbose=true -continueOnError=false;",
-            "COMMIT;",
-            "WbImport -ifNotDefined=pg_done -type=text -extension=tsv -mode=insert -sourceDir='"
-            + sub_systems_path
-            + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=pwb -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
-            "DROP SCHEMA pwb CASCADE; COMMIT;",
-            "WbSysExec echo 'done' > '" + pg_done + "';",
-            "WbDisconnect;",
-            "\n",
-            "-- MySQL 8.0",
-            "WbDisconnect;",
-            'WbConnect -url="jdbc:mysql://localhost:3306?zeroDateTimeBehavior=CONVERT_TO_NULL&serverTimezone=UTC" -username="root" -password="P@ssw0rd";',
-            "DROP DATABASE IF EXISTS pwb; CREATE DATABASE pwb; ALTER DATABASE pwb CHARACTER SET = utf8mb4 COLLATE = utf8mb4_da_0900_as_cs; USE pwb;",
-            "RESET MASTER;"
-            "WbSysExec touch '" + my_done + "';",
-            "WbVarDef -contentFile='" + my_done + "' -variable=my_done;",
-            "WbInclude -ifNotDefined=my_done -file='"
-            + mysql_ddl
-            + "' -displayResult=true -verbose=true -continueOnError=false;",
-            "WbImport -ifNotDefined=my_done -type=text -extension=tsv -mode=insert -sourceDir='"
-            + sub_systems_path
-            + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=pwb -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
-            "DROP DATABASE pwb;",
-            "WbSysExec echo 'done' > '" + my_done + "';",
-            "WbDisconnect;",
-            "\n",
-            "-- Oracle 11.2",
-            "WbDisconnect;",
-            'WbConnect -url="jdbc:oracle:thin:@127.0.1.1:1521/XE" -username="oracle" -password="pwb";',
-            "WbSysExec touch '" + ora_done + "';",
-            "WbVarDef -contentFile='" + ora_done + "' -variable=ora_done;",
-            "WbInclude -ifNotDefined=ora_done -file='../PWB/ora_schema_reset.sql' -displayResult=true -verbose=true -continueOnError=false;",
-            "WbInclude -ifNotDefined=ora_done -file='"
-            + oracle_ddl
-            + "' -displayResult=true -verbose=true -continueOnError=false;",
-            "WbImport -ifNotDefined=ora_done -type=text -extension=tsv -mode=insert -sourceDir='"
-            + sub_systems_path
-            + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=oracle -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
-            "WbInclude -ifNotDefined=ora_done -file='../PWB/ora_schema_reset.sql' -displayResult=true -verbose=true -continueOnError=false;",
-            "WbSysExec echo 'done' > '" + ora_done + "';",
-            "WbDisconnect;",
-            "\n",
-            "-- SQL Server 2019",
-            "WbDisconnect;",
-            'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
-            "DROP DATABASE IF EXISTS pwb; CREATE DATABASE pwb;",
-            "WbDisconnect;",
-            'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=pwb" -username="sa" -password="P@ssw0rd" -autocommit=false;',
-            "WbSysExec touch '" + ms_done + "';",
-            "WbVarDef -contentFile='" + ms_done + "' -variable=ms_done;",
-            "WbInclude -ifNotDefined=ms_done -file='"
-            + mssql_ddl
-            + "' -displayResult=true -verbose=true -continueOnError=false;",
-            "WbImport -ifNotDefined=ms_done -type=text -extension=tsv -mode=insert -sourceDir='"
-            + sub_systems_path
-            + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=dbo -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
-            "WbDisconnect;",
-            'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
-            "DROP DATABASE IF EXISTS pwb;",
-            "WbSysExec echo 'done' > '" + ms_done + "';",
-            "WbDisconnect;",
-            "\n",
-            "-- SQLite 3.27",
-            "WbDisconnect;",
-            # 'WbConnect -url="jdbc:sqlite::memory:" -username="" -password="" -driverjar="../bin/sqlite-jdbc-3.27.2.1.jar" -driver=org.sqlite.JDBC;',
-            "WbSysExec rm '" + sqlite_db + "' 2> /dev/null;",
-            'WbConnect -url="jdbc:sqlite:' + sqlite_db + \
-            '"  -username="" -password="" -driverjar="../bin/sqlite-jdbc-3.27.2.1.jar" -driver=org.sqlite.JDBC;',
-            "WbSysExec touch '" + lite_done + "';",
-            "WbVarDef -contentFile='" + lite_done + "' -variable=lite_done;",
-            "WbInclude -ifNotDefined=lite_done -file='"
-            + isosql_ddl
-            + "' -displayResult=true -verbose=true -continueOnError=false;",
-            "WbImport -ifNotDefined=lite_done -type=text -extension=tsv -mode=insert -sourceDir='"
-            + sub_systems_path
-            + folder
-            + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema= -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
-            "WbSysExec echo 'done' > '" + lite_done + "';",
-            "WbDisconnect;",
-        ]
+
+        order_list = []
+        with open(import_order_file) as file:
+            for cnt, line in enumerate(file):
+                order_list.append(line.rstrip())
+
+        # db_list = ['postgresql','mysql','oracle','mssql','sqlite']   
+        # db_dict = {}      
+        # for db in db_list:
+        #     db_dict.update({db: get_table_deps(table_name, table_def, deps_dict)})   
+         
+        # TODO: Flytt øverst når testet
+        def generate_import(db_name, done_file, schema):
+            import_list = []
+            for table in order_list:
+                import_str = 'WbImport -ifNotDefined=' + done_file + ' -schema=' + schema + ' -file=' + sub_data_folder + table + '.tsv' + ' -table=' + table + " -type=text -extension=tsv -mode=insert -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;"
+                import_list.append(import_str)
+                # print(cmd)    
+            return '\n'.join(import_list)     
+
+        db_dict =   {
+                    'postgresql': [
+                        '-url="jdbc:postgresql://localhost:5432/" -username="postgres" -password="P@ssw0rd";',
+                        'DROP SCHEMA IF EXISTS pwb CASCADE; COMMIT; CREATE SCHEMA pwb; COMMIT; SET search_path TO pwb;',
+                        pg_done,
+                        isosql_ddl,
+                        'DROP SCHEMA pwb CASCADE; COMMIT;',
+                        'pwb'
+                        ],
+                    # 'mysql': [
+                    #     '-url="jdbc:mysql://localhost:3306?zeroDateTimeBehavior=CONVERT_TO_NULL&serverTimezone=UTC" -username="root" -password="P@ssw0rd";',
+                    #     'DROP DATABASE IF EXISTS pwb; CREATE DATABASE pwb; ALTER DATABASE pwb CHARACTER SET = utf8mb4 COLLATE = utf8mb4_da_0900_as_cs; USE pwb; RESET MASTER;',
+                    #     my_done,
+                    #     mysql_ddl,
+                    #     'DROP DATABASE pwb;',
+                    #     'pwb'
+                    #     ],   
+                    'oracle': [
+                        '-url="jdbc:oracle:thin:@127.0.1.1:1521/XE" -username="oracle" -password="pwb";',
+                        'WbInclude -ifNotDefined=ora_done -file="../PWB/ora_schema_reset.sql" -displayResult=true -verbose=true -continueOnError=false;',
+                        ora_done,
+                        oracle_ddl,
+                        'WbInclude -ifNotDefined=ora_done -file="../PWB/ora_schema_reset.sql" -displayResult=true -verbose=true -continueOnError=false;',
+                        'oracle'
+                        ],  
+                    'mssql': [
+                        '-url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
+                        'DROP DATABASE IF EXISTS pwb; CREATE DATABASE pwb; WbDisconnect; WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=pwb" -username="sa" -password="P@ssw0rd" -autocommit=false;',
+                        ms_done,
+                        mssql_ddl,
+                        'WbDisconnect; WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true; DROP SCHEMA pwb CASCADE;',
+                        'pwb'
+                        ],                                           
+                                         
+
+                    # 'mssql': ['1','2'],
+                    # 'sqlite': ['1','2']                                        
+                    }    
+
+        sql_list = []
+        for db_name, db_list in db_dict.items():
+            url = db_list[0]
+            drop_before = db_list[1]
+            done_file_path = db_list[2]
+            done_file_name = os.path.basename(done_file_path)
+            ddl = db_list[3]
+            drop_after = db_list[4]
+            schema = db_list[5]
+            sql = [
+                    '\n',
+                    '--' + db_name,
+                    'WbDisconnect;',
+                    'WbConnect ' + url,
+                    'WbSysExec touch ' + done_file_path + ';',
+                    'WbVarDef -contentFile=' + done_file_path + ' -variable=' + done_file_name + ';',
+                    drop_before,
+                    'WbInclude -ifNotDefined=' + done_file_name + ' -file=' + ddl + ' -displayResult=true -verbose=true -continueOnError=false; COMMIT;', 
+                     generate_import(db_name, done_file_name, schema),
+                    drop_after,
+                    'WbSysExec echo "done" > ' + done_file_path + ';',
+                    'WbDisconnect;'  
+                    '\n'
+            ]
+            sql_list.append('\n'.join(sql))
+        print('\n'.join(sql_list))
+                
+
+
+
+                
+
+        # sql = [
+        #     "-- SQL Server 2019",
+        #     "WbDisconnect;",
+        #     'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
+        #     "DROP DATABASE IF EXISTS pwb; CREATE DATABASE pwb;",
+        #     "WbDisconnect;",
+        #     'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=pwb" -username="sa" -password="P@ssw0rd" -autocommit=false;',
+        #     "WbSysExec touch '" + ms_done + "';",
+        #     "WbVarDef -contentFile='" + ms_done + "' -variable=ms_done;",
+        #     "WbInclude -ifNotDefined=ms_done -file='"
+        #     + mssql_ddl
+        #     + "' -displayResult=true -verbose=true -continueOnError=false;",
+        #     "WbImport -ifNotDefined=ms_done -type=text -extension=tsv -mode=insert -sourceDir='"
+        #     + sub_systems_path
+        #     + folder
+        #     + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=dbo -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
+        #     "WbDisconnect;",
+        #     'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
+        #     "DROP DATABASE IF EXISTS pwb;",
+        #     "WbSysExec echo 'done' > '" + ms_done + "';",
+        #     "WbDisconnect;",
+        #     "\n",
+        #     "-- SQLite 3.27",
+        #     "WbDisconnect;",
+        #     # 'WbConnect -url="jdbc:sqlite::memory:" -username="" -password="" -driverjar="../bin/sqlite-jdbc-3.27.2.1.jar" -driver=org.sqlite.JDBC;',
+        #     "WbSysExec rm '" + sqlite_db + "' 2> /dev/null;",
+        #     'WbConnect -url="jdbc:sqlite:' + sqlite_db + \
+        #     '"  -username="" -password="" -driverjar="../bin/sqlite-jdbc-3.27.2.1.jar" -driver=org.sqlite.JDBC;',
+        #     "WbSysExec touch '" + lite_done + "';",
+        #     "WbVarDef -contentFile='" + lite_done + "' -variable=lite_done;",
+        #     "WbInclude -ifNotDefined=lite_done -file='"
+        #     + isosql_ddl
+        #     + "' -displayResult=true -verbose=true -continueOnError=false;",
+        #     "WbImport -ifNotDefined=lite_done -type=text -extension=tsv -mode=insert -sourceDir='"
+        #     + sub_systems_path
+        #     + folder
+        #     + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema= -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
+        #     "WbSysExec echo 'done' > '" + lite_done + "';",
+        #     "WbDisconnect;",
+        # ]
         with open(sql_file, "a+") as file:
-            file.write("\n".join(sql))
+            file.write("\n".join(sql_list))

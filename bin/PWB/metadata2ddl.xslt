@@ -620,7 +620,7 @@ Supported parameters:
         <xsl:text>varchar(5)</xsl:text>
         <!-- <xsl:text>boolean</xsl:text> -->
       </xsl:when>
-      <!-- TODO: Test å bytte ut bigint med numeric alle steder. Oka for andre enn pg? er iso sql datatype -->
+      <!-- TODO: Test å bytte ut bigint med numeric alle steder. Okay for andre enn pg? er iso sql datatype -->
       <xsl:when test="$type-id = 2 or $type-id = 3">
         <xsl:if test="$scale &gt; 0">
           <xsl:text>numeric(</xsl:text><xsl:value-of select="$precision"/><xsl:text>,</xsl:text><xsl:value-of select="$scale"/><xsl:text>)</xsl:text>

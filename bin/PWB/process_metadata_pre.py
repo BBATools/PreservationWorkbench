@@ -26,18 +26,84 @@ from verify_make_copies import add_wim_file
 from extract_user_input import add_config_section
 from appJar import gui
 from process_files_pre import mount_wim, quit
-from lxml import etree
+# from lxml import etree # TODO: Fjern fra arkimint også hvis ikke trengs andre steder lenger heller
 from toposort import toposort, toposort_flatten
+from tempfile import NamedTemporaryFile
+import shutil
+import csv
+import petl as etl
+from petl.compat import text_type
+from petl.util.base import Table
+import fileinput
+
+csv.field_size_limit(sys.maxsize)
 
 # TODO: Endre så en logg pr subsystem heller
 
+def lower_dict(d):
+   new_dict = dict((k.lower(), v.lower()) for k, v in d.items())
+   return new_dict
 
-def blocks(files, size=65536):
-    while True:
-        b = files.read(size)
-        if not b:
-            break
-        yield b
+def replace_in_file(file_path, search_text, new_text):
+    with fileinput.input(file_path, inplace=True) as f:
+        for line in f:
+            new_line = line.replace(search_text, new_text)
+            print(new_line, end='')   
+
+
+def lower_case_header(table):
+    return LowerCaseHeaderView(table)
+
+class LowerCaseHeaderView(Table):
+    def __init__(self, table):
+        self.table = table
+
+    def __iter__(self):
+        it = iter(self.table)
+        hdr = next(it)
+        outhdr = tuple((text_type(f.lower())) for f in hdr)
+        yield outhdr
+        for row in it:
+            yield row      
+
+
+def get_table_deps(table_name, table_def, deps_dict, empty_tables):   
+    table_deps = set()
+    foreign_keys = table_def.findall("foreign-keys/foreign-key")    
+    for foreign_key in foreign_keys:
+        constraint_name = foreign_key.find("constraint-name")  
+        ref_table = foreign_key.find("references/table-name")  
+        ref_table_value = ref_table.text.lower()
+        if ref_table_value not in table_deps and ref_table_value not in empty_tables:
+            if ref_table_value in deps_dict.keys():
+                if table_name.text in deps_dict[ref_table_value]:
+                    constraint_name.text = "_disabled_" + constraint_name.text
+                    continue
+            table_deps.add(ref_table_value)                
+
+    if len(table_deps) == 0:
+        table_deps.add(table_name.text) 
+    return table_deps     
+
+def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case):
+    tempfile = NamedTemporaryFile(mode='w', dir = base_path + "/content/data/", delete=False)
+    
+    replace_in_file(new_file_name, '\0', '') # Remove null bytes
+    table = etl.fromcsv(new_file_name, delimiter='\t', skipinitialspace=True, quoting = csv.QUOTE_NONE, quotechar='',escapechar = '')
+    table = lower_case_header(table)
+    table = etl.rename(table, illegal_columns, strict=False)
+    row_count = etl.nrows(table)
+
+    print(new_file_name)  
+    for pk in pk_set:
+        print(pk)
+        table = etl.convert(table, pk.lower(), lambda a: a if len(str(a))>0 else '-')      
+
+    writer = csv.writer(tempfile, delimiter='\t', quoting = csv.QUOTE_NONE, quotechar='',escapechar = '') 
+    writer.writerows(table)    
+
+    shutil.move(tempfile.name, new_file_name) 
+    return row_count      
 
 
 def indent(elem, level=0):
@@ -90,52 +156,24 @@ open(tmp_dir + "/PWB.log", 'w').close()  # Clear log file
 mount_wim(filepath, mount_dir)
 open(sql_file, 'w').close()  # Blank out between runs
 
-# TODO: Prøv å endre loop-in-loop til noe som det under:
-# Også 'continue' for å begrense indentering
-# def process_item(item):
-#     # setups
-#     # condition
-#     # processing
-#     # calculation
-#     return result
-
-# results = [process_item(item) for item in item_list]
-
 # WAIT: Sjekk også datatype med pandas og legg til som tag når numerisk: https://stackoverflow.com/questions/22697773/how-to-check-the-dtype-of-a-column-in-python-pandas/22697903
+
 sub_systems_path = mount_dir + "/content/sub_systems/"
 subfolders = os.listdir(sub_systems_path)
 for folder in subfolders:
-    # Fix xml:
-    # WAIT: Legg inn endring av alle tabell -og feltnavn til lower-case (ser at xsl gjør det -> nok?)
     base_path = sub_systems_path + folder
     ddl_file = base_path + "/documentation/metadata.sql"
     header_xml_file = base_path + "/header/metadata.xml"
     mod_xml_file = base_path + "/documentation/metadata_mod.xml"
-    if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path),
-                                  folder)) and os.path.isfile(header_xml_file):
-        # TODO: Sjekk nederste svar her (sammenlign med kode under): https://stackoverflow.com/questions/23921485/update-an-xml-document-using-python-or-a-shell-script
-        # TODO: ----> se også på den ift kode for å kassere tabeller
-        tree = ET.parse(header_xml_file)
-        p_key = tree.findall(
-            "table-def/column-def[primary-key='true'][java-sql-type-name='VARCHAR']"
-        )
-        for child in p_key:
-            name = child.find("column-name")
-            size = child.find("dbms-data-size")
-            dbms_type = child.find("dbms-data-type")
-            if int(size.text) > 768:
-                dbms_type.text = dbms_type.text.replace(size.text, "768")
-                size.text = "768"
-        for child in p_key:
-            name = child.find("column-name")
-            size = child.find("dbms-data-size")
-            dbms_type = child.find("dbms-data-type")
-            if int(size.text) > 768:
-                dbms_type.text = dbms_type.text.replace(size.text, "768")
-                size.text = "768"
 
+    if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path),folder)) and os.path.isfile(header_xml_file):
+        tree = ET.parse(header_xml_file)
         empty_tables = []
-        illegal_tables = {'WINDOW': 'WINDOW_'}
+        # WAIT: Endre til list bare under. evt. generer med underscore bak
+        illegal_tables = {
+            'WINDOW': 'WINDOW_',   
+            'FUNCTION': 'FUNCTION_',              
+            }
         illegal_columns = {
             'STORED': 'STORED_',
             'FUNCTION': 'FUNCTION_',
@@ -147,28 +185,32 @@ for folder in subfolders:
             'DATE': 'DATE_',
             'PUBLIC': 'PUBLIC_',
             'OVER': 'OVER_',
-            'SQL': 'SQL_',
+            'SQL': 'SQL_',  
+            'RANGE': 'RANGE_',    
+            'MEMBER': 'MEMBER_',                                                     
             'INTERVAL': 'INTERVAL_'
         }
+
+        illegal_columns_lower_case = lower_dict(illegal_columns)
+
         t_count = 0
         c_count = 0
-        table_def = tree.findall("table-def")
-        for table in table_def:
-            table_name = table.find("table-name")
-            file_name = base_path + "/content/data/" + table_name.text.lower(
-            ) + ".txt"
-            # TODO: Menyvalg for dispose bare må rename txt-fil
-            # TODO: Brukes denne lenger? Eller blir fil bare slettet nå?
-            # TODO: Må dette gjøres senere så håndterer at gjør disposed i etterkant av at endret ext til tsv ?
-            # TODO: ---> eller heller skrive til xml-fil at disposed? --> Holder å bare slette tsv. Også før endre ext?
-            disposed_file_name = base_path + "/content/data/" + table_name.text.lower() + \
-                "__disposed.txt"
+        # pk_dict = {}
+        table_defs = tree.findall("table-def")
+        for table_def in table_defs:
+            table_name = table_def.find("table-name")
+            file_name = base_path + "/content/data/" + table_name.text.lower() + ".txt"
+            new_file_name = os.path.splitext(file_name)[0] + '.tsv'
+
+            if os.path.isfile(file_name):
+                os.rename(file_name, new_file_name)            
+
+            # TODO: Menyvalg for dispose bare fjerne tsv/eller text-fil. Endre til tsv ext før en får gjøre det?
+
             # Add tables names too long for oracle to 'illegal_tables'
-            if len(table_name.text
-                   ) > 30 and table_name.text not in illegal_tables:
+            if len(table_name.text) > 30 and table_name.text not in illegal_tables:
                 t_count += 1
-                illegal_tables[table_name.text] = table_name.text[:25] + \
-                    "_" + str(t_count) + "_"
+                illegal_tables[table_name.text] = table_name.text[:26] + "_" + str(t_count) + "_"
 
             # Rename illegal tablenames in XML:
             old_table_name = ET.Element("original-table-name")
@@ -176,32 +218,46 @@ for folder in subfolders:
 
             if table_name.text in illegal_tables:
                 table_name.text = illegal_tables[table_name.text]
+                # TODO: Oppdatere i constraint når endret tabellnavn
+
             table_name.text = table_name.text.lower()
-            table.insert(3, old_table_name)
+            table_def.insert(3, old_table_name) 
+            
+            pk_set = set()
+            column_defs = table_def.findall("column-def")
+            for column_def in column_defs:
+                column_name = column_def.find('column-name')
+                primary_key = column_def.find('primary-key') 
+                column_name_length = len(column_name.text)                  
 
-            # Rename tsv-files except when disposed:
-            new_file_name = (
-                base_path + "/content/data/" + table_name.text + ".tsv")
+                if column_name_length > 30 and column_name.text not in illegal_columns:
+                    c_count += 1    
+                    illegal_columns[column_name.text] = column_name.text[:26] + "_" + str(c_count)   
 
-            if os.path.isfile(file_name):
-                os.rename(file_name, new_file_name)
-            elif os.path.isfile(disposed_file_name):
-                os.remove(disposed_file_name)
+                if primary_key.text == 'true':
+                    pk_set.add(column_name.text)
+
+                # WAIT: Oracle workaround -> lag bedre fiks hvis støter på igjen
+                # java_sql_type_name = column_def.find('java-sql-type-name') 
+                # dbms_data_size = column_def.find("dbms-data-size")
+                # dbms_data_type = column_def.find("dbms-data-type")                  
+                # if java_sql_type_name.text == 'VARCHAR':
+                #     if int(dbms_data_size.text) > 768:  
+                #         dbms_data_type.text = dbms_data_type.text.replace(dbms_data_size.text, "768")
+                #         dbms_data_size.text = "768"                                      
+                                                                                                      
 
             # Add row-count/disposed-info:
-            # TODO: Blir feil med row-count når kjører denne koden flere ganger? (n/a heller enn 0)
             disposed = ET.Element("disposed")
             disposed.text = "false"
             disposal_comment = ET.Element("disposal_comment")
             disposal_comment.text = " "
             rows = ET.Element("rows")
-            row_count = 0
+            
             # TODO: Legg inn sjekk så ikke leser rader på nytt hvis gjort før
             if os.path.exists(new_file_name):
-                with open(
-                        new_file_name, "r", encoding="utf-8",
-                        errors='ignore') as f:
-                    row_count = sum(bl.count("\n") for bl in blocks(f)) - 1
+                row_count = tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case)                                               
+
                 if row_count == 0:
                     os.remove(new_file_name)
                     disposed.text = "true"
@@ -214,219 +270,134 @@ for folder in subfolders:
                 empty_tables.append(table_name.text)
                 rows.text = "n/a"
 
-            table.insert(5, rows)
-            table.insert(6, disposed)
-            table.insert(7, disposal_comment)
+            table_def.insert(5, rows)
+            table_def.insert(6, disposed)
+            table_def.insert(7, disposal_comment)
 
-            # Add column names too long for oracle to 'illegal_columns'
-            for column_def in table.getchildren():
-                if column_def.tag == "column-def":
-                    for column in column_def:
-                        if column.tag == "column-name":
-                            col_length = len(column.text)
-                            if col_length > 30 and column.text not in illegal_columns:
-                                c_count += 1
-                                illegal_columns[column.text] = column.text[:26] + "_" + str(c_count)
-
-        # TODO: Mulig senere å kutte ut en egen loop for dette?
+        # Sort tables in dependent order:
         deps_dict = {}
-        for table in table_def:
-            dep_count = 0
-            disp_value = table.find("disposed").text
-            if disp_value == "true":
-                continue
-
-            table_name = table.find("table-name")
-            children = table.getchildren()
-            table_deps = set()
-            for column_def in children:
-                if column_def.tag == "foreign-keys":
-                    for fkey_def in column_def:
-                        if fkey_def.tag == "foreign-key":
-                            c_name = fkey_def.find("constraint-name")                       
-                            for fkey in fkey_def:
-                                if fkey.tag == "references":
-                                    for fkey_ref in fkey:
-                                        if fkey_ref.tag == "table-name":
-                                            ref_table = fkey_ref.text.lower()
-
-                                            if (ref_table not in table_deps and ref_table != table_name.text):
-                                                if ref_table in deps_dict.keys():
-                                                    if table_name.text in deps_dict[ref_table]:
-                                                        c_name.text = "_disabled_" + c_name.text
-                                                        continue
-                                                table_deps.add(ref_table)
-
-            if len(table_deps) == 0:
-                table_deps.add(table_name.text)
-
-            deps_dict.update({table_name.text: table_deps})
-
-        deps_list = toposort_flatten(deps_dict)
+        # WAIT: Kombinere med loop over?
+        for table_def in table_defs:
+            table_name = table_def.find("table-name")
+            disposed = table_def.find("disposed")
+            if disposed.text != "true":
+                deps_dict.update({table_name.text: get_table_deps(table_name, table_def, deps_dict, empty_tables)})                
+        deps_list = toposort_flatten(deps_dict) 
 
         with open(base_path + '/documentation/import_order.txt', 'w') as file:
             for val in deps_list:
                 file.write('%s\n' % val)
 
-        for table in table_def:
-            table_name = table.find("table-name")
+
+        for table_def in table_defs:
+            table_name = table_def.find("table-name")
+            dep_position = ET.Element("dep-position")
             index = 0
+
             if table_name.text in deps_list:
                 index = int(deps_list.index(table_name.text))
 
-            children = table.getchildren()
-            dep_position = ET.Element("dep-position")
             dep_position.text = str(index + 1)
-            table.insert(6, dep_position)
+            table_def.insert(6, dep_position)
             i = 0
-            # Rename illegal column names in XML:
-            for column_def in children:
-                if column_def.tag == "column-def":
-                    for column in column_def:
-                        if column.tag == "column-name":
-                            if column.text in illegal_columns:
-                                old_column_name = ET.Element(
-                                    "original-column-name")
 
-                                old_column_name.text = column.text
-                                column.text = illegal_columns[column.text]
-                                column_def.insert(2, old_column_name)
-                                # Update tsv-file:
-                                new_file_name = base_path + "/content/data/" + table_name.text + ".tsv"
-                                if os.path.isfile(new_file_name):
-                                    df = pd.read_csv(
-                                        new_file_name,
-                                        sep="\t",
-                                        low_memory=False)
-                                    df.rename(
-                                        columns={
-                                            old_column_name.text:
-                                            column.text.lower(),
-                                            old_column_name.text.lower():
-                                            column.text.lower()
-                                        },  # For reruns
-                                        inplace=True,
-                                    )
-                                    df.to_csv(
-                                        new_file_name, index=False, sep="\t")
-                        # TODO: Fix feil med bigint:
-                        # -> virket når jeg gjorde felt til "numeric" -> fiks i xsl -> se linje 663
-                        # -> se også her: https://www.w3resource.com/sql/data-type.php#NUMERIC
-                        # if column.tag == "dbms-data-type":
-                        # if column.text
-                        # size = child.find("dbms-data-size")
-                        # dbms_type = child.find("dbms-data-type")
-                        if column.tag == "references":
-                            for ref in column:
-                                if ref.tag == "column-name":
-                                    if ref.text in illegal_columns:
-                                        old_column_ref = ET.Element(
-                                            "original-column-name")
-                                        old_column_ref.text = ref.text
-                                        # ref.text = ref.text + "_"
-                                        ref.text = illegal_columns[ref.text]
-                                        column.insert(3, old_column_ref)
-                                if ref.tag == "table-name":
-                                    if ref.text.lower() in empty_tables:
-                                        column_def.remove(column)
+            foreign_keys = table_def.findall("foreign-keys/foreign-key")  
+            for foreign_key in foreign_keys:
+                tab_constraint_name = foreign_key.find("constraint-name")  
 
-                                    if ref.text in illegal_tables:
-                                        old_table_ref = ET.Element(
-                                            "original-table-name")
-                                        old_table_ref.text = ref.text
-                                        ref.text = illegal_tables[ref.text]
-                                        column.insert(3, old_table_ref)
-                                # if ref.tag == "deferrable":
-                                # column.remove(ref)
-                if column_def.tag == "index-def":
-                    for index in column_def:
-                        if index.tag == "column-list":
-                            for ref in index:
-                                if ref.attrib["name"] in illegal_columns:
-                                    # ref.attrib["name"] = ref.attrib["name"] + "_"
-                                    ref.attrib["name"] = illegal_columns[
-                                        ref.attrib["name"]]
-                                    # TODO: Legge inn old_name også her?
-                if column_def.tag == "foreign-keys":
-                    for fkey_def in column_def:
-                        # disposed.text = "false"
-                        # disposal_comment.text = " "
-                        if fkey_def.tag == "foreign-key":
-                            for fkey in fkey_def:
-                                # ora_check_constraint = False
-                                # if fkey.tag == "constraint-name":
-                                #     c_name = str(fkey.text).lower()
-                                #     # Ignore Oracle check constraints
-                                #     if c_name.startswith("sys_c"):
-                                #         ora_check_constraint = True
-                                if fkey.tag == "references":
-                                    for fkey_ref in fkey:
-                                        # Fix references to normalized table-names:
-                                        if fkey_ref.tag == "table-name":
-                                            if fkey_ref.text in illegal_tables:
-                                                old_table_ref = ET.Element(
-                                                    "original-table-name")
-                                                old_table_ref.text = fkey_ref.text
-                                                fkey_ref.text = illegal_tables[
-                                                    fkey_ref.text]
-                                                fkey.insert(3, old_table_ref)
-                                            # Remove contraints depending on empty tables:
-                                            if fkey_ref.text.lower(
-                                            ) in empty_tables:
-                                                column_def.remove(fkey_def)
-                                                # print(fkey_ref.text.lower())
-                                                # disposed.text = "true"
-                                                # disposal_comment.text = "References empty table"
-                                            # Remove contraints pointing to same table:
-                                            # TODO: Sjekk at det faktisk er tilfelle at ikke støttes av div databaser/iso-sql
+                fk_references = foreign_key.findall('references')  
+                for fk_reference in fk_references:
+                    tab_ref_table_name = fk_reference.find("table-name")  
+                    if tab_ref_table_name.text.lower() in empty_tables: 
+                        tab_constraint_name.text = "_disabled_" + tab_constraint_name.text
+                    elif tab_ref_table_name.text in illegal_tables: 
+                        tab_ref_table_name.text = tab_ref_table_name.text + '_'
+                    
 
-                                            if fkey_ref.text.lower(
-                                            ) == table_name.text:
-                                                # print(table_name.text)
-                                                # TODO: Tester uten linje under -> ga feil for profdoc
-                                                # column_def.remove(fkey_def)
+                    if str(tab_constraint_name.text).startswith('sys_c'): 
+                        tab_constraint_name.text = tab_constraint_name.text + '_'                                     
 
-                                                disposed.text = "true"
-                                                disposal_comment.text = "Self-referencing constraint"
-                                                # TODO: Bruk dispos-tag heller enn å fjerne også andre steder
-                                        fkey_ref.insert(1, disposed)
-                                        fkey_ref.insert(2, disposal_comment)
+                # WAIT: Slå sammen de to under til en def
+                source_columns = foreign_key.findall('source-columns') 
+                for source_column in source_columns:
+                    source_column_names = source_column.findall('column')  
+                    for source_column_name in source_column_names:
+                        if source_column_name.text in illegal_columns: 
+                            old_source_column_name = ET.Element("original-column")
+                            old_source_column_name.text = source_column_name.text
+                            source_column_name.text = illegal_columns[source_column_name.text]
+                            source_column.insert(1, old_source_column_name)  
 
-                                # fkey.insert(1, disposed)
-                                # fkey.insert(2, disposal_comment)
+                referenced_columns = foreign_key.findall('referenced-columns') 
+                for referenced_column in referenced_columns:
+                    referenced_column_names = referenced_column.findall('column')  
+                    for referenced_column_name in referenced_column_names:
+                        if referenced_column_name.text in illegal_columns: 
+                            old_referenced_column_name = ET.Element("original-column")
+                            old_referenced_column_name.text = referenced_column_name.text
+                            referenced_column_name.text = illegal_columns[referenced_column_name.text]
+                            referenced_column.insert(1, old_referenced_column_name)                                                                                     
+                                                          
+            column_defs = table_def.findall("column-def")
+            for column_def in column_defs:
+                column_name = column_def.find('column-name')               
 
-                                if fkey.tag in ("source-columns",
-                                                "referenced-columns"):
-                                    for column in fkey:
-                                        if (column.tag == "column" and
-                                                column.text in illegal_columns
-                                            ):
-                                            old_column_ref = ET.Element(
-                                                "original-column-name")
-                                            old_column_ref.text = column.text
-                                            # column.text = column.text + "_"
-                                            column.text = illegal_columns[
-                                                column.text]
-                                            fkey.insert(1, old_column_ref)
-                                # fkey_def.insert(1, disposed)
-                                # fkey_def.insert(2, disposal_comment)
+                # Fix illegal or empty column- and table-names:
+                if column_name.text in illegal_columns:
+                    old_column_name = ET.Element("original-column-name")
+                    old_column_name.text = column_name.text
+                    column_name.text = illegal_columns[column_name.text]
+                    column_def.insert(2, old_column_name)
 
-                # table-constraints (constraints of type "check")
-                if column_def.tag == "table-constraints":
-                    for constraint_def in column_def:
-                        if constraint_def.tag == "constraint-definition":
-                            for word in constraint_def.text.split():
-                                word = word.replace("(", "")
-                                if word in illegal_columns:
-                                    constraint_def.text = constraint_def.text.replace(
-                                        word, illegal_columns[word])
+                    # Update tsv-file:   
+                    # TODO: Flytt denne og kombiner med annen csv-kode - bør kjørs pr tabell heller
+                    # new_file_name = base_path + "/content/data/" + table_name.text + ".tsv"
+                    # if os.path.isfile(new_file_name):
+                    #     df = pd.read_csv(new_file_name,sep="\t",low_memory=False)
+                    #     df.rename(columns={old_column_name.text:column_name.text.lower(),old_column_name.text.lower():column_name.text.lower()}, inplace=True)
+                    #     df.to_csv(new_file_name, index=False, sep="\t")   
+
+                col_references = column_def.findall('references')
+                for col_reference in col_references:
+                    ref_column_name = col_reference.find('column-name')
+                    col_ref_table_name = col_reference.find('table-name')  
+                    col_constraint_name = col_reference.find('constraint-name')                           
+
+                    if ref_column_name.text in illegal_columns:   
+                        old_ref_column_name = ET.Element("original-column-name")
+                        old_ref_column_name.text = ref_column_name.text
+                        ref_column_name.text = illegal_columns[ref_column_name.text]
+                        column_def.insert(3, old_ref_column_name)    
+
+                    # if col_ref_table_name:
+                    if col_ref_table_name.text in illegal_tables:   
+                        print(col_ref_table_name.text)
+                        old_ref_table_name = ET.Element("original-table-name")
+                        old_ref_table_name.text = col_ref_table_name.text
+                        col_ref_table_name.text = illegal_tables[col_ref_table_name.text]
+                        column_def.insert(3, old_ref_table_name)   
+
+                        # if col_ref_table_name.text.lower() in empty_tables: 
+                        #     # print(col_ref_table_name.text.lower())
+                        #     # col_constraint_name.text = "_disabled_" + col_constraint_name.text                                                                                                              
+                        #     # column_def.remove(col_references)  
+                        #     col_ref_table_name.text = "testeeeeeeeer"                                                                                                               
+
+                # # table-constraints (constraints of type "check")
+                # if column_def.tag == "table-constraints":
+                #     for constraint_def in column_def:
+                #         if constraint_def.tag == "constraint-definition":
+                #             for word in constraint_def.text.split():
+                #                 word = word.replace("(", "")
+                #                 if word in illegal_columns:
+                #                     constraint_def.text = constraint_def.text.replace(
+                #                         word, illegal_columns[word])
 
         root = tree.getroot()
         indent(root)
         tree.write(mod_xml_file)
 
-        # WAIT: Justere "2html.xslt" tilsvarende til det som er gjort for "2xml" ?
-        # Generate html and ddl:
+        # Generate ddl:
         sql = [
             "\n",
             "---- Generate DDL -----",
@@ -434,14 +405,7 @@ for folder in subfolders:
             "-stylesheet=PWB/metadata2ddl.xslt",
             "-xsltOutput=" + ddl_file + ";",
         ]
+
         with open(sql_file, "a+") as file:
             file.write("\n".join(sql))
             file.close()
-
-        # Make all tsv headers lower case
-        for fname in glob.iglob(base_path + "/content/data/*.tsv"):
-            with open(fname, "r+") as f:
-                line = f.readline().strip()
-                header = line.strip()
-                f.seek(0)  # move file pointer to beginning of file
-                f.write(line.replace(header, header.lower()))
