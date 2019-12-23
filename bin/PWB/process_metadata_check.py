@@ -138,10 +138,10 @@ for folder in subfolders:
                     #     ],   
                     'oracle': [
                         '-url="jdbc:oracle:thin:@127.0.1.1:1521/XE" -username="oracle" -password="pwb";',
-                        'WbInclude -ifNotDefined=ora_done -file="../PWB/ora_schema_reset.sql" -displayResult=true -verbose=true -continueOnError=false;',
+                        'WbInclude -ifNotDefined=ora_done -file="../PWB/ora_schema_reset.sql" -displayResult=true -verbose=true -continueOnError=false; COMMIT;',
                         ora_done,
                         oracle_ddl,
-                        'WbInclude -ifNotDefined=ora_done -file="../PWB/ora_schema_reset.sql" -displayResult=true -verbose=true -continueOnError=false; COMMIT;',
+                        'COMMIT; WbInclude -ifNotDefined=ora_done -file="../PWB/ora_schema_reset.sql" -displayResult=true -verbose=true -continueOnError=false; COMMIT;',
                         'oracle'
                         ],  
                     'mssql': [
@@ -150,7 +150,7 @@ for folder in subfolders:
                         ms_done,
                         mssql_ddl,
                         'WbDisconnect; WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true; DROP SCHEMA pwb CASCADE;',
-                        'pwb'
+                        'dbo'
                         ],                                           
                                          
 
@@ -175,7 +175,7 @@ for folder in subfolders:
                     'WbSysExec touch ' + done_file_path + ';',
                     'WbVarDef -contentFile=' + done_file_path + ' -variable=' + done_file_name + ';',
                     drop_before,
-                    'WbInclude -ifNotDefined=' + done_file_name + ' -file=' + ddl + ' -displayResult=true -verbose=true -continueOnError=false; COMMIT;', 
+                    'WbInclude -ifNotDefined=' + done_file_name + ' -file=' + ddl + ' -displayResult=true -verbose=true -continueOnError=false;', 
                      generate_import(db_name, done_file_name, schema),
                     drop_after,
                     'WbSysExec echo "done" > ' + done_file_path + ';',
