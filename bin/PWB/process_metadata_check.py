@@ -141,7 +141,7 @@ for folder in subfolders:
                         'WbInclude -ifNotDefined=ora_done -file="../PWB/ora_schema_reset.sql" -displayResult=true -verbose=true -continueOnError=false;',
                         ora_done,
                         oracle_ddl,
-                        'WbInclude -ifNotDefined=ora_done -file="../PWB/ora_schema_reset.sql" -displayResult=true -verbose=true -continueOnError=false;',
+                        'WbInclude -ifNotDefined=ora_done -file="../PWB/ora_schema_reset.sql" -displayResult=true -verbose=true -continueOnError=false; COMMIT;',
                         'oracle'
                         ],  
                     'mssql': [

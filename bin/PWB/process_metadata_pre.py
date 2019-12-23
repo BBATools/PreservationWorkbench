@@ -67,7 +67,7 @@ class LowerCaseHeaderView(Table):
             yield row      
 
 
-def get_table_deps(table_name, table_def, deps_dict, empty_tables):   
+def get_table_deps(table_name, table_def, deps_dict, empty_tables, illegal_tables):   
     table_deps = set()
     foreign_keys = table_def.findall("foreign-keys/foreign-key")    
     for foreign_key in foreign_keys:
@@ -79,6 +79,8 @@ def get_table_deps(table_name, table_def, deps_dict, empty_tables):
                 if table_name.text in deps_dict[ref_table_value]:
                     constraint_name.text = "_disabled_" + constraint_name.text
                     continue
+            if ref_table.text in illegal_tables:
+                ref_table_value = illegal_tables[ref_table.text].lower()
             table_deps.add(ref_table_value)                
 
     if len(table_deps) == 0:
@@ -195,7 +197,7 @@ for folder in subfolders:
 
         t_count = 0
         c_count = 0
-        # pk_dict = {}
+        deps_dict = {}
         table_defs = tree.findall("table-def")
         for table_def in table_defs:
             table_name = table_def.find("table-name")           
@@ -210,11 +212,7 @@ for folder in subfolders:
             file_name = base_path + "/content/data/" + table_name.text.lower() + ".txt"
             new_file_name = os.path.splitext(file_name)[0] + '.tsv'
             if os.path.isfile(file_name):
-                os.rename(file_name, new_file_name) 
-
-            if table_name.text in illegal_tables: 
-                os.rename(new_file_name, os.path.splitext(file_name)[0] + '_.tsv') 
-                new_file_name = os.path.splitext(file_name)[0] + '_.tsv'
+                os.rename(file_name, new_file_name)                 
 
             # Rename illegal tablenames in XML:
             old_table_name = ET.Element("original-table-name")
@@ -222,7 +220,11 @@ for folder in subfolders:
 
             if table_name.text in illegal_tables:
                 table_name.text = illegal_tables[table_name.text]
-                # TODO: Oppdatere i constraint når endret tabellnavn
+
+                ill_new_file_name = os.path.splitext(file_name)[0] + '_.tsv'
+                if os.path.isfile(new_file_name):
+                    os.rename(new_file_name, ill_new_file_name) 
+                new_file_name = ill_new_file_name   
 
             table_name.text = table_name.text.lower()
             table_def.insert(3, old_table_name) 
@@ -261,7 +263,6 @@ for folder in subfolders:
             # TODO: Legg inn sjekk så ikke leser rader på nytt hvis gjort før
             if os.path.exists(new_file_name):
                 row_count = tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case)                                               
-
                 if row_count == 0:
                     os.remove(new_file_name)
                     disposed.text = "true"
@@ -280,12 +281,11 @@ for folder in subfolders:
 
         # Sort tables in dependent order:
         deps_dict = {}
-        # WAIT: Kombinere med loop over?
         for table_def in table_defs:
             table_name = table_def.find("table-name")
             disposed = table_def.find("disposed")
             if disposed.text != "true":
-                deps_dict.update({table_name.text: get_table_deps(table_name, table_def, deps_dict, empty_tables)})                
+                deps_dict.update({table_name.text: get_table_deps(table_name, table_def, deps_dict, empty_tables, illegal_tables)})                
         deps_list = toposort_flatten(deps_dict) 
 
         with open(base_path + '/documentation/import_order.txt', 'w') as file:
@@ -308,7 +308,7 @@ for folder in subfolders:
             foreign_keys = table_def.findall("foreign-keys/foreign-key")  
             for foreign_key in foreign_keys:
                 tab_constraint_name = foreign_key.find("constraint-name")  
-                if str(tab_constraint_name.text).startswith('sys_c'): 
+                if str(tab_constraint_name.text).startswith('SYS_C'): 
                     tab_constraint_name.text = tab_constraint_name.text + '_'   #TODO: Denne virker ikke ift generert ddl                
 
                 fk_references = foreign_key.findall('references')  
