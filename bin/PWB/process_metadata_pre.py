@@ -198,12 +198,7 @@ for folder in subfolders:
         # pk_dict = {}
         table_defs = tree.findall("table-def")
         for table_def in table_defs:
-            table_name = table_def.find("table-name")
-            file_name = base_path + "/content/data/" + table_name.text.lower() + ".txt"
-            new_file_name = os.path.splitext(file_name)[0] + '.tsv'
-
-            if os.path.isfile(file_name):
-                os.rename(file_name, new_file_name)            
+            table_name = table_def.find("table-name")           
 
             # TODO: Menyvalg for dispose bare fjerne tsv/eller text-fil. Endre til tsv ext før en får gjøre det?
 
@@ -211,6 +206,15 @@ for folder in subfolders:
             if len(table_name.text) > 30 and table_name.text not in illegal_tables:
                 t_count += 1
                 illegal_tables[table_name.text] = table_name.text[:26] + "_" + str(t_count) + "_"
+
+            file_name = base_path + "/content/data/" + table_name.text.lower() + ".txt"
+            new_file_name = os.path.splitext(file_name)[0] + '.tsv'
+            if os.path.isfile(file_name):
+                os.rename(file_name, new_file_name) 
+
+            if table_name.text in illegal_tables: 
+                os.rename(new_file_name, os.path.splitext(file_name)[0] + '_.tsv') 
+                new_file_name = os.path.splitext(file_name)[0] + '_.tsv'
 
             # Rename illegal tablenames in XML:
             old_table_name = ET.Element("original-table-name")
@@ -304,6 +308,8 @@ for folder in subfolders:
             foreign_keys = table_def.findall("foreign-keys/foreign-key")  
             for foreign_key in foreign_keys:
                 tab_constraint_name = foreign_key.find("constraint-name")  
+                if str(tab_constraint_name.text).startswith('sys_c'): 
+                    tab_constraint_name.text = tab_constraint_name.text + '_'   #TODO: Denne virker ikke ift generert ddl                
 
                 fk_references = foreign_key.findall('references')  
                 for fk_reference in fk_references:
@@ -312,11 +318,7 @@ for folder in subfolders:
                         tab_constraint_name.text = "_disabled_" + tab_constraint_name.text
                     elif tab_ref_table_name.text in illegal_tables: 
                         tab_ref_table_name.text = tab_ref_table_name.text + '_'
-                    
-
-                    if str(tab_constraint_name.text).startswith('sys_c'): 
-                        tab_constraint_name.text = tab_constraint_name.text + '_'                                     
-
+                                            
                 # WAIT: Slå sammen de to under til en def
                 source_columns = foreign_key.findall('source-columns') 
                 for source_column in source_columns:
@@ -347,15 +349,7 @@ for folder in subfolders:
                     old_column_name = ET.Element("original-column-name")
                     old_column_name.text = column_name.text
                     column_name.text = illegal_columns[column_name.text]
-                    column_def.insert(2, old_column_name)
-
-                    # Update tsv-file:   
-                    # TODO: Flytt denne og kombiner med annen csv-kode - bør kjørs pr tabell heller
-                    # new_file_name = base_path + "/content/data/" + table_name.text + ".tsv"
-                    # if os.path.isfile(new_file_name):
-                    #     df = pd.read_csv(new_file_name,sep="\t",low_memory=False)
-                    #     df.rename(columns={old_column_name.text:column_name.text.lower(),old_column_name.text.lower():column_name.text.lower()}, inplace=True)
-                    #     df.to_csv(new_file_name, index=False, sep="\t")   
+                    column_def.insert(2, old_column_name) 
 
                 col_references = column_def.findall('references')
                 for col_reference in col_references:
