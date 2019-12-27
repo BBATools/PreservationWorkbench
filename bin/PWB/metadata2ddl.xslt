@@ -443,7 +443,7 @@ Supported parameters:
             </xsl:for-each>
             <xsl:text>)</xsl:text>
             <!-- <xsl:call-template name="define-fk-actions"/> -->
-            <xsl:call-template name="add-defer-rule"/>
+            <!-- <xsl:call-template name="add-defer-rule"/> -->
             <!-- <xsl:text>;</xsl:text> -->
             <!-- <xsl:value-of select="$newline"/> -->
           </xsl:for-each>

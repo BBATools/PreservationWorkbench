@@ -98,7 +98,6 @@ def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case):
 
     print(new_file_name)  
     for pk in pk_set:
-        print(pk)
         table = etl.convert(table, pk.lower(), lambda a: a if len(str(a))>0 else '-')      
 
     writer = csv.writer(tempfile, delimiter='\t', quoting = csv.QUOTE_NONE, quotechar='',escapechar = '') 
@@ -123,6 +122,28 @@ def indent(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
+empty_tables = []
+# WAIT: Endre til list bare under. evt. generer med underscore bak
+illegal_tables = {
+    'WINDOW': 'WINDOW_',   
+    'FUNCTION': 'FUNCTION_',              
+    }
+illegal_columns = {
+    'STORED': 'STORED_',
+    'FUNCTION': 'FUNCTION_',
+    'SCHEMA': 'SCHEMA_',
+    'SYSTEM': 'SYSTEM_',
+    'NOTNULL': 'NOTNULL_',
+    'COLUMN': 'COLUMN_',
+    'PERCENT': 'PERCENT_',
+    'DATE': 'DATE_',
+    'PUBLIC': 'PUBLIC_',
+    'OVER': 'OVER_',
+    'SQL': 'SQL_',  
+    'RANGE': 'RANGE_',    
+    'MEMBER': 'MEMBER_',                                                     
+    'INTERVAL': 'INTERVAL_'
+}
 
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tmp'))
@@ -170,29 +191,6 @@ for folder in subfolders:
 
     if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path),folder)) and os.path.isfile(header_xml_file):
         tree = ET.parse(header_xml_file)
-        empty_tables = []
-        # WAIT: Endre til list bare under. evt. generer med underscore bak
-        illegal_tables = {
-            'WINDOW': 'WINDOW_',   
-            'FUNCTION': 'FUNCTION_',              
-            }
-        illegal_columns = {
-            'STORED': 'STORED_',
-            'FUNCTION': 'FUNCTION_',
-            'SCHEMA': 'SCHEMA_',
-            'SYSTEM': 'SYSTEM_',
-            'NOTNULL': 'NOTNULL_',
-            'COLUMN': 'COLUMN_',
-            'PERCENT': 'PERCENT_',
-            'DATE': 'DATE_',
-            'PUBLIC': 'PUBLIC_',
-            'OVER': 'OVER_',
-            'SQL': 'SQL_',  
-            'RANGE': 'RANGE_',    
-            'MEMBER': 'MEMBER_',                                                     
-            'INTERVAL': 'INTERVAL_'
-        }
-
         illegal_columns_lower_case = lower_dict(illegal_columns)
 
         t_count = 0
@@ -262,7 +260,7 @@ for folder in subfolders:
             
             # TODO: Legg inn sjekk så ikke leser rader på nytt hvis gjort før
             if os.path.exists(new_file_name):
-                row_count = tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case)                                               
+                row_count = tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case)    
                 if row_count == 0:
                     os.remove(new_file_name)
                     disposed.text = "true"
@@ -292,10 +290,11 @@ for folder in subfolders:
             for val in deps_list:
                 file.write('%s\n' % val)
 
-
+        self_dep_dict = {}
         for table_def in table_defs:
             table_name = table_def.find("table-name")
             dep_position = ET.Element("dep-position")
+            self_dep_set = set()
             index = 0
 
             if table_name.text in deps_list:
@@ -309,7 +308,7 @@ for folder in subfolders:
             for foreign_key in foreign_keys:
                 tab_constraint_name = foreign_key.find("constraint-name")  
                 if str(tab_constraint_name.text).startswith('SYS_C'): 
-                    tab_constraint_name.text = tab_constraint_name.text + '_'   #TODO: Denne virker ikke ift generert ddl                
+                    tab_constraint_name.text = tab_constraint_name.text + '_'              
 
                 fk_references = foreign_key.findall('references')  
                 for fk_reference in fk_references:
@@ -342,7 +341,7 @@ for folder in subfolders:
                                                           
             column_defs = table_def.findall("column-def")
             for column_def in column_defs:
-                column_name = column_def.find('column-name')               
+                column_name = column_def.find('column-name')           
 
                 # Fix illegal or empty column- and table-names:
                 if column_name.text in illegal_columns:
@@ -355,7 +354,7 @@ for folder in subfolders:
                 for col_reference in col_references:
                     ref_column_name = col_reference.find('column-name')
                     col_ref_table_name = col_reference.find('table-name')  
-                    col_constraint_name = col_reference.find('constraint-name')                           
+                    # col_constraint_name = col_reference.find('constraint-name')                           
 
                     if ref_column_name.text in illegal_columns:   
                         old_ref_column_name = ET.Element("original-column-name")
@@ -363,13 +362,28 @@ for folder in subfolders:
                         ref_column_name.text = illegal_columns[ref_column_name.text]
                         column_def.insert(3, old_ref_column_name)    
 
-                    # if col_ref_table_name:
                     if col_ref_table_name.text in illegal_tables:   
-                        print(col_ref_table_name.text)
                         old_ref_table_name = ET.Element("original-table-name")
                         old_ref_table_name.text = col_ref_table_name.text
                         col_ref_table_name.text = illegal_tables[col_ref_table_name.text]
-                        column_def.insert(3, old_ref_table_name)   
+                        column_def.insert(3, old_ref_table_name)  
+
+                    if col_ref_table_name.text.lower() == table_name.text and col_ref_table_name.text.lower() not in empty_tables:   
+                        self_dep_set.add(ref_column_name.text.lower() + ':' + column_name.text.lower())
+                        # print(table_name.text + ':' + ref_column_name.text + ':' + column_name.text)
+            
+            if len(self_dep_set) != 0: 
+                self_dep_dict.update({table_name.text : self_dep_set})
+
+
+                        # self_dep_set.add(ref_column_name.text + ':' + column_name.text)
+                        # self_dep_dict.update({table_name.text: ref_column_name.text.lower() + ':' + column_name.text.lower()})  
+
+                        # print(table_name.text)
+                        # old_ref_table_name = ET.Element("original-table-name")
+                        # old_ref_table_name.text = col_ref_table_name.text
+                        # col_ref_table_name.text = illegal_tables[col_ref_table_name.text]
+                        # column_def.insert(3, old_ref_table_name)                          
 
                         # if col_ref_table_name.text.lower() in empty_tables: 
                         #     # print(col_ref_table_name.text.lower())
@@ -385,11 +399,38 @@ for folder in subfolders:
                 #                 word = word.replace("(", "")
                 #                 if word in illegal_columns:
                 #                     constraint_def.text = constraint_def.text.replace(
-                #                         word, illegal_columns[word])
+                #                         word, illegal_columns[word])                
 
         root = tree.getroot()
         indent(root)
         tree.write(mod_xml_file)
+     
+
+        # Sort lines in files with self constraints correctly:
+        # TODO: Gjør om til funksjon
+        for key, value in self_dep_dict.items():
+            file_name = base_path + "/content/data/" + key + ".tsv"
+            tempfile = NamedTemporaryFile(mode='w', dir = base_path + "/content/data/", delete=False)
+            table = etl.fromcsv(file_name, delimiter='\t', skipinitialspace=True, quoting = csv.QUOTE_NONE, quotechar='',escapechar = '')
+            key_dep_dict = {}
+
+            print(file_name)
+            for constraint in value:
+                child_dep, parent_dep = constraint.split(':')
+                data = etl.values(table, child_dep, parent_dep)
+                for d in data:
+                    key_dep_set = {d[1]}
+                    key_dep_dict.update({d[0]: key_dep_set})   
+
+            key_dep_list = toposort_flatten(key_dep_dict)   
+            table = etl.addfield(table, 'pwb_index', lambda rec: int(key_dep_list.index(rec[child_dep])))
+            table = etl.sort(table, 'pwb_index')
+            table = etl.cutout(table, 'pwb_index')
+
+            writer = csv.writer(tempfile, delimiter='\t', quoting = csv.QUOTE_NONE, quotechar='',escapechar = '') 
+            writer.writerows(table)    
+            shutil.move(tempfile.name, file_name)             
+
 
         # Generate ddl:
         sql = [
