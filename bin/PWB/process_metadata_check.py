@@ -15,220 +15,228 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess, os, sys, pathlib, glob, shutil, fileinput
+import subprocess, os, sys, glob, shutil, fileinput, pathlib
 from functools import reduce
 from configparser import SafeConfigParser
 
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tmp'))
+ora_reset_script = os.path.abspath(os.path.join(os.path.dirname(__file__), 'oracle_reset.sql'))
+ms_reset_script = os.path.abspath(os.path.join(os.path.dirname(__file__), 'mssql_reset.sql'))
 conf_file = tmp_dir + "/pwb.ini"
 config.read(conf_file)
 data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
 filepath = config.get('ENV', 'wim_path')
 sys_name = os.path.splitext(os.path.basename(filepath))[0]
 mount_dir = data_dir + "/" + sys_name + "_mount"
-sql_file = tmp_dir + "/meta_check.sql"
-sql = ""
+db_list = ['postgresql','oracle','mssql','sqlite']     
+  
 
 if not filepath:
-    exit()
+    exit()  
 
-with open(sql_file, "w+") as file:  # Blank out between runs
-    file.write(" ")  
+# def gen_import_statements(db):
+#     import_statements = []
+#     import_str = "" 
+#     for table in order_list:
+#         if db == 'postgresql': 
+#             import_str = '''psql "user='postgres' password='P@ssw0rd' host='localhost'" -v "ON_ERROR_STOP=1" -c "\copy pwb.''' +  table + ''' FROM ''' \
+#                 + sub_data_folder + table + '''.tsv delimiter E'\\t' CSV HEADER QUOTE E'\\b' NULL AS ''"'''                
+#         elif db == 'oracle':
+#             sql_loader_log = tmp_dir + '/sqlldr_log.log'
+#             sql_loader_bad = tmp_dir + '/sqlldr_bad.log'
+#             sql_loader_ctl = documentation_folder + 'oracle_import/' + table + '.ctl'
+#             import_str = oracle_bin + 'sqlldr oracle/pwb bad =' + sql_loader_bad + ' log=' + sql_loader_log + ' errors=0 skip=1 direct=true control=' + sql_loader_ctl
+#         elif db == 'mssql':   
+#             import_str = bcp_bin + ' ' + table + ' in ' + sub_data_folder + table + '.tsv -U sa -P P@ssw0rd -d pwb -S localhost -r "\\r\\n" -F 2 -c'
+#         elif db == 'sqlite':   
+#             # import_str = 'sqlite3  -separator "\\t" -cmd ".import ' sqlite_db  + sub_data_folder + table + '.tsv ' + + '"' 
+#             import_str = '''dqt='"'; sqlite3  ''' + sqlite_db + ''' -bail -batch ".mode tabs" ".import ${dqt}| tail -n +2 ''' + sub_data_folder + table + '''.tsv${dqt}''' + table + '''"'''
+#             # import_str = '''sqlite3  ''' + sqlite_db + ''' -bail -batch ".mode tabs" ".import \\"| tail -n +2 ''' + sub_data_folder + table + '''.tsv\\" ''' + table + '''"'''
+#             # \x22
+
+#         import_statements.append(import_str)
+#     return '\n'.join(import_statements)         
+
+
+# WAIT: Lag også vbs-versjon for windows
+def gen_import_file(db):                 
+    ln = [
+            '#!/bin/bash \n',
+            '# -- ' + str(db) + ' --',
+            '# -- modify variables as needed before running import script -- \n',
+            '# -- Variables --',
+            'user=' + users[db],
+            'password=' + passwords[db],
+            'host=localhost',
+            'schema=' + schemas[db],
+            'db_name=' + db_names[db],
+            'sql_bin=' + sql_bin[db],
+            'import_bin=' + import_bins[db],
+            'import_order_file=' + import_order_file,
+            'data_path=' + data_path,            
+            'reset_file=' + reset_files[db],
+            'ddl_file=' + ddl_files[db] + '\n',
+            '# -- Code --',
+            reset_statements[db],
+            create_schema_statements[db],
+            'while IFS= read -r table',
+            'do',
+            import_statements[db],
+            # '$import_bin $user/$password@$host errors=0 skip=1 direct=true control="$table".ctl data="$data_path""$table".tsv',            
+            'done < "$import_order_file"'
+            # # db_reset_statements[db], # TODO: Foreløpig fjernet for test
+            # 'touch ' + db_done_files[db], # TODO: Bedre sjekker før denne gjøres
+    ]
+
+    with open(import_sql_files[db], "w") as file:
+        file.write("\n".join(ln))          
+
+
+# TODO: Se her for datatyper: http://troels.arvin.dk/db/rdbms/#data_types
 
 sub_systems_path = mount_dir + "/content/sub_systems/"
 subfolders = os.listdir(sub_systems_path)
 for folder in subfolders:
-    header_xml_file = sub_systems_path + folder + "/header/metadata.xml"
+    folder_path = sub_systems_path + folder 
+    header_xml_file = folder_path + "/header/metadata.xml"
+    data_path = folder_path  + "/content/data/"
+
     if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path), folder)) \
-    and os.path.isfile(header_xml_file) \
-    and os.listdir(sub_systems_path + folder + '/content/data/'):
-        documentation_folder = sub_systems_path + folder + "/documentation/"
-        sub_data_folder = sub_systems_path + folder + "/content/data/"
+    and os.path.isfile(header_xml_file) and os.listdir(data_path):
+        
+        documentation_folder = folder_path + "/documentation/"
         import_order_file = documentation_folder + 'import_order.txt'
-        isosql_ddl = documentation_folder + "metadata.sql"
-        oracle_ddl = documentation_folder + "metadata_oracle.sql"
-        mysql_ddl = documentation_folder + "metadata_mysql.sql"
-        mssql_ddl = documentation_folder + "metadata_mssql.sql"
-        pg_done = documentation_folder + "pg_done"
-        my_done = documentation_folder + "my_done"
-        ora_done = documentation_folder + "ora_done"
-        ms_done = documentation_folder + "ms_done"
-        lite_done = documentation_folder + "lite_done"
         sqlite_db = "/tmp/" + folder + ".db"
-
-        # TODO: Se her for datatyper: http://troels.arvin.dk/db/rdbms/#data_types
-        mssql_repls = (
-            (" timestamp", " datetime"),
-            (" varchar(", " nvarchar("),
-            ("  DEFERRABLE INITIALLY DEFERRED", "  ")            
-            #    (" boolean", " varchar(5)"),
-            #  (" bigint", " numeric"), #TODO: Ser ikke ut til at bigint kan ha desimaler i alle dbtyper
-        )
-        mssql_ddl_w = open(mssql_ddl, "w")
-        # mssql_ddl_w.write(
-        #     "SET ANSI_NULLS OFF; \n \n")
-        with open(isosql_ddl, 'r') as file_r:
-            for line in file_r:
-                mssql_ddl_w.write(
-                    reduce(lambda a, kv: a.replace(*kv), mssql_repls, line))
-
-        oracle_repls = (
-            (" text", " clob"),
-            (" varchar(4000)", " clob"),
-            (" varchar2(4000)", " clob"),
-            (" varchar(", " varchar2("),
-            # (" boolean", " varchar2(5)"),
-        )
-        oracle_ddl_w = open(oracle_ddl, "w")
-        oracle_ddl_w.write(
-            "ALTER SESSION SET NLS_LENGTH_SEMANTICS=CHAR; \n \n")
-        with open(isosql_ddl, 'r') as file_r:
-            for line in file_r:
-                oracle_ddl_w.write(
-                    reduce(lambda a, kv: a.replace(*kv), oracle_repls, line))
-
-        # mysql_repls = (
-        #     (" timestamp", " datetime"),
-        #     (" varchar(4000)", " text"),            
-        #     ("  DEFERRABLE INITIALLY DEFERRED", "  ")
-        # )
-        # mysql_ddl_w = open(mysql_ddl, "w")
-        # with open(isosql_ddl, 'r') as file_r:
-        #     for line in file_r:
-        #         mysql_ddl_w.write(
-        #             reduce(lambda a, kv: a.replace(*kv), mysql_repls, line))
-
 
         order_list = []
         with open(import_order_file) as file:
             for cnt, line in enumerate(file):
-                order_list.append(line.rstrip())
+                order_list.append(line.rstrip())          
 
-        # db_list = ['postgresql','mysql','oracle','mssql','sqlite']   
-        # db_dict = {}      
-        # for db in db_list:
-        #     db_dict.update({db: get_table_deps(table_name, table_def, deps_dict)})   
-         
-        # TODO: Flytt øverst når testet
-        def generate_import(db_name, done_file, schema):
-            import_list = []
-            for table in order_list:
-                import_str = 'WbImport -ifNotDefined=' + done_file + ' -schema=' + schema + ' -file=' + sub_data_folder + table + '.tsv' + ' -table=' + table + " -type=text -extension=tsv -mode=insert -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;"
-                import_list.append(import_str)
-                # print(cmd)    
-            return '\n'.join(import_list)     
+        users = {}
+        sql_bin = {}
+        import_bins = {}
+        passwords = {}
+        schemas = {}
+        db_names = {}        
+        done_files = {} # WAIT: Skriv til config fil heller
+        import_sql_files = {} 
+        reset_statements = {}     
+        create_schema_statements = {}  
+        ddl_files = {} 
+        reset_files = {}
+        import_statements = {}
 
-        db_dict =   {
-                    'postgresql': [
-                        '-url="jdbc:postgresql://localhost:5432/" -username="postgres" -password="P@ssw0rd";',
-                        'DROP SCHEMA IF EXISTS pwb CASCADE; COMMIT; CREATE SCHEMA pwb; COMMIT; SET search_path TO pwb;',
-                        pg_done,
-                        isosql_ddl,
-                        'DROP SCHEMA pwb CASCADE; COMMIT;',
-                        'pwb'
-                        ],
-                    # 'mysql': [
-                    #     '-url="jdbc:mysql://localhost:3306?zeroDateTimeBehavior=CONVERT_TO_NULL&serverTimezone=UTC" -username="root" -password="P@ssw0rd";',
-                    #     'DROP DATABASE IF EXISTS pwb; CREATE DATABASE pwb; ALTER DATABASE pwb CHARACTER SET = utf8mb4 COLLATE = utf8mb4_da_0900_as_cs; USE pwb; RESET MASTER;',
-                    #     my_done,
-                    #     mysql_ddl,
-                    #     'DROP DATABASE pwb;',
-                    #     'pwb'
-                    #     ],   
-                    'oracle': [
-                        '-url="jdbc:oracle:thin:@127.0.1.1:1521/XE" -username="oracle" -password="pwb";',
-                        'WbInclude -ifNotDefined=ora_done -file="../PWB/ora_schema_reset.sql" -displayResult=true -verbose=true -continueOnError=false; COMMIT;',
-                        ora_done,
-                        oracle_ddl,
-                        'COMMIT; WbInclude -ifNotDefined=ora_done -file="../PWB/ora_schema_reset.sql" -displayResult=true -verbose=true -continueOnError=false; COMMIT;',
-                        'oracle'
-                        ],  
-                    'mssql': [
-                        '-url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
-                        'DROP DATABASE IF EXISTS pwb; CREATE DATABASE pwb; WbDisconnect; WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=pwb" -username="sa" -password="P@ssw0rd" -autocommit=false;',
-                        ms_done,
-                        mssql_ddl,
-                        'WbDisconnect; WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true; DROP SCHEMA pwb CASCADE;',
-                        'dbo'
-                        ],                                           
-                                         
+        for db in db_list:
+            pathlib.Path(documentation_folder + db + '_import').mkdir(parents=True, exist_ok=True)
+            done_files[db]=documentation_folder + db + '_done'
+            import_sql_files[db]=documentation_folder + db + '_import/import.sh'
 
-                    # 'mssql': ['1','2'],
-                    # 'sqlite': ['1','2']                                        
-                    }    
+            if db in ('postgresql','sqlite'): 
+                ddl_files[db] = documentation_folder + 'metadata.sql'
+                reset_files[db] = '#Not needed for ' + db
+            else:                             
+                ddl_files[db] = documentation_folder + db + '_import/metadata_' + db + '.sql' # WAIT: Endre så konsekvent navngiving
+                reset_files[db] = documentation_folder + db + '_import/' + db + '_reset.sql'
 
-        sql_list = []
-        for db_name, db_list in db_dict.items():
-            url = db_list[0]
-            drop_before = db_list[1]
-            done_file_path = db_list[2]
-            done_file_name = os.path.basename(done_file_path)
-            ddl = db_list[3]
-            drop_after = db_list[4]
-            schema = db_list[5]
-            sql = [
-                    '\n',
-                    '--' + db_name,
-                    'WbDisconnect;',
-                    'WbConnect ' + url,
-                    'WbSysExec touch ' + done_file_path + ';',
-                    'WbVarDef -contentFile=' + done_file_path + ' -variable=' + done_file_name + ';',
-                    drop_before,
-                    'WbInclude -ifNotDefined=' + done_file_name + ' -file=' + ddl + ' -displayResult=true -verbose=true -continueOnError=false;', 
-                     generate_import(db_name, done_file_name, schema),
-                    drop_after,
-                    'WbSysExec echo "done" > ' + done_file_path + ';',
-                    'WbDisconnect;'  
-                    '\n'
-            ]
-            sql_list.append('\n'.join(sql))
-        print('\n'.join(sql_list))
-                
+            if db == 'postgresql':
+                users[db] = 'postgres'
+                passwords[db] = 'P@ssw0rd'
+                schemas[db] = 'pwb #Any existing tables in schema will be deleted by first line in code'
+                db_names[db] = '#Not needed for postgresql'
+                sql_bin[db] = '/usr/bin/psql'
+                import_bins[db] = '/usr/bin/psql'
+                reset_statements[db] = 'PGOPTIONS="--client-min-messages=warning" $sql_bin "user=$user password=$password host=$host" -c "DROP SCHEMA IF EXISTS $schema CASCADE;"'
+                create_schema_statements[db] = '$sql_bin "user=$user password=$password host=$host" -c "CREATE SCHEMA $schema; SET search_path TO $schema;" -f $ddl_file' 
+                import_statements[db] = '''$import_bin "user=$user password=$password host=$host" -v "ON_ERROR_STOP=1" -c "\copy \"$schema\".\"$table\" FROM \"$data_path\"\"$table\".tsv delimiter E'\\t' CSV HEADER QUOTE E'\\b' NULL AS ''"'''
+
+            if db == 'oracle': 
+                if not os.path.isfile(documentation_folder + db + '_import/oracle_reset.sql'):
+                    shutil.copyfile(ora_reset_script, documentation_folder + db + '_import/oracle_reset.sql') 
+
+                users[db] = 'oracle'
+                passwords[db] = 'pwb'
+                schemas[db] = 'oracle #Any existing tables in schema will be deleted by first line in code'   
+                db_names[db] = '#Not needed for oracle'
+                sql_bin[db] = '/u01/app/oracle/product/11.2.0/xe/bin/sqlplus'
+                import_bins[db] = '/u01/app/oracle/product/11.2.0/xe/bin/sqlldr'                   
+                reset_statements[db] = '$sql_bin -S $user/$password@$host < $reset_file'
+                create_schema_statements[db] = '$sql_bin  -S $user/$password@$host < $ddl_file'
+                import_statements[db] = '$import_bin $user/$password@$host errors=0 skip=1 direct=true control="$table".ctl data="$data_path""$table".tsv'
+                repls = (
+                            (" text,", " clob,"),
+                            (" text)", " clob)"),
+                            (" varchar(4000)", " clob"),
+                            (" varchar2(4000)", " clob"),
+                            (" varchar(", " varchar2("),
+                            # (" boolean", " varchar2(5)"),
+                )
+
+                with open(ddl_files[db], "w") as file:
+                    with open(ddl_files['postgresql'], 'r') as file_r:
+                        file.write("ALTER SESSION SET NLS_LENGTH_SEMANTICS=CHAR;\n\n")
+                        for line in file_r:
+                            file.write(
+                                reduce(lambda a, kv: a.replace(*kv), repls, line))
+
+            if db == 'mssql': 
+                if not os.path.isfile(documentation_folder + db + '_import/mssql_reset.sql'):
+                    shutil.copyfile(ms_reset_script, documentation_folder + db + '_import/mssql_reset.sql') 
+
+                users[db] = 'sa'
+                passwords[db] = 'P@ssw0rd'
+                schemas[db] = '#Default schema of user on mssql'
+                db_names[db] = 'pwb #Any existing tables in database will be deleted by first line in code'  
+                sql_bin[db] = '/opt/mssql-tools/bin/sqlcmd'
+                import_bins[db] = '/opt/mssql-tools/bin/bcp'   
+ 
+
+                # TODO: db_navn som variabel til reset_file hvordan?
+                reset_statements[db] = '$sql_bin -b -U $user -P $password -h $host -d master -i $reset_file'
+                create_schema_statements[db] = '$sql_bin -b -U $user -P $password -h $host -d $db_name -i $ddl_file' 
+                import_statements[db] = '$import_bin $user/$password@$host errors=0 skip=1 direct=true control="$table".ctl data="$data_path""$table".tsv'                
+                repls = (
+                            (" timestamp", " datetime"),
+                            (" varchar(", " nvarchar("),       
+                            #    (" boolean", " varchar(5)"),
+                            #  (" bigint", " numeric"), #TODO: Ser ikke ut til at bigint kan ha desimaler i alle dbtyper
+                )
+
+                with open(ddl_files[db], "w") as file:
+                    with open(ddl_files['postgresql'], 'r') as file_r:
+                        for line in file_r:
+                            file.write(
+                                reduce(lambda a, kv: a.replace(*kv), repls, line))    
+
+            if db == 'sqlite':
+                reset_statements[db] = 'rm ' + sqlite_db + ' 2> /dev/null'
+                create_schema_statements[db] = 'sqlite3 ' + sqlite_db + ' < ' + ddl_files[db]   
+                                                                          
+            if db in ('postgresql', 'oracle', 'mssql'): # TODO: Fjern når kode fikset for alle db
+                gen_import_file(db)                                
 
 
 
-                
+        for db in db_list:
+        #    for db in ('postgresql', 'oracle', 'mssql'): # TODO: Støtte H2, mysql eller siard heller? http://www.h2database.com/html/tutorial.html#csv
+            if not os.path.isfile(done_files[db]):
+                with open(import_sql_files[db], "r") as meta_check:
+                    for line in meta_check:
+                        line = str(line)
+                        if not line.startswith(' --'):
+                            print(line)                                                                
+                            sys.stdout.flush()   
+                            try:
+                                subprocess.check_call(line, shell=True, cwd=data_path)            
+                            except subprocess.CalledProcessError:
+                                # pass # handle errors in the called executable
+                                break
+                            except OSError:
+                                pass 
 
-        # sql = [
-        #     "-- SQL Server 2019",
-        #     "WbDisconnect;",
-        #     'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
-        #     "DROP DATABASE IF EXISTS pwb; CREATE DATABASE pwb;",
-        #     "WbDisconnect;",
-        #     'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=pwb" -username="sa" -password="P@ssw0rd" -autocommit=false;',
-        #     "WbSysExec touch '" + ms_done + "';",
-        #     "WbVarDef -contentFile='" + ms_done + "' -variable=ms_done;",
-        #     "WbInclude -ifNotDefined=ms_done -file='"
-        #     + mssql_ddl
-        #     + "' -displayResult=true -verbose=true -continueOnError=false;",
-        #     "WbImport -ifNotDefined=ms_done -type=text -extension=tsv -mode=insert -sourceDir='"
-        #     + sub_systems_path
-        #     + folder
-        #     + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema=dbo -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
-        #     "WbDisconnect;",
-        #     'WbConnect -url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433" -username="sa" -password="P@ssw0rd" -autocommit=true;',
-        #     "DROP DATABASE IF EXISTS pwb;",
-        #     "WbSysExec echo 'done' > '" + ms_done + "';",
-        #     "WbDisconnect;",
-        #     "\n",
-        #     "-- SQLite 3.27",
-        #     "WbDisconnect;",
-        #     # 'WbConnect -url="jdbc:sqlite::memory:" -username="" -password="" -driverjar="../bin/sqlite-jdbc-3.27.2.1.jar" -driver=org.sqlite.JDBC;',
-        #     "WbSysExec rm '" + sqlite_db + "' 2> /dev/null;",
-        #     'WbConnect -url="jdbc:sqlite:' + sqlite_db + \
-        #     '"  -username="" -password="" -driverjar="../bin/sqlite-jdbc-3.27.2.1.jar" -driver=org.sqlite.JDBC;',
-        #     "WbSysExec touch '" + lite_done + "';",
-        #     "WbVarDef -contentFile='" + lite_done + "' -variable=lite_done;",
-        #     "WbInclude -ifNotDefined=lite_done -file='"
-        #     + isosql_ddl
-        #     + "' -displayResult=true -verbose=true -continueOnError=false;",
-        #     "WbImport -ifNotDefined=lite_done -type=text -extension=tsv -mode=insert -sourceDir='"
-        #     + sub_systems_path
-        #     + folder
-        #     + "/content/data' -skipTargetCheck=true -checkDependencies=true -useSavepoint=false -continueOnError=false -ignoreIdentityColumns=false -schema= -delimiter=\\t -decimal='.' -encoding=UTF8 -header=true -deleteTarget=false -booleanToNumber=false -adjustSequences=false -createTarget=false -emptyStringIsNull=true -trimValues=false -showProgress=10000;",
-        #     "WbSysExec echo 'done' > '" + lite_done + "';",
-        #     "WbDisconnect;",
-        # ]
-        with open(sql_file, "a+") as file:
-            file.write("\n".join(sql_list))
+                sys.stdout.flush()                                     
+
+                                    
+
+

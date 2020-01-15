@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import shutil, os, time, sys, datetime, subprocess, pathlib
+import shutil, os, time, sys, datetime, subprocess
 from configparser import SafeConfigParser
 from appJar import gui
 from extract_user_input import add_config_section

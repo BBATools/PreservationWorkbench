@@ -415,8 +415,8 @@ Supported parameters:
             <xsl:text>  FOREIGN KEY (</xsl:text>
             <xsl:for-each select="source-columns/column">
               <!-- TODO: Også lenger nede -> virket ikke for extens med oracle -> lag bedre fiks  -->
-              <!-- <xsl:sort order="ascending" select="text()"/>  -->
-              <!-- TODO: Fix for mysql -> lage samme for pk nødvendig? -->
+              <xsl:sort order="ascending" select="text()"/> 
+              <!-- TODO: Fix for mysql og mssql -> lage samme for pk nødvendig? -->
               <xsl:call-template name="write-object-name">
                 <xsl:with-param name="objectname" select="."/>
               </xsl:call-template>
@@ -432,8 +432,8 @@ Supported parameters:
             </xsl:call-template>
             <xsl:text> (</xsl:text>
             <xsl:for-each select="referenced-columns/column">
-              <!-- <xsl:sort order="ascending" select="text()"/>  -->
-              <!-- TODO: Fix for mysql -> lage samme for pk nødvendig? -->
+              <xsl:sort order="ascending" select="text()"/> 
+              <!-- TODO: Fix for mysql og mssql -> lage samme for pk nødvendig? -->
               <xsl:call-template name="write-object-name">
                 <xsl:with-param name="objectname" select="."/>
               </xsl:call-template>

@@ -17,7 +17,8 @@
 
 import subprocess, os, pathlib, glob, sys, fileinput, copy, collections
 if os.name == "posix":
-    from lxml import etree as ET
+    # from lxml import etree as ET
+    import xml.etree.ElementTree as ET
     import pandas as pd
 
 from functools import reduce
@@ -186,8 +187,11 @@ subfolders = os.listdir(sub_systems_path)
 for folder in subfolders:
     base_path = sub_systems_path + folder
     ddl_file = base_path + "/documentation/metadata.sql"
+    oracle_dir = base_path + "/documentation/oracle_import/"
     header_xml_file = base_path + "/header/metadata.xml"
     mod_xml_file = base_path + "/documentation/metadata_mod.xml"
+
+    pathlib.Path(oracle_dir).mkdir(parents=True, exist_ok=True)
 
     if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path),folder)) and os.path.isfile(header_xml_file):
         tree = ET.parse(header_xml_file)
@@ -294,8 +298,22 @@ for folder in subfolders:
         for table_def in table_defs:
             table_name = table_def.find("table-name")
             dep_position = ET.Element("dep-position")
+            disposed = table_def.find("disposed")
             self_dep_set = set()
             index = 0
+
+            ora_ctl_file = oracle_dir + table_name.text + '.ctl'
+            ora_ctl_list = []
+            if disposed.text != "true":
+                ora_ctl = [
+                'LOAD DATA',
+                'CHARACTERSET UTF8 LENGTH SEMANTICS CHAR',
+                'INFILE ' + table_name.text + '.tsv',
+                'INSERT INTO TABLE ' + str(table_name.text).upper(),
+                "FIELDS TERMINATED BY '\\t' TRAILING NULLCOLS",
+                '(#'
+                ]
+                ora_ctl_list.append('\n'.join(ora_ctl))
 
             if table_name.text in deps_list:
                 index = int(deps_list.index(table_name.text))
@@ -337,11 +355,19 @@ for folder in subfolders:
                             old_referenced_column_name = ET.Element("original-column")
                             old_referenced_column_name.text = referenced_column_name.text
                             referenced_column_name.text = illegal_columns[referenced_column_name.text]
-                            referenced_column.insert(1, old_referenced_column_name)                                                                                     
-                                                          
+                            referenced_column.insert(1, old_referenced_column_name)                                                                                                                                             
+
+
             column_defs = table_def.findall("column-def")
+            
+            column_defs[:] = sorted(column_defs, key=lambda elem: int(elem.findtext('dbms-position')))
+            # TODO: Sortering virker men blir ikke lagret til xml-fil. Fiks senere når lage siard/datapackage-versjoner
+
             for column_def in column_defs:
-                column_name = column_def.find('column-name')           
+                column_name = column_def.find('column-name') 
+                java_sql_type_name = column_def.find('java-sql-type-name')
+                dbms_data_size = column_def.find('dbms-data-size')   
+                dbms_data_type = column_def.find('dbms-data-type')
 
                 # Fix illegal or empty column- and table-names:
                 if column_name.text in illegal_columns:
@@ -371,6 +397,25 @@ for folder in subfolders:
                     if col_ref_table_name.text.lower() == table_name.text and col_ref_table_name.text.lower() not in empty_tables:   
                         self_dep_set.add(ref_column_name.text.lower() + ':' + column_name.text.lower())
                         # print(table_name.text + ':' + ref_column_name.text + ':' + column_name.text)
+
+                if disposed.text != "true":
+                    # WAIT: Skriv om under så mindre if/else rep
+                    ora_ctl_type = ''
+                    if   (java_sql_type_name.text in ('VARCHAR', 'CHAR')):   ora_ctl_type = 'CHAR'
+                    elif (java_sql_type_name.text == 'DECIMAL'):   ora_ctl_type = 'DECIMAL EXTERNAL'
+                    elif (java_sql_type_name.text == 'TIMESTAMP'): ora_ctl_type = 'TIMESTAMP "YYYY-MM-DD HH24:MI:SS"'
+                    elif (java_sql_type_name.text == 'FLOAT'): ora_ctl_type = 'FLOAT EXTERNAL'  
+                    elif (java_sql_type_name.text in ('VARBINARY', 'LONGVARCHAR', 'CLOB')): ora_ctl_type = 'CHAR(1000000)' # WAIT: Finn absolutte maks som kan brukes               
+
+                    if dbms_data_type.text.find('(')!=-1 and java_sql_type_name.text not in ('FLOAT','VARBINARY','LONGVARCHAR', 'CLOB'): 
+                        ora_ctl_type = ora_ctl_type + '(' + dbms_data_size.text + ')'
+
+                    ora_ctl_list.append(column_name.text + ' ' + ora_ctl_type)                                    
+
+            # Write Oracle SQL Loader control file:
+            if disposed.text != "true":
+                with open(ora_ctl_file, "w") as file:
+                    file.write((',\n'.join(ora_ctl_list)).replace('#,', '') + ' TERMINATED BY WHITESPACE \n)')                        
             
             if len(self_dep_set) != 0: 
                 self_dep_dict.update({table_name.text : self_dep_set})
