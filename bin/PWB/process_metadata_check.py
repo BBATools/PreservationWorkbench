@@ -190,12 +190,9 @@ for folder in subfolders:
                 import_bins[db] = '/usr/bin/sqlite3'
                 ddl_files[db] = documentation_folder + 'metadata.sql'                
                 reset_statements[db] = 'rm "$db_name" 2> /dev/null'
-                create_schema_statements[db] = '$sql_bin "$db_name" < $ddl_file'  
-                # import_statements[db] = '$import_bin $table in "$data_path""$table".tsv -U $user -P $password -d $db_name -S $host -r "\\r\\n" -F 2 -c'                   
-                import_statements[db] = '''$import_bin $db_name -bail -batch \\".mode tabs\\" \\".import $data_path$table.tsv $table\\"'''
-                #sqlite3  /home/bba/pwb.db -bail -batch ".mode tabs" ".import /home/bba/bin/PWB/_DATA/Profdoc_Frisklivsentralen_mount/content/sub_systems/dokprod_interfaceversion001/content/data/accountingperiod.tsv accountingperiod"
-
-                # import_str = 'sqlite3  -separator "\\t" -cmd ".import ' sqlite_db  + sub_data_folder + table + '.tsv ' + + '"'                               
+                create_schema_statements[db] = '$sql_bin "$db_name" < $ddl_file'                  
+                import_statements[db] = '''tail -n +2 $data_path$table.tsv > /tmp/$table.tsv && $import_bin $db_name -bail -batch \\".mode tabs\\" \\".import /tmp/$table.tsv $table\\" && rm /tmp/$table.tsv'''
+                            
                                                                           
             gen_import_file(db)
 
