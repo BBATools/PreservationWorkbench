@@ -22,6 +22,7 @@ from configparser import SafeConfigParser
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tmp'))
 ora_reset_script = os.path.abspath(os.path.join(os.path.dirname(__file__), 'oracle_reset.sql'))
+tsv2sqlite_script = os.path.abspath(os.path.join(os.path.dirname(__file__), 'tsv2sqlite.py'))
 conf_file = tmp_dir + "/pwb.ini"
 config.read(conf_file)
 data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
@@ -35,7 +36,7 @@ if not filepath:
     exit()  
 
 
-# WAIT: Lag også vbs-versjon for windows
+# WAIT: Lag også powershell eller vbs-versjon for windows
 # WAIT: Endre så henter filplassering auto og resten av paths relativt (som i arkimint)
 def gen_import_file(db):                 
     ln = [
@@ -55,15 +56,12 @@ def gen_import_file(db):
             'reset_file=' + reset_files[db],
             'ddl_file=' + ddl_files[db] + '\n',
             '# -- Code --',
-            reset_statements[db],
+            reset_before_statements[db],
             create_schema_statements[db],
             'while IFS= read -r table',
             'do',
             import_statements[db],
-            # '$import_bin $user/$password@$host errors=0 skip=1 direct=true control="$table".ctl data="$data_path""$table".tsv',            
             'done < "$import_order_file"'
-            # # db_reset_statements[db], # TODO: Foreløpig fjernet for test
-            # 'touch ' + db_done_files[db], # TODO: Bedre sjekker før denne gjøres
     ]
 
     with open(import_sql_files[db], "w") as file:
@@ -99,16 +97,19 @@ for folder in subfolders:
         db_names = {}        
         done_files = {} # WAIT: Skriv til config fil heller
         import_sql_files = {} 
-        reset_statements = {}     
+        reset_before_statements = {}  
+        reset_after_statements = {}              
         create_schema_statements = {}  
         ddl_files = {} 
         reset_files = {}
         import_statements = {}
+        db_done_files = {}
 
         for db in db_list:
             pathlib.Path(documentation_folder + db + '_import').mkdir(parents=True, exist_ok=True)
             done_files[db]=documentation_folder + db + '_done'
             import_sql_files[db]=documentation_folder + db + '_import/import.sh'
+            db_done_files[db] = documentation_folder + db + '_done'
 
             if db in ('postgresql','sqlite', 'mssql'): 
                 reset_files[db] = ' #Not needed for ' + db
@@ -123,7 +124,8 @@ for folder in subfolders:
                 sql_bin[db] = '/usr/bin/psql'
                 import_bins[db] = '/usr/bin/psql'
                 ddl_files[db] = documentation_folder + 'metadata.sql'
-                reset_statements[db] = 'PGOPTIONS="--client-min-messages=warning" $sql_bin "user=$user password=$password host=$host" -q -c "DROP SCHEMA IF EXISTS $schema CASCADE;"'
+                reset_before_statements[db] = 'PGOPTIONS="--client-min-messages=warning" $sql_bin "user=$user password=$password host=$host" -q -c "DROP SCHEMA IF EXISTS $schema CASCADE;"'
+                reset_after_statements[db] = sql_bin[db] + '"user=' + users[db] + ' password=' + passwords[db] + 'host=localhost" -q -c "DROP SCHEMA IF EXISTS ' + schemas[db] + ' CASCADE;"'
                 create_schema_statements[db] = '$sql_bin "user=$user password=$password host=$host" -q -c "CREATE SCHEMA $schema; SET search_path TO $schema;" -f $ddl_file' 
                 import_statements[db] = '''$import_bin "user=$user password=$password host=$host" -v "ON_ERROR_STOP=1" -c "\copy \"$schema\".\"$table\" FROM \"$data_path\"\"$table\".tsv delimiter E'\\t' CSV HEADER QUOTE E'\\b' NULL AS ''"'''
 
@@ -137,7 +139,8 @@ for folder in subfolders:
                 sql_bin[db] = '/u01/app/oracle/product/11.2.0/xe/bin/sqlplus'
                 import_bins[db] = '/u01/app/oracle/product/11.2.0/xe/bin/sqlldr'   
                 ddl_files[db] = documentation_folder + db + '_import/metadata_' + db + '.sql'                                
-                reset_statements[db] = '$sql_bin -S $user/$password@$host < $reset_file'
+                reset_before_statements[db] = '$sql_bin -S $user/$password@$host < $reset_file'
+                reset_after_statements[db] = sql_bin[db] + ' -S ' + users[db] + '/' + passwords[db] + '@localhost < ' + reset_files[db]
                 create_schema_statements[db] = '$sql_bin -S $user/$password@$host < $ddl_file'
                 import_statements[db] = '$import_bin $user/$password@$host errors=0 skip=1 direct=true control="$table".ctl data="$data_path""$table".tsv'
                 repls = (
@@ -164,7 +167,8 @@ for folder in subfolders:
                 sql_bin[db] = '/opt/mssql-tools/bin/sqlcmd'
                 import_bins[db] = '/opt/mssql-tools/bin/bcp'   
                 ddl_files[db] = documentation_folder + db + '_import/metadata_' + db + '.sql'
-                reset_statements[db] = '$sql_bin -b -U $user -P $password -H $host -d master -Q "DROP DATABASE IF EXISTS $db_name; CREATE DATABASE $db_name"'
+                reset_before_statements[db] = '$sql_bin -b -U $user -P $password -H $host -d master -Q "DROP DATABASE IF EXISTS $db_name; CREATE DATABASE $db_name"'
+                reset_after_statements[db] = sql_bin[db] + ' -b -U ' + users[db] + ' -P ' + passwords[db] + ' -H localhost -d master -Q "DROP DATABASE IF EXISTS pwb;"'
                 create_schema_statements[db] = '$sql_bin -b -U $user -P $password -H $host -d $db_name -i $ddl_file' 
                 import_statements[db] = '$import_bin $table in "$data_path""$table".tsv -U $user -P $password -d $db_name -S $host -r "\\r\\n" -F 2 -c'
 
@@ -182,40 +186,36 @@ for folder in subfolders:
                                 reduce(lambda a, kv: a.replace(*kv), repls, line)) 
 
             if db == 'sqlite':
+                shutil.copyfile(tsv2sqlite_script, documentation_folder + db + '_import/tsv2sqlite.py')                 
                 users[db] = ' #Not needed for sqlite'
                 passwords[db] = ' #Not needed for sqlite'
                 schemas[db] = ' #Not needed for sqlite'
                 db_names[db] = '/tmp/pwb.db #Name and path of created db-file. Deleted first on rerun'  
                 sql_bin[db] = '/usr/bin/sqlite3'
-                import_bins[db] = '/usr/bin/sqlite3'
+                import_bins[db] = '"python3 tsv2sqlite.py"'
                 ddl_files[db] = documentation_folder + 'metadata.sql'                
-                reset_statements[db] = 'rm "$db_name" 2> /dev/null'
-                create_schema_statements[db] = '$sql_bin "$db_name" < $ddl_file'                  
-                import_statements[db] = '''tail -n +2 $data_path$table.tsv > /tmp/$table.tsv && $import_bin $db_name -bail -batch \\".mode tabs\\" \\".import /tmp/$table.tsv $table\\" && rm /tmp/$table.tsv'''
+                reset_before_statements[db] = 'rm "$db_name" 2> /dev/null'
+                reset_after_statements[db] = 'echo "*********************************** \n All databases imported successfully"'
+                create_schema_statements[db] = '$sql_bin "$db_name" < $ddl_file' 
+                import_statements[db] = '$import_bin $table $data_path$table.tsv $db_name'
                             
                                                                           
             gen_import_file(db)
 
 
-        # for db in db_list:
-        # #    for db in ('postgresql', 'oracle', 'mssql'): # TODO: Støtte H2, mysql eller siard heller? http://www.h2database.com/html/tutorial.html#csv
-        #     if not os.path.isfile(done_files[db]):
-        #         with open(import_sql_files[db], "r") as meta_check:
-        #             for line in meta_check:
-        #                 line = str(line)
-        #                 if not line.startswith(' --'):
-        #                     print(line)                                                                
-        #                     sys.stdout.flush()   
-        #                     try:
-        #                         subprocess.check_call(line, shell=True, cwd=data_path)            
-        #                     except subprocess.CalledProcessError:
-        #                         # pass # handle errors in the called executable
-        #                         break
-        #                     except OSError:
-        #                         pass 
+        # TODO: Lag egen def for suprocess heller. Bedre sjekker før 'done', og 'done' til config-fil heller enn separate filer
+        for db in db_list:
+            if not os.path.isfile(done_files[db]): 
+                try:
+                    subprocess.check_call(import_sql_files[db], shell=True, cwd=documentation_folder + db + '_import')            
+                except subprocess.CalledProcessError:
+                    # pass # handle errors in the called executable
+                    break
+                except OSError:
+                    pass 
+                else:  
+                    subprocess.call('touch ' + db_done_files[db], shell=True, cwd=documentation_folder + db + '_import')                                        
+                    subprocess.call(reset_after_statements[db], shell=True, cwd=documentation_folder + db + '_import')     
 
-        #         sys.stdout.flush()                                     
-
-                                    
-
-
+                sys.stdout.flush() 
+              

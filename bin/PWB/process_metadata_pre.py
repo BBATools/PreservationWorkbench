@@ -94,7 +94,7 @@ def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case):
     replace_in_file(new_file_name, '\0', '') # Remove null bytes
     table = etl.fromcsv(new_file_name, delimiter='\t', skipinitialspace=True, quoting = csv.QUOTE_NONE, quotechar='',escapechar = '')
     table = lower_case_header(table)
-    table = etl.rename(table, illegal_columns, strict=False)
+    table = etl.rename(table, illegal_columns_lower_case, strict=False)
     row_count = etl.nrows(table)
 
     print(new_file_name)  
@@ -141,7 +141,7 @@ illegal_columns = {
     'PUBLIC': 'PUBLIC_',
     'OVER': 'OVER_',
     'SQL': 'SQL_',  
-    'RANGE': 'RANGE_',    
+    'RANGE': 'RANGE_', # TODO: Denne hadde ikke blitt oppdatert i header på tsv-fil    
     'MEMBER': 'MEMBER_',                                                     
     'INTERVAL': 'INTERVAL_'
 }
