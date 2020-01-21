@@ -122,7 +122,7 @@ if __name__ == "__main__":
                     "-maxDigits=0",
                     "-lineEnding=lf",
                     "-clobAsFile=false", # WAIT: GUI-valg for å justere denne. Andre?
-                    "-blobType=file",
+                    "-blobType=ansi", # WAIT: Fortsatt ha file som default? GUI-valg for denne? Siste mulige variant er base64
                     "-delimiter=\\t",
                     "-replaceExpression='(\\n|\\r\\n|\\r|\\t|^$)' -replaceWith=' '",
                     "-nullString=' '",
