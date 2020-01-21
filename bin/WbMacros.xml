@@ -5,7 +5,7 @@
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -43,7 +43,7 @@ WbExport -ifNotEmpty=db_args
 -header=true                  
 -decimal=&apos;.&apos;                  
 -maxDigits=0                  -- export as many decimals as possible
--lineEnding=crlf        
+-lineEnding=lf        
 -clobAsFile=true              -- export huge text fields as separate files
 -blobType=file                -- export binary fields as separate files
 -delimiter=\t                 -- tab-separated  
@@ -59,6 +59,7 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
        <void property="tooltip">
         <string>XML/TSV-export</string>
        </void>
+       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
@@ -102,7 +103,7 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
         <string>XML/H2-export</string>
        </void>
        <void property="visibleInPopup">
-        <boolean>false</boolean>
+        <object idref="Boolean0"/>
        </void>
       </object>
      </void>
@@ -204,7 +205,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup2">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>File</string>
        </void>
@@ -216,8 +217,6 @@ WbMessage &quot;Not implemented yet&quot;;
        <void property="tooltip">
         <string>dispos...</string>
        </void>
-       <void id="Boolean0" method="isVisibleInMenu"/>
-       <void id="Boolean1" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
@@ -374,7 +373,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <int>4</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -384,7 +383,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
-        <object idref="Boolean0"/>
+        <boolean>true</boolean>
        </void>
        <void property="name">
         <string>MD5sum File</string>
@@ -410,7 +409,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -423,7 +422,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>6</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -436,7 +435,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>7</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -449,7 +448,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>8</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -462,7 +461,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>9</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -475,7 +474,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>10</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>

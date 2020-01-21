@@ -120,7 +120,7 @@ if __name__ == "__main__":
                     "-header=true",
                     "-decimal='.'",
                     "-maxDigits=0",
-                    "-lineEnding=crlf",
+                    "-lineEnding=lf",
                     "-clobAsFile=false", # WAIT: GUI-valg for å justere denne. Andre?
                     "-blobType=file",
                     "-delimiter=\\t",
