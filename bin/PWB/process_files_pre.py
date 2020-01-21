@@ -121,7 +121,7 @@ if __name__ == "__main__":
                     "-decimal='.'",
                     "-maxDigits=0",
                     "-lineEnding=crlf",
-                    "-clobAsFile=true",
+                    "-clobAsFile=false", # WAIT: GUI-valg for å justere denne. Andre?
                     "-blobType=file",
                     "-delimiter=\\t",
                     "-replaceExpression='(\\n|\\r\\n|\\r|\\t|^$)' -replaceWith=' '",
