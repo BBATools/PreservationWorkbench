@@ -44,7 +44,7 @@
       </xsl:call-template>
     </xsl:variable>
 
-    <xsl:text>WbCopy -ifNotEmpty=db_args -targetConnection=$[TargetCon] -mode=INSERT -ignoreIdentityColumns=false -removeDefaults=true -continueOnError=false -showProgress=10000 -targetSchema=PUBLIC -createTarget=true -targetTable="</xsl:text>
+    <xsl:text>WbCopy -ifNotEmpty=db_args -targetConnection=$[TargetCon] -mode=INSERT -commitEvery=1000 -ignoreIdentityColumns=false -removeDefaults=true -continueOnError=false -showProgress=10000 -targetSchema=PUBLIC -createTarget=true -targetTable="</xsl:text>
     <xsl:value-of select="$tablename"/> 
     <xsl:text>" -sourceQuery='SELECT</xsl:text>     
 
@@ -69,7 +69,7 @@
 
     <xsl:text>" FROM "</xsl:text>
     <xsl:value-of select="$tablename"/>  
-    <xsl:text>"';</xsl:text>    
+    <xsl:text>"'; COMMIT;</xsl:text>    
 
     <xsl:value-of select="$newline"/>
     <xsl:for-each select="column-def">

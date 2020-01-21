@@ -48,5 +48,5 @@ cp=$cp:$SCRIPT_PATH/ext/*
 #fi
 
 cd $SCRIPT_PATH
-java -jar sqlworkbench.jar -Dvisualvm.display.name=SQLWorkbench -Dawt.useSystemAAFontSettings=on -configDir=. -url=jdbc:h2:mem:PWB -password="";
+java -Xmx6g -jar sqlworkbench.jar -Dvisualvm.display.name=SQLWorkbench -Dawt.useSystemAAFontSettings=on -configDir=. -url=jdbc:h2:mem:PWB -password="";
 
