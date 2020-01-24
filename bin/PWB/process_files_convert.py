@@ -105,7 +105,7 @@ def run_shell_command(command, cwd=None, timeout=30):
     cmd = [' '.join(command)]
     stdout = []
     stderr = []
-    mix = []
+    mix = []  # TODO: Fjern denne mm
 
     print(''.join(cmd))
     sys.stdout.flush()
