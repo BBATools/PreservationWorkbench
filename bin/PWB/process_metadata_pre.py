@@ -131,6 +131,7 @@ empty_tables = []
 # WAIT: Endre til list bare under. evt. generer med underscore bak
 illegal_tables = {
     'WINDOW': 'WINDOW_',
+    'TRANSACTION': 'TRANSACTION_',
     'FUNCTION': 'FUNCTION_',
 }
 illegal_columns = {
@@ -139,6 +140,7 @@ illegal_columns = {
     'SCHEMA': 'SCHEMA_',
     'SYSTEM': 'SYSTEM_',
     'NOTNULL': 'NOTNULL_',
+    'TRANSACTION': 'TRANSACTION_',
     'COLUMN': 'COLUMN_',
     'PERCENT': 'PERCENT_',
     'DATE': 'DATE_',
@@ -212,8 +214,11 @@ for folder in subfolders:
         table_defs = tree.findall("table-def")
         for table_def in table_defs:
             table_name = table_def.find("table-name")
+            # table_name_attrib = table_def.attrib['name']
+            old_table_name = ET.Element("original-table-name")
+            old_table_name.text = table_name.text
 
-            # TODO: Menyvalg for dispose bare fjerne tsv/eller text-fil. Endre til tsv ext før en får gjøre det?
+            # TODO: Menyvalg for dispose trenger bare fjerne tsv-fil
 
             # Add tables names too long for oracle to 'illegal_tables'
             if len(table_name.text
@@ -229,10 +234,6 @@ for folder in subfolders:
             if os.path.isfile(file_name):
                 os.rename(file_name, new_file_name)
 
-            # Rename illegal tablenames in XML:
-            old_table_name = ET.Element("original-table-name")
-            old_table_name.text = table_name.text
-
             if table_name.text in illegal_tables:
                 table_name.text = illegal_tables[table_name.text]
 
@@ -243,6 +244,7 @@ for folder in subfolders:
 
             table_name.text = table_name.text.lower()
             table_def.insert(3, old_table_name)
+            table_def.set('name', table_name.text)
 
             pk_set = set()
             column_defs = table_def.findall("column-def")
@@ -258,9 +260,12 @@ for folder in subfolders:
                         text] = column_name.text[:26] + "_" + str(c_count)
 
                 if primary_key.text == 'true':
-                    pk_set.add(column_name.text)
+                    if column_name.text in illegal_columns:
+                        pk_set.add(illegal_columns[column_name.text])
+                    else:
+                        pk_set.add(column_name.text)
 
-                # WAIT: Oracle workaround -> lag bedre fiks hvis støter på igjen
+                # WAIT: Oracle workaround -> lag bedre fiks hvis støter på problem igjen
                 # java_sql_type_name = column_def.find('java-sql-type-name')
                 # dbms_data_size = column_def.find("dbms-data-size")
                 # dbms_data_type = column_def.find("dbms-data-type")
@@ -276,10 +281,11 @@ for folder in subfolders:
             disposal_comment.text = " "
             rows = ET.Element("rows")
 
-            # TODO: Legg inn sjekk så ikke leser rader på nytt hvis gjort før
+            # TODO: Legg inn sjekk så ikke leser rader på nytt hvis gjort før -> tull med row_count da?
             if os.path.exists(new_file_name):
                 row_count = tsv_fix(base_path, new_file_name, pk_set,
                                     illegal_columns_lower_case)
+
                 if row_count == 0:
                     os.remove(new_file_name)
                     disposed.text = "true"
@@ -343,24 +349,34 @@ for folder in subfolders:
             for foreign_key in foreign_keys:
                 tab_constraint_name = foreign_key.find("constraint-name")
                 if str(tab_constraint_name.text).startswith('SYS_C'):
+                    old_tab_constraint_name = ET.Element(
+                        "original-constraint-name")
+                    old_tab_constraint_name.text = tab_constraint_name.text
                     tab_constraint_name.text = tab_constraint_name.text + '_'
+                    foreign_key.insert(1, old_tab_constraint_name)
 
                 fk_references = foreign_key.findall('references')
                 for fk_reference in fk_references:
                     tab_ref_table_name = fk_reference.find("table-name")
+                    old_tab_ref_table_name = ET.Element("original-table-name")
+                    old_tab_ref_table_name.text = tab_ref_table_name.text
+
                     if tab_ref_table_name.text.lower() in empty_tables:
                         tab_constraint_name.text = "_disabled_" + tab_constraint_name.text
                     elif tab_ref_table_name.text in illegal_tables:
                         tab_ref_table_name.text = tab_ref_table_name.text + '_'
 
+                    tab_ref_table_name.text = tab_ref_table_name.text.lower()
+                    fk_reference.insert(3, old_tab_ref_table_name)
+
                 # WAIT: Slå sammen de to under til en def
                 source_columns = foreign_key.findall('source-columns')
                 for source_column in source_columns:
                     source_column_names = source_column.findall('column')
+                    old_source_column_name = ET.Element("original-column")
+
                     for source_column_name in source_column_names:
                         if source_column_name.text in illegal_columns:
-                            old_source_column_name = ET.Element(
-                                "original-column")
                             old_source_column_name.text = source_column_name.text
                             source_column_name.text = illegal_columns[
                                 source_column_name.text]
@@ -392,19 +408,26 @@ for folder in subfolders:
                 java_sql_type_name = column_def.find('java-sql-type-name')
                 dbms_data_size = column_def.find('dbms-data-size')
                 dbms_data_type = column_def.find('dbms-data-type')
+                old_column_name = ET.Element("original-column-name")
+                old_column_name.text = column_name.text
 
-                # Fix illegal or empty column- and table-names:
                 if column_name.text in illegal_columns:
-                    old_column_name = ET.Element("original-column-name")
-                    old_column_name.text = column_name.text
-                    column_name.text = illegal_columns[column_name.text]
-                    column_def.insert(2, old_column_name)
+                    column_name.text = illegal_columns[
+                        column_name.text].lower()
+                else:
+                    column_name.text = column_name.text.lower()
+
+                column_def.insert(2, old_column_name)
+                column_def.set('name', column_name.text)
 
                 col_references = column_def.findall('references')
                 for col_reference in col_references:
                     ref_column_name = col_reference.find('column-name')
                     col_ref_table_name = col_reference.find('table-name')
-                    # col_constraint_name = col_reference.find('constraint-name')
+                    col_constraint_name = col_reference.find('constraint-name')
+                    old_col_constraint_name = ET.Element(
+                        "original-constraint-name")
+                    old_col_constraint_name.text = col_constraint_name.text
 
                     if ref_column_name.text in illegal_columns:
                         old_ref_column_name = ET.Element(
@@ -419,14 +442,86 @@ for folder in subfolders:
                         old_ref_table_name.text = col_ref_table_name.text
                         col_ref_table_name.text = illegal_tables[
                             col_ref_table_name.text]
-                        column_def.insert(3, old_ref_table_name)
+                        col_reference.insert(3, old_ref_table_name)
+
+                    old_col_constraint_fix = False
+                    if str(col_constraint_name.text).startswith('SYS_C'):
+                        col_constraint_name.text = col_constraint_name.text + '_'
+                        old_col_constraint_fix = True
+
+                    if col_ref_table_name.text.lower() in empty_tables:
+                        col_constraint_name.text = "_disabled_" + col_constraint_name.text
+                        old_col_constraint_fix = True
+
+                    if old_col_constraint_fix:
+                        col_reference.insert(2, old_col_constraint_name)
 
                     if col_ref_table_name.text.lower(
                     ) == table_name.text and col_ref_table_name.text.lower(
                     ) not in empty_tables:
                         self_dep_set.add(ref_column_name.text.lower() + ':' +
                                          column_name.text.lower())
-                        # print(table_name.text + ':' + ref_column_name.text + ':' + column_name.text)
+
+                # for col_reference in col_references:
+                #     ref_column_name = col_reference.find('column-name')
+                #     col_ref_table_name = col_reference.find('table-name')
+
+                    if (col_ref_table_name.text !=
+                            table_name.text) and (disposed.text != "true"):
+
+                        # col_ref_table_defs = tree.findall("table-def")
+                        # p_key = tree.findall(
+                        #     "table-def/column-def[primary-key='true']")
+
+                        # table_def.find("table-name")
+                        # xpath_str = "table-def[table-name='" + col_ref_table_name.text + "']"
+                        # print(xpath_str)
+                        # ref_column = tree.find(xpath_str)
+                        # if ref_column:
+                        #     print("test")
+
+                        # test = tree.find(
+                        #     "table-def[disposed !='true'][@name='" +
+                        #     col_ref_table_name.text + "']/column-def[@name ='"
+                        #     + ref_column_name.text + "']/dbms-data-size")
+
+                        # /schema-report/table-def[162]/column-def[12]/dbms-data-size
+                        # /schema-report/table-def[table-name='PATIENT']/column-def[column-name='PAT_ID']
+                        ref_columns = tree.findall(
+                            "table-def[table-name='" + col_ref_table_name.text.
+                            lower() + "']/column-def[column-name='" +
+                            ref_column_name.text.lower() + "']")
+
+                        # TODO: Sjekk om linje under også ok når find heller enn findall
+                        # ref_columns = tree.findall(
+                        #     "table-def[table-name='reg_injury']/column-def[column-name='ri_id'"
+                        # )
+
+                        # for ref_column in ref_columns:
+                        #     if ref_column:
+                        #         print("test")
+
+                        # if ref_column:
+                        #     ref_column_data_size = ref_column.find(
+                        #         'dbms-data-size')
+                        #     print(ref_column_data_size.text)
+                        # else:
+                        #     print("!!!" + col_ref_table_name.text)
+
+                        # if ref_column:
+                        #     if ref_column:
+                        #         test = ref_column.find('dbms-data-size')
+                        #         print(test.text)
+                        #     else:
+                        #         print("noooooooooo")
+
+                        # test = tree.find(
+                        #     'table-def[@name ="REG_INJURY"]/tablespace')
+                        # # test = tree.find(
+                        # #     '/schema-report/table-def[@name ="' +
+                        # #     col_ref_table_name.text + '"]/column-def[@name ="' +
+                        # #     ref_column_name.text + '"]/dbms-data-size')
+                        # print(str(test.text))
 
                 if disposed.text != "true":
                     # WAIT: Skriv om under så mindre if/else rep
