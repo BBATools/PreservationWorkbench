@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<java version="11.0.5" class="java.beans.XMLDecoder">
+<java version="11.0.6" class="java.beans.XMLDecoder">
  <object class="java.util.ArrayList">
   <void method="add">
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
@@ -166,7 +166,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="name">
         <string>Make Copies</string>
        </void>
@@ -186,6 +186,8 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
        <void property="tooltip">
         <string>Copy data to processing folder and backup</string>
        </void>
+       <void id="Boolean0" method="isVisibleInMenu"/>
+       <void id="Boolean1" method="isAppendResult"/>
       </object>
      </void>
     </void>
@@ -219,7 +221,7 @@ WbMessage &quot;Not implemented yet&quot;;
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>Directory</string>
        </void>
@@ -233,8 +235,6 @@ WbMessage &quot;Not implemented yet&quot;;</string>
        <void property="tooltip">
         <string>dispos...</string>
        </void>
-       <void id="Boolean0" method="isVisibleInMenu"/>
-       <void id="Boolean1" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
@@ -405,7 +405,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean1"/>
     </void>
    </object>
   </void>

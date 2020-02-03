@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess, os, pathlib, glob, sys
+import subprocess, os, pathlib, glob, sys, shutil
 from configparser import SafeConfigParser
 from verify_make_copies import add_wim_file
 from extract_user_input import add_config_section
