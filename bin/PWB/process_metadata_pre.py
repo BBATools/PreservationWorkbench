@@ -106,6 +106,7 @@ def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case):
         quoting=csv.QUOTE_NONE,
         quotechar='',
         escapechar='')
+
     table = lower_case_header(table)
     table = etl.rename(table, illegal_columns_lower_case, strict=False)
     row_count = etl.nrows(table)
@@ -120,7 +121,8 @@ def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case):
         delimiter='\t',
         quoting=csv.QUOTE_NONE,
         quotechar='',
-        escapechar='')
+        escapechar='',
+        lineterminator='\n')
     writer.writerows(table)
 
     shutil.move(tempfile.name, new_file_name)
@@ -203,6 +205,7 @@ for folder in subfolders:
     if os.path.isdir(os.path.join(os.path.abspath(sub_systems_path),
                                   folder)) and os.path.isfile(header_xml_file):
         tree = ET.parse(header_xml_file)
+        tree_lookup = ET.parse(header_xml_file)
         illegal_columns_lower_case = lower_dict(illegal_columns)
 
         # for table_def in table_defs:
@@ -348,12 +351,15 @@ for folder in subfolders:
             foreign_keys = table_def.findall("foreign-keys/foreign-key")
             for foreign_key in foreign_keys:
                 tab_constraint_name = foreign_key.find("constraint-name")
+                old_tab_constraint_name = ET.Element(
+                    "original-constraint-name")
+                old_tab_constraint_name.text = tab_constraint_name.text
+
                 if str(tab_constraint_name.text).startswith('SYS_C'):
-                    old_tab_constraint_name = ET.Element(
-                        "original-constraint-name")
-                    old_tab_constraint_name.text = tab_constraint_name.text
                     tab_constraint_name.text = tab_constraint_name.text + '_'
-                    foreign_key.insert(1, old_tab_constraint_name)
+
+                tab_constraint_name.text = tab_constraint_name.text.lower()
+                foreign_key.insert(1, old_tab_constraint_name)
 
                 fk_references = foreign_key.findall('references')
                 for fk_reference in fk_references:
@@ -373,28 +379,36 @@ for folder in subfolders:
                 source_columns = foreign_key.findall('source-columns')
                 for source_column in source_columns:
                     source_column_names = source_column.findall('column')
-                    old_source_column_name = ET.Element("original-column")
 
                     for source_column_name in source_column_names:
+                        old_source_column_name = ET.Element("original-column")
+                        old_source_column_name.text = source_column_name.text
+
                         if source_column_name.text in illegal_columns:
-                            old_source_column_name.text = source_column_name.text
                             source_column_name.text = illegal_columns[
                                 source_column_name.text]
-                            source_column.insert(1, old_source_column_name)
+
+                        source_column_name.text = source_column_name.text.lower(
+                        )
+                        source_column.insert(1, old_source_column_name)
 
                 referenced_columns = foreign_key.findall('referenced-columns')
                 for referenced_column in referenced_columns:
                     referenced_column_names = referenced_column.findall(
                         'column')
+
                     for referenced_column_name in referenced_column_names:
+                        old_referenced_column_name = ET.Element(
+                            "original-column")
+                        old_referenced_column_name.text = referenced_column_name.text
+
                         if referenced_column_name.text in illegal_columns:
-                            old_referenced_column_name = ET.Element(
-                                "original-column")
-                            old_referenced_column_name.text = referenced_column_name.text
                             referenced_column_name.text = illegal_columns[
                                 referenced_column_name.text]
-                            referenced_column.insert(
-                                1, old_referenced_column_name)
+
+                        referenced_column_name.text = referenced_column_name.text.lower(
+                        )
+                        referenced_column.insert(1, old_referenced_column_name)
 
             column_defs = table_def.findall("column-def")
 
@@ -428,18 +442,18 @@ for folder in subfolders:
                     old_col_constraint_name = ET.Element(
                         "original-constraint-name")
                     old_col_constraint_name.text = col_constraint_name.text
+                    old_ref_column_name = ET.Element("original-column-name")
+                    old_ref_column_name.text = ref_column_name.text
+                    old_ref_table_name = ET.Element("original-table-name")
+                    old_ref_table_name.text = col_ref_table_name.text
 
                     if ref_column_name.text in illegal_columns:
-                        old_ref_column_name = ET.Element(
-                            "original-column-name")
-                        old_ref_column_name.text = ref_column_name.text
                         ref_column_name.text = illegal_columns[
                             ref_column_name.text]
                         column_def.insert(3, old_ref_column_name)
 
                     if col_ref_table_name.text in illegal_tables:
-                        old_ref_table_name = ET.Element("original-table-name")
-                        old_ref_table_name.text = col_ref_table_name.text
+
                         col_ref_table_name.text = illegal_tables[
                             col_ref_table_name.text]
                         col_reference.insert(3, old_ref_table_name)
@@ -462,16 +476,31 @@ for folder in subfolders:
                         self_dep_set.add(ref_column_name.text.lower() + ':' +
                                          column_name.text.lower())
 
-                # for col_reference in col_references:
-                #     ref_column_name = col_reference.find('column-name')
-                #     col_ref_table_name = col_reference.find('table-name')
+                        # for col_reference in col_references:
+                        #     ref_column_name = col_reference.find('column-name')
+                        #     col_ref_table_name = col_reference.find('table-name')
 
-                    if (col_ref_table_name.text !=
-                            table_name.text) and (disposed.text != "true"):
+                        # if (col_ref_table_name.text !=
+                        #         table_name.text) and (disposed.text != "true"):
 
-                        # col_ref_table_defs = tree.findall("table-def")
-                        # p_key = tree.findall(
-                        #     "table-def/column-def[primary-key='true']")
+                    # xpath_str = "table-def[table-name='" + col_ref_table_name.text.lower(
+                    # ) + "']/column-def[column-name='" + ref_column_name.text.lower(
+                    # ) + "']"
+                    # ref_column = tree.find(xpath_str)
+
+                    # xpath_str = "table-def[table-name='PATIENT']/column-def[column-name='PAT_ID']"
+
+                    xpath_str = "table-def[table-name='" + col_ref_table_name.text + "']/column-def[column-name='" + old_ref_column_name.text + "']"
+                    ref_column = tree_lookup.find(xpath_str)
+
+                    if ref_column:
+                        ref_column_data_size = ref_column.find(
+                            'dbms-data-size')
+                        if ref_column_data_size.text != dbms_data_size.text:
+                            dbms_data_size.text = ref_column_data_size.text
+                            print("table: " + col_ref_table_name.text)
+                            print("col:   " + ref_column_name.text)
+                            print(ref_column_data_size.text)
 
                         # table_def.find("table-name")
                         # xpath_str = "table-def[table-name='" + col_ref_table_name.text + "']"
@@ -487,10 +516,6 @@ for folder in subfolders:
 
                         # /schema-report/table-def[162]/column-def[12]/dbms-data-size
                         # /schema-report/table-def[table-name='PATIENT']/column-def[column-name='PAT_ID']
-                        ref_columns = tree.findall(
-                            "table-def[table-name='" + col_ref_table_name.text.
-                            lower() + "']/column-def[column-name='" +
-                            ref_column_name.text.lower() + "']")
 
                         # TODO: Sjekk om linje under også ok når find heller enn findall
                         # ref_columns = tree.findall(
@@ -498,15 +523,8 @@ for folder in subfolders:
                         # )
 
                         # for ref_column in ref_columns:
-                        #     if ref_column:
-                        #         print("test")
-
                         # if ref_column:
-                        #     ref_column_data_size = ref_column.find(
-                        #         'dbms-data-size')
-                        #     print(ref_column_data_size.text)
-                        # else:
-                        #     print("!!!" + col_ref_table_name.text)
+                        #     print("test")
 
                         # if ref_column:
                         #     if ref_column:
@@ -618,7 +636,9 @@ for folder in subfolders:
                 delimiter='\t',
                 quoting=csv.QUOTE_NONE,
                 quotechar='',
+                lineterminator='\n',
                 escapechar='')
+
             writer.writerows(table)
             shutil.move(tempfile.name, file_name)
 
