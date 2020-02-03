@@ -120,7 +120,7 @@ for folder in subfolders:
                 reset_before_statements[
                     db] = 'PGOPTIONS="--client-min-messages=warning" $sql_bin "user=$user password=$password host=$host" -q -c "DROP SCHEMA IF EXISTS $schema CASCADE;"'
                 reset_after_statements[
-                    db] = sql_bin[db] + '"user=' + users[db] + ' password=' + passwords[db] + 'host=localhost" -q -c "DROP SCHEMA IF EXISTS ' + schemas[db] + ' CASCADE;"'
+                    db] = sql_bin[db] + ' "user=' + users[db] + ' password=' + passwords[db] + ' host=localhost" -q -c "DROP SCHEMA IF EXISTS pwb CASCADE;"'
                 create_schema_statements[
                     db] = '$sql_bin "user=$user password=$password host=$host" -q -c "CREATE SCHEMA $schema; SET search_path TO $schema;" -f $ddl_file'
                 import_statements[
