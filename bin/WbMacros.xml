@@ -5,7 +5,7 @@
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -59,6 +59,7 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
        <void property="tooltip">
         <string>XML/TSV-export</string>
        </void>
+       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
@@ -102,7 +103,7 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
         <string>XML/H2-export</string>
        </void>
        <void property="visibleInPopup">
-        <boolean>false</boolean>
+        <object idref="Boolean0"/>
        </void>
       </object>
      </void>
@@ -204,68 +205,6 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/verify_
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup2">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
-       <void property="name">
-        <string>File</string>
-       </void>
-       <void property="text">
-        <string>
-WbMessage &quot;Not implemented yet&quot;;
-</string>
-       </void>
-       <void property="tooltip">
-        <string>dispos...</string>
-       </void>
-       <void id="Boolean0" method="isVisibleInMenu"/>
-       <void id="Boolean1" method="isAppendResult"/>
-      </object>
-     </void>
-     <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
-       <void property="name">
-        <string>Directory</string>
-       </void>
-       <void property="sortOrder">
-        <int>1</int>
-       </void>
-       <void property="text">
-        <string>-- TODO: Ha avhuking for om også undermapper skal kasseres
-WbMessage &quot;Not implemented yet&quot;;</string>
-       </void>
-       <void property="tooltip">
-        <string>dispos...</string>
-       </void>
-      </object>
-     </void>
-     <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
-       <void property="name">
-        <string>Table</string>
-       </void>
-       <void property="sortOrder">
-        <int>2</int>
-       </void>
-       <void property="text">
-        <string>WbMessage &quot;Not implemented yet&quot;;</string>
-       </void>
-       <void property="tooltip">
-        <string>dispos...</string>
-       </void>
-      </object>
-     </void>
-    </void>
-    <void property="name">
-     <string>DISPOSE</string>
-    </void>
-    <void property="sortOrder">
-     <int>2</int>
-    </void>
-   </object>
-  </void>
-  <void method="add">
-   <object class="workbench.sql.macros.MacroGroup" id="MacroGroup3">
-    <void property="macros">
-     <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>Files</string>
@@ -299,12 +238,12 @@ WbSysExec -ifEmpty=wim_path -program=&apos;echo &quot;*** Some files not convert
         <int>1</int>
        </void>
        <void property="text">
-        <string>  -- PROCESS METADATA:
+        <string>-- PROCESS METADATA:
 
- -- Read env variables from config-file
- WbVarDef -file=tmp/pwb.ini;
- -- Normalize metadata and generate sql	
- WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_metadata_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
+-- Read env variables from config-file
+WbVarDef -file=tmp/pwb.ini;
+-- Normalize metadata and generate sql	
+WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_metadata_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Read env variables from config-file
 WbVarDef -file=tmp/pwb.ini;
 -- Generate DDL from xml																																					
@@ -335,7 +274,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
    </object>
   </void>
   <void method="add">
-   <object class="workbench.sql.macros.MacroGroup" id="MacroGroup4">
+   <object class="workbench.sql.macros.MacroGroup" id="MacroGroup3">
     <void property="macros">
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
@@ -369,17 +308,17 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <int>4</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
   <void method="add">
-   <object class="workbench.sql.macros.MacroGroup" id="MacroGroup5">
+   <object class="workbench.sql.macros.MacroGroup" id="MacroGroup4">
     <void property="macros">
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
-        <object idref="Boolean0"/>
+        <boolean>true</boolean>
        </void>
        <void property="name">
         <string>MD5sum File</string>
@@ -405,7 +344,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -418,7 +357,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>6</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -431,7 +370,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>7</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -444,7 +383,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>8</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -457,7 +396,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>9</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -470,7 +409,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>10</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean1"/>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
