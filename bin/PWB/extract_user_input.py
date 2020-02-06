@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from configparser import SafeConfigParser
+from common.config import pwb_add_config_section
 from appJar import gui
 import os, subprocess
 if os.name == "posix":
@@ -26,22 +27,17 @@ if os.name == "posix":
 # WAIT: http://appjar.info/pythonEvents/#stopping-the-gui
 
 
-def add_config_section(s, section_name):
-    if not s.has_section(section_name):
-        s.add_section(section_name)
-
-
 def submit(btn):
     wb_dir = os.path.abspath(os.path.join(tmp_dir, '../../'))
-    add_config_section(config, 'ENV')
+    pwb_add_config_section(config, 'ENV')
     config.set('ENV', 'wb_dir', wb_dir)
     config.set('ENV', 'quit', "")
 
-    add_config_section(config, 'SYSTEM')
+    pwb_add_config_section(config, 'SYSTEM')
     sys_name = app.getEntry("sys_name")
     config.set('SYSTEM', 'sys_name', sys_name)
 
-    add_config_section(config, 'DATABASE')
+    pwb_add_config_section(config, 'DATABASE')
     db_name = app.getEntry("db_name")
     config.set('DATABASE', 'db_name', db_name)
     db_schema = app.getEntry("db_schema")
@@ -53,7 +49,7 @@ def submit(btn):
     for path in dir_paths:
         paths["dir" + str(i)] = path
         i += 1
-    add_config_section(config, 'DOCUMENTS')
+    pwb_add_config_section(config, 'DOCUMENTS')
     for key in paths.keys():
         config.set('DOCUMENTS', key, paths[key])
 
@@ -112,7 +108,7 @@ if __name__ == "__main__":
         os.path.join(os.path.dirname(__file__), '..', 'tmp'))
     conf_file = tmp_dir + "/pwb.ini"
     config.read(conf_file)
-    add_config_section(config, 'ENV')
+    pwb_add_config_section(config, 'ENV')
     config.set('ENV', 'quit', "true")
     with open(conf_file, "w+") as configfile:
         config.write(configfile, space_around_delimiters=False)

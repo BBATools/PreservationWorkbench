@@ -1,6 +1,6 @@
 #! python3
 
-# Copyright (C) 2019 Morten Eek
+# Copyright (C) 2020 Morten Eek
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@ if os.name == "posix":
 from functools import reduce
 from configparser import SafeConfigParser
 from verify_make_copies import add_wim_file
-from extract_user_input import add_config_section
 from appJar import gui
 from process_files_pre import mount_wim, quit
 # from lxml import etree # TODO: Fjern fra arkimint også hvis ikke trengs andre steder lenger heller
@@ -37,124 +36,13 @@ from petl.compat import text_type
 from petl.util.base import Table
 import fileinput
 from process_files_pre import indent
+# from dialog import pwb_yes_no_prompt
+from common.dialog import pwb_yes_no_prompt
+from common.dictionary import pwb_lower_dict
+from common.file import pwb_replace_in_file
+from common.config import pwb_add_config_section
 
 csv.field_size_limit(sys.maxsize)
-
-
-class Cmd:
-    def __init__(self, cmdArgs, stdin=None):
-        self.cmd = ' '.join(cmdArgs)
-        self.cmdArgs = cmdArgs
-        self.stdin = stdin
-        self.stdout = None
-        self.stderr = None
-        self.returncode = None
-        self.succeeded = None
-
-        if stdin and type(stdin) is str:
-            if stdin[-1] == '\n':
-                self.stdin = str.encode(stdin[:-1])
-            else:
-                self.stdin = str.encode(stdin)
-
-
-def pwb_cmd(cmdArgs, stdin=None, piped=False):
-    if len(cmdArgs) == 1 and '|' in cmdArgs[0]:
-        args = [i.strip().split(' ') for i in cmdArgs[0].split('|')]
-        return runCmd(args, piped=True)
-
-    if piped:
-        if len(cmdArgs) > 2:
-            return runCmd(
-                cmdArgs[-1], stdin=runCmd(cmdArgs[:-1], piped=True).stdout)
-        elif len(cmdArgs) == 2:
-            return runCmd(
-                cmdArgs[1], stdin=runCmd(cmdArgs[0], piped=False).stdout)
-
-    cmd = Cmd(cmdArgs, stdin)
-
-    try:
-        if cmd.stdin:
-            if sys.version_info[1] < 7:  # Add capture_output for Python version 3.7 or greater
-                result = subprocess.run(
-                    cmd.cmdArgs,
-                    input=cmd.stdin,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    #timeout=600,
-                    check=True)
-            else:
-                result = subprocess.run(
-                    cmd.cmdArgs,
-                    input=cmd.stdin,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    capture_output=True,  # python >= 3.7
-                    #timeout=600,
-                    check=True)
-        else:
-            if sys.version_info[1] < 7:
-                result = subprocess.run(
-                    cmd.cmdArgs,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    #timeout=600,
-                    check=True)
-
-            else:
-                result = subprocess.run(
-                    cmd.cmdArgs,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    capture_output=True,  # python >= 3.7
-                    #timeout=600,
-                    check=True)
-
-        cmd.stdout = result.stdout.decode("utf-8")
-        cmd.stderr = result.stderr.decode("utf-8")
-
-    except subprocess.CalledProcessError as e:
-        cmd.succeeded = False
-        cmd.returncode = e.returncode
-        cmd.stdout = e.stdout.decode("utf-8")
-        cmd.stderr = e.stderr.decode("utf-8")
-    except subprocess.TimeoutExpired as e:
-
-        cmd.succeeded = False
-        cmd.stdout = 'COMMAND TIMEOUT ({}s)'.format(e.timeout)
-    except Exception as e:
-        cmd.succeeded = False
-        cmd.stdout = ''
-        if hasattr(e, 'message'):
-            cmd.stderr = e.message
-        else:
-            cmd.stderr = str(e)
-    else:
-        cmd.returncode = 0
-        cmd.succeeded = True
-    finally:
-        return cmd
-
-
-def pwb_yes_no_prompt(message, height=100, width=500):
-    question = pwb_cmd([
-        'zenity', '--question', message, '--title=PWB',
-        '--height={}'.format(height), '--width={}'.format(width),
-        '--text={}'.format(message)
-    ])
-    return question.succeeded
-
-
-def lower_dict(d):
-    new_dict = dict((k.lower(), v.lower()) for k, v in d.items())
-    return new_dict
-
-
-def replace_in_file(file_path, search_text, new_text):
-    with fileinput.input(file_path, inplace=True) as f:
-        for line in f:
-            new_line = line.replace(search_text, new_text)
-            print(new_line, end='')
 
 
 def lower_case_header(table):
@@ -200,7 +88,7 @@ def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case):
     tempfile = NamedTemporaryFile(
         mode='w', dir=base_path + "/content/data/", delete=False)
 
-    replace_in_file(new_file_name, '\0', '')  # Remove null bytes
+    pwb_replace_in_file(new_file_name, '\0', '')  # Remove null bytes
     table = etl.fromcsv(
         new_file_name,
         delimiter='\t',
@@ -258,8 +146,8 @@ illegal_columns = {
 
 if __name__ == "__main__":
     config = SafeConfigParser()
-    tmp_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'tmp'))
+    pwb_dir = os.path.abspath(os.path.dirname(__file__))
+    tmp_dir = os.path.abspath(os.path.join(pwb_dir, '..', 'tmp'))
     conf_file = tmp_dir + "/pwb.ini"
     config.read(conf_file)
     data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
@@ -276,7 +164,7 @@ if __name__ == "__main__":
     filepath = add_wim_file(data_dir)
 
     if filepath:
-        add_config_section(config, 'ENV')
+        pwb_add_config_section(config, 'ENV')
         config.set('ENV', 'wim_path', filepath)
         config.set('ENV', 'log_file', "system_process_metadata.log")
         config.set('ENV', 'process', "meta")
@@ -287,6 +175,9 @@ if __name__ == "__main__":
 
     sys_name = os.path.splitext(os.path.basename(filepath))[0]
     mount_dir = data_dir + "/" + sys_name + "_mount"
+
+    print(tmp_dir)
+    exit()
 
     # TODO: Feil at sletter logg i tilfelle reruns? Endre så en logg pr subsystem heller
     open(tmp_dir + "/PWB.log", 'w').close()  # Clear log file
@@ -317,7 +208,7 @@ if __name__ == "__main__":
                              folder)) and os.path.isfile(header_xml_file):
             tree = ET.parse(header_xml_file)
             tree_lookup = ET.parse(header_xml_file)
-            illegal_columns_lower_case = lower_dict(illegal_columns)
+            illegal_columns_lower_case = pwb_lower_dict(illegal_columns)
 
             # for table_def in table_defs:
             # table_name = table_def.find("table-name")

@@ -22,7 +22,7 @@ from pathlib import Path
 from configparser import SafeConfigParser
 from pgmagick.api import Image
 from pdfy import Pdfy
-from extract_user_input import add_config_section
+from common.config import pwb_add_config_section
 from functools import reduce
 
 config = SafeConfigParser()
@@ -724,7 +724,7 @@ if not os.path.isfile(convert_done_file):
 
     not_converted = len(conversion_failed) + len(conversion_not_supported)
     if not_converted > 0:
-        add_config_section(config, 'ENV')
+        pwb_add_config_section(config, 'ENV')
         config.set('ENV', 'wim_path', "")
         with open(conf_file, "w+") as configfile:
             config.write(configfile, space_around_delimiters=False)

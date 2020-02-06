@@ -17,7 +17,6 @@
 
 import subprocess, os, glob, shutil
 from configparser import SafeConfigParser
-from extract_user_input import add_config_section
 
 config = SafeConfigParser()
 tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))

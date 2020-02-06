@@ -18,7 +18,7 @@
 from configparser import SafeConfigParser
 import pathlib, os, subprocess
 from verify_md5sum import pwb_message
-from extract_user_input import add_config_section
+from common.config import pwb_add_config_section
 
 def unique_dir(directory):
     counter = 0
@@ -83,7 +83,7 @@ if sys_name:
 else:
     pwb_message("'Illegal or missing values in user input'", "error")
 
-add_config_section(config, 'DATABASE')
+pwb_add_config_section(config, 'DATABASE')
 config.set('DATABASE', 'db_args', db_args)
 with open(conf_file, "w+") as configfile:
     config.write(configfile, space_around_delimiters=False)

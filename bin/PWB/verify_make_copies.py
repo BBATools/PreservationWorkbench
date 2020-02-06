@@ -18,7 +18,6 @@
 import shutil, os, time, sys, datetime, subprocess
 from configparser import SafeConfigParser
 from appJar import gui
-from extract_user_input import add_config_section
 if os.name == "posix":
     from ttkthemes import ThemedTk
     # TODO: Bruk zenity direkte med subprocess heller -> fjerner gtk fm samt færre begrensninger

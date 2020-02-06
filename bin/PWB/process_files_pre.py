@@ -18,10 +18,10 @@
 import subprocess, os, pathlib, glob, sys, shutil
 from configparser import SafeConfigParser
 from verify_make_copies import add_wim_file
-from extract_user_input import add_config_section
 from appJar import gui
 import jaydebeapi
 import xml.etree.ElementTree as ET
+from common.config import pwb_add_config_section
 
 # TODO: Endre så en logg pr subsystem heller
 
@@ -76,7 +76,7 @@ def run_shell_command(command, cwd=None):
 
 def quit(conf_file):
     config = SafeConfigParser()
-    add_config_section(config, 'ENV')
+    pwb_add_config_section(config, 'ENV')
     config.set('ENV', 'wim_path', "")
     with open(conf_file, "w+") as configfile:
         config.write(configfile, space_around_delimiters=False)
@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     filepath = add_wim_file(data_dir)
     if filepath:
-        add_config_section(config, 'ENV')
+        pwb_add_config_section(config, 'ENV')
         config.set('ENV', 'wim_path', filepath)
         config.set('ENV', 'log_file', "system_process_files.log")
         config.set('ENV', 'process', "file")
