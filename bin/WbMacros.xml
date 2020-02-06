@@ -5,7 +5,7 @@
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -59,7 +59,6 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
        <void property="tooltip">
         <string>XML/TSV-export</string>
        </void>
-       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
@@ -103,12 +102,12 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
         <string>XML/H2-export</string>
        </void>
        <void property="visibleInPopup">
-        <object idref="Boolean0"/>
+        <boolean>false</boolean>
        </void>
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -130,6 +129,7 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/create_
        <void property="tooltip">
         <string>Package all data and generate checksum</string>
        </void>
+       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
     </void>
@@ -230,7 +230,7 @@ WbSysExec -ifEmpty=wim_path -program=&apos;echo &quot;*** Some files not convert
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition1">
        <void property="name">
         <string>Metadata</string>
        </void>
@@ -259,6 +259,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
        <void property="tooltip">
         <string>Normalize metadata</string>
        </void>
+       <void id="Boolean1" method="isVisibleInMenu"/>
       </object>
      </void>
     </void>
@@ -266,7 +267,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <string>PROCESS</string>
     </void>
     <void property="sortOrder">
-     <int>3</int>
+     <int>2</int>
     </void>
     <void property="tooltip">
      <string>Kun testet på Linux</string>
@@ -305,10 +306,10 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <string>Finalize SIP</string>
     </void>
     <void property="sortOrder">
-     <int>4</int>
+     <int>3</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -318,7 +319,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
-        <boolean>true</boolean>
+        <object idref="Boolean1"/>
        </void>
        <void property="name">
         <string>MD5sum File</string>
@@ -341,10 +342,10 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <string>File Operations</string>
     </void>
     <void property="sortOrder">
-     <int>5</int>
+     <int>4</int>
     </void>
     <void property="visibleInMenu">
-     <object idref="Boolean0"/>
+     <boolean>false</boolean>
     </void>
    </object>
   </void>
@@ -352,6 +353,19 @@ WbSysExec ..\md5\md5.exe $[Filepath];
    <object class="workbench.sql.macros.MacroGroup">
     <void property="name">
      <string>H2</string>
+    </void>
+    <void property="sortOrder">
+     <int>5</int>
+    </void>
+    <void property="visibleInMenu">
+     <boolean>false</boolean>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="workbench.sql.macros.MacroGroup">
+    <void property="name">
+     <string>SQL Server</string>
     </void>
     <void property="sortOrder">
      <int>6</int>
@@ -364,7 +378,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
   <void method="add">
    <object class="workbench.sql.macros.MacroGroup">
     <void property="name">
-     <string>SQL Server</string>
+     <string>Oracle</string>
     </void>
     <void property="sortOrder">
      <int>7</int>
@@ -377,7 +391,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
   <void method="add">
    <object class="workbench.sql.macros.MacroGroup">
     <void property="name">
-     <string>Oracle</string>
+     <string>MySQL</string>
     </void>
     <void property="sortOrder">
      <int>8</int>
@@ -390,23 +404,10 @@ WbSysExec ..\md5\md5.exe $[Filepath];
   <void method="add">
    <object class="workbench.sql.macros.MacroGroup">
     <void property="name">
-     <string>MySQL</string>
-    </void>
-    <void property="sortOrder">
-     <int>9</int>
-    </void>
-    <void property="visibleInMenu">
-     <object idref="Boolean0"/>
-    </void>
-   </object>
-  </void>
-  <void method="add">
-   <object class="workbench.sql.macros.MacroGroup">
-    <void property="name">
      <string>PostgreSQL</string>
     </void>
     <void property="sortOrder">
-     <int>10</int>
+     <int>9</int>
     </void>
     <void property="visibleInMenu">
      <object idref="Boolean0"/>

@@ -168,6 +168,9 @@ Supported parameters:
       <xsl:value-of select="count(column-def[primary-key='true'])"/>
     </xsl:variable>
 
+    <!-- <xsl:for-each select="source-columns/column">
+    <xsl:sort order="ascending" select="text()"/>  -->
+
     <xsl:if test="$pkcount &gt; 0">
       <!-- <xsl:text>ALTER TABLE </xsl:text> -->
       <!-- <xsl:value-of select="$tablename"/> -->
@@ -177,6 +180,8 @@ Supported parameters:
       <xsl:text>  PRIMARY KEY </xsl:text>
       <xsl:text>(</xsl:text>
       <xsl:for-each select="column-def[primary-key='true']">
+        <!-- <xsl:sort select="dbms-position" data-type="number"/> -->
+        <xsl:sort order="ascending" select="text()"/>
         <xsl:call-template name="write-object-name">
           <xsl:with-param name="objectname" select="column-name"/>
         </xsl:call-template>
@@ -413,8 +418,20 @@ Supported parameters:
             </xsl:call-template>
             <xsl:value-of select="$newline"/>
             <xsl:text>  FOREIGN KEY (</xsl:text>
+
+            <!-- <xsl:for-each select="source-columns/column">
+              <xsl:variable name="colname" select="."/>              
+              <xsl:call-template name="write-object-name">
+                <xsl:with-param name="objectname" select="/schema-report/table-def[table-name=$table]/column-def[column-name=$colname]/references/column-name"/>
+              </xsl:call-template>
+                <xsl:sort select="dbms-position" data-type="number"/>
+              <xsl:if test="position() &lt; last()">
+                <xsl:text>,</xsl:text>
+              </xsl:if>
+            </xsl:for-each> -->
+
+
             <xsl:for-each select="source-columns/column">
-              <xsl:sort order="ascending" select="text()"/> 
               <xsl:call-template name="write-object-name">
                 <xsl:with-param name="objectname" select="."/>
               </xsl:call-template>
@@ -422,6 +439,8 @@ Supported parameters:
                 <xsl:text>,</xsl:text>
               </xsl:if>
             </xsl:for-each>
+
+
             <xsl:text>)</xsl:text>
             <xsl:value-of select="$newline"/>
             <xsl:text>  REFERENCES </xsl:text>
@@ -431,7 +450,7 @@ Supported parameters:
             <xsl:text> (</xsl:text>
 
             <xsl:for-each select="source-columns/column">
-              <xsl:sort order="ascending" select="text()"/> 
+              <!-- <xsl:sort order="ascending" select="text()"/>  -->
               <xsl:variable name="colname" select="."/>              
               <xsl:call-template name="write-object-name">
                 <xsl:with-param name="objectname" select="/schema-report/table-def[table-name=$table]/column-def[column-name=$colname]/references/column-name"/>
