@@ -158,9 +158,9 @@ if __name__ == "__main__":
 
             h2_file = documentation_folder + folder
             h2_done_file = documentation_folder + "done"
+            print(h2_done_file)
             if (os.path.isfile(h2_file + ".mv.db")
                     and not os.path.isfile(h2_done_file)):
-
                 conn = jaydebeapi.connect(  # WAIT: Endre til egen def
                     "org.h2.Driver",
                     "jdbc:h2:" + h2_file,
@@ -218,6 +218,8 @@ if __name__ == "__main__":
                 cmd = 'java -jar sqlworkbench.jar -script=' + tmp_dir + '/wbexport.sql'
                 returncode, stdout, stderr = run_shell_command(cmd, bin_dir)
                 print(stdout)
+
+                open(h2_done_file, 'a').close()
 
             for data_file in glob.iglob(data_folder + "/*.data"):
                 shutil.move(data_file, data_docs_folder)

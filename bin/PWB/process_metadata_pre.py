@@ -40,8 +40,6 @@ from process_files_pre import indent
 
 csv.field_size_limit(sys.maxsize)
 
-# TODO: Endre så en logg pr subsystem heller
-
 
 class Cmd:
     def __init__(self, cmdArgs, stdin=None):
@@ -290,7 +288,7 @@ if __name__ == "__main__":
     sys_name = os.path.splitext(os.path.basename(filepath))[0]
     mount_dir = data_dir + "/" + sys_name + "_mount"
 
-    # TODO: Feil at sletter logg i tilfelle reruns?
+    # TODO: Feil at sletter logg i tilfelle reruns? Endre så en logg pr subsystem heller
     open(tmp_dir + "/PWB.log", 'w').close()  # Clear log file
     mount_wim(filepath, mount_dir)
 
@@ -298,8 +296,8 @@ if __name__ == "__main__":
     open(sql_file, 'w').close()  # Blank out between runs
 
     sub_systems_path = mount_dir + "/content/sub_systems/"
-    proceed = pwb_yes_no_prompt("Remove any disposable data from \n'" +
-                                sub_systems_path + "'.\n\n Proceed?")
+    proceed = pwb_yes_no_prompt("Remove manually any disposable data from \n'"
+                                + sub_systems_path + "'.\n\n Proceed?")
 
     if not proceed:
         sys.exit()
@@ -507,7 +505,7 @@ if __name__ == "__main__":
 
                             source_column_name.text = source_column_name.text.lower(
                             )
-                            source_column.insert(1, old_source_column_name)
+                            source_column.insert(10, old_source_column_name)
 
                     referenced_columns = foreign_key.findall(
                         'referenced-columns')
@@ -527,14 +525,14 @@ if __name__ == "__main__":
                             referenced_column_name.text = referenced_column_name.text.lower(
                             )
                             referenced_column.insert(
-                                1, old_referenced_column_name)
+                                10, old_referenced_column_name)
 
                 column_defs = table_def.findall("column-def")
 
                 column_defs[:] = sorted(
                     column_defs,
                     key=lambda elem: int(elem.findtext('dbms-position')))
-                # TODO: Sortering virker men blir ikke lagret til xml-fil. Fiks senere når lage siard/datapackage-versjoner
+                # WAIT: Sortering virker men blir ikke lagret til xml-fil. Fiks senere når lage siard/datapackage-versjoner
 
                 for column_def in column_defs:
                     column_name = column_def.find('column-name')

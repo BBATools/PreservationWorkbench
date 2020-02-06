@@ -414,9 +414,7 @@ Supported parameters:
             <xsl:value-of select="$newline"/>
             <xsl:text>  FOREIGN KEY (</xsl:text>
             <xsl:for-each select="source-columns/column">
-              <!-- TODO: Også lenger nede -> virket ikke for extens med oracle -> lag bedre fiks  -->
               <xsl:sort order="ascending" select="text()"/> 
-              <!-- TODO: Fix for mysql og mssql -> lage samme for pk nødvendig? -->
               <xsl:call-template name="write-object-name">
                 <xsl:with-param name="objectname" select="."/>
               </xsl:call-template>
@@ -431,17 +429,19 @@ Supported parameters:
               <xsl:with-param name="objectname" select="$targetTable"/>
             </xsl:call-template>
             <xsl:text> (</xsl:text>
-            <xsl:for-each select="referenced-columns/column">
+
+            <xsl:for-each select="source-columns/column">
               <xsl:sort order="ascending" select="text()"/> 
-              <!-- TODO: Fix for mysql og mssql -> lage samme for pk nødvendig? -->
+              <xsl:variable name="colname" select="."/>              
               <xsl:call-template name="write-object-name">
-                <xsl:with-param name="objectname" select="."/>
+                <xsl:with-param name="objectname" select="/schema-report/table-def[table-name=$table]/column-def[column-name=$colname]/references/column-name"/>
               </xsl:call-template>
               <xsl:if test="position() &lt; last()">
                 <xsl:text>,</xsl:text>
               </xsl:if>
             </xsl:for-each>
             <xsl:text>)</xsl:text>
+            
             <!-- <xsl:call-template name="define-fk-actions"/> -->
             <!-- <xsl:call-template name="add-defer-rule"/> -->
             <!-- <xsl:text>;</xsl:text> -->
