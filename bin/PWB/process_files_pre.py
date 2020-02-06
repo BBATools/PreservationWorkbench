@@ -100,7 +100,7 @@ if __name__ == "__main__":
     config.read(conf_file)
     data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
     h2_to_tsv_script = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), 'h2_to_tsv.xslt'))
+        os.path.join(os.path.dirname(__file__), 'xslt/h2_to_tsv.xslt'))
     wbexport_script = os.path.join(tmp_dir, 'wbexport.sql')
 
     if os.name != "posix":

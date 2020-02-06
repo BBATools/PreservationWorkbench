@@ -663,7 +663,7 @@ if __name__ == "__main__":
                 "\n",
                 "---- Generate DDL -----",
                 "WbXslt -inputfile=" + mod_xml_file,
-                "-stylesheet=PWB/metadata2ddl.xslt",
+                "-stylesheet=PWB/xslt/metadata2ddl.xslt",
                 "-xsltOutput=" + ddl_file + ";",
             ]
 

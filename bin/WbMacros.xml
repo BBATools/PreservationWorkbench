@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<java version="11.0.5" class="java.beans.XMLDecoder">
+<java version="11.0.6" class="java.beans.XMLDecoder">
  <object class="java.util.ArrayList">
   <void method="add">
    <object class="workbench.sql.macros.MacroGroup" id="MacroGroup0">
     <void property="macros">
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition">
+      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -28,7 +28,7 @@ WbVarDef -file=tmp/pwb.ini;
 -- Check connection
 WbConfirm -ifNotEmpty=db_args -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
 -- Create schemareport
-WbInclude -ifNotEmpty=db_args -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
+WbInclude -ifNotEmpty=db_args -file=PWB/sqlwb/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
 -- Export to tsv
 -- TODO: Vil virke også med LONG RAW på oracle (bug i oracle jdbc-driver) hvis det feltet  er listet sist i tabellen -&gt; fikse auto hvordan?
 WbExport -ifNotEmpty=db_args
@@ -59,6 +59,7 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
        <void property="tooltip">
         <string>XML/TSV-export</string>
        </void>
+       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
      <void method="add">
@@ -85,9 +86,9 @@ WbVarDef -file=tmp/pwb.ini;
 -- Check connection
 WbConfirm -ifNotEmpty=db_args -message=&quot;Is database connection correct?&quot; -yesText=&quot;Yes, run command&quot; -noText=&quot;No, stop&quot;;
 -- Create schemareport
-WbInclude -ifNotEmpty=db_args -file=PWB/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
+WbInclude -ifNotEmpty=db_args -file=PWB/sqlwb/WbSchemaReport.sql -displayResult=true -verbose=true -continueOnError=false;
 -- Generate WbCopy statements
-WbInclude -ifNotEmpty=db_args -file=PWB/metadata2wbcopy.sql -displayResult=true -verbose=true -continueOnError=false;
+WbInclude -ifNotEmpty=db_args -file=PWB/sqlwb/metadata2wbcopy.sql -displayResult=true -verbose=true -continueOnError=false;
 -- Generate target connection
 WbVarDef TargetCon=&apos;username=,password=,url=jdbc:h2:../_DATA/$[sys_name]/content/sub_systems/$[subsys_name]/documentation/$[db_name]_$[db_schema];LOG=0;CACHE_SIZE=65536;LOCK_MODE=0;UNDO_LOG=0&apos;;
 -- Copy data to H2 database in data package
@@ -102,12 +103,12 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
         <string>XML/H2-export</string>
        </void>
        <void property="visibleInPopup">
-        <boolean>false</boolean>
+        <object idref="Boolean0"/>
        </void>
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition0">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
         <boolean>true</boolean>
        </void>
@@ -129,7 +130,6 @@ WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/create_
        <void property="tooltip">
         <string>Package all data and generate checksum</string>
        </void>
-       <void id="Boolean0" property="expandWhileTyping"/>
       </object>
      </void>
     </void>
@@ -230,7 +230,7 @@ WbSysExec -ifEmpty=wim_path -program=&apos;echo &quot;*** Some files not convert
       </object>
      </void>
      <void method="add">
-      <object class="workbench.sql.macros.MacroDefinition" id="MacroDefinition1">
+      <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
         <string>Metadata</string>
        </void>
@@ -259,7 +259,6 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
        <void property="tooltip">
         <string>Normalize metadata</string>
        </void>
-       <void id="Boolean1" method="isVisibleInMenu"/>
       </object>
      </void>
     </void>
@@ -309,7 +308,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <int>3</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -319,7 +318,7 @@ WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quo
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="appendResult">
-        <object idref="Boolean1"/>
+        <boolean>true</boolean>
        </void>
        <void property="name">
         <string>MD5sum File</string>
@@ -345,7 +344,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>4</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>
@@ -358,7 +357,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean0"/>
     </void>
    </object>
   </void>

@@ -24,7 +24,7 @@ if __name__ == "__main__":
     tmp_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'tmp'))
     ora_reset_script = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), 'oracle_reset.sql'))
+        os.path.join(os.path.dirname(__file__), 'sql/oracle_reset.sql'))
     tsv2sqlite_script = os.path.abspath(
         os.path.join(os.path.dirname(__file__), 'tsv2sqlite.py'))
     conf_file = tmp_dir + "/pwb.ini"

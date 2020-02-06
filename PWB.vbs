@@ -63,7 +63,7 @@ else
 	Answer = _
  		Msgbox("Missing dependencies! Download now?", vbYesNo+vbCritical, "PWB Installer")
 	If Answer = vbYes Then
-		WshShell.run("powershell -executionpolicy bypass -noexit -file PWB/download_deps.ps1")
+		WshShell.run("powershell -executionpolicy bypass -noexit -file PWB/pshell/download_deps.ps1")
 	End If
 End If
 
