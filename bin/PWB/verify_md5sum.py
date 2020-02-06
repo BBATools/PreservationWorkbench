@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import hashlib, os, subprocess, pathlib
-from verify_make_copies import add_wim_file
+from common.gui import pwb_add_wim_file
 import tkinter
 from tkinter import ttk, messagebox
 
@@ -48,7 +48,7 @@ def pwb_message(message, box_arg):
 if __name__== "__main__":
     tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
     data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
-    filepath = add_wim_file(data_dir)  
+    filepath = pwb_add_wim_file(data_dir)  
 
     if filepath:
         md5sum_file = os.path.splitext(filepath)[0]+'_md5sum.txt'

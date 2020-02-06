@@ -31,17 +31,17 @@ end if
 
 wkspPath = wbpath & "Default.wksp"
 If Not FSO.FileExists(wkspPath) Then
-	FSO.CopyFile wbpath & "PWB\Default.wksp" , wkspPath
+	FSO.CopyFile wbpath & "PWB\sqlwb\Default.wksp" , wkspPath
 End If
 
 settingsPath = wbpath & "workbench.settings"
 If Not FSO.FileExists(settingsPath) Then
-	FSO.CopyFile wbpath & "PWB\workbench_win.settings" , settingsPath
+	FSO.CopyFile wbpath & "PWB\sqlwb\workbench_win.settings" , settingsPath
 End If
 
 profilesPath = wbpath & "WbProfiles.xml"
 If Not FSO.FileExists(profilesPath) Then
-	FSO.CopyFile wbpath & "PWB\WbProfiles_win.xml" , profilesPath
+	FSO.CopyFile wbpath & "PWB\sqlwb\WbProfiles_win.xml" , profilesPath
 End If
 
 pythonPath = wbpath & "python\python3.exe"

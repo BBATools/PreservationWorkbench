@@ -23,7 +23,6 @@ if os.name == "posix":
 
 from functools import reduce
 from configparser import SafeConfigParser
-from verify_make_copies import add_wim_file
 from appJar import gui
 from process_files_pre import mount_wim, quit
 # from lxml import etree # TODO: Fjern fra arkimint også hvis ikke trengs andre steder lenger heller
@@ -36,7 +35,7 @@ from petl.compat import text_type
 from petl.util.base import Table
 import fileinput
 from process_files_pre import indent
-# from dialog import pwb_yes_no_prompt
+from common.gui import pwb_add_wim_file
 from common.dialog import pwb_yes_no_prompt
 from common.dictionary import pwb_lower_dict
 from common.file import pwb_replace_in_file
@@ -161,7 +160,7 @@ if __name__ == "__main__":
         app.errorBox("Error", "Only supported on Arkimint")
         quit(conf_file)
 
-    filepath = add_wim_file(data_dir)
+    filepath = pwb_add_wim_file(data_dir)
 
     if filepath:
         pwb_add_config_section(config, 'ENV')
@@ -176,7 +175,6 @@ if __name__ == "__main__":
     sys_name = os.path.splitext(os.path.basename(filepath))[0]
     mount_dir = data_dir + "/" + sys_name + "_mount"
 
-    print(tmp_dir)
     exit()
 
     # TODO: Feil at sletter logg i tilfelle reruns? Endre så en logg pr subsystem heller

@@ -7,11 +7,11 @@ os=posix
 pwb_path=$SCRIPT_PATH/PWB" > $SCRIPT_PATH/tmp/pwb.ini
 
 if [ ! -f $SCRIPT_PATH/workbench.settings ]; then
-    cp $SCRIPT_PATH/PWB/workbench.settings $SCRIPT_PATH;
+    cp $SCRIPT_PATH/PWB/sqlwb/workbench.settings $SCRIPT_PATH;
 fi
 
 if [ ! -f $SCRIPT_PATH/WbProfiles.xml ]; then
-    cp $SCRIPT_PATH/PWB/WbProfiles.xml $SCRIPT_PATH;
+    cp $SCRIPT_PATH/PWB/sqlwb/WbProfiles.xml $SCRIPT_PATH;
 fi
 
 JAVACMD="java"
@@ -39,13 +39,6 @@ cp=$cp:$SCRIPT_PATH/resolver.jar
 cp=$cp:$SCRIPT_PATH/serializer.jar
 cp=$cp:$SCRIPT_PATH/simple-odf.jar
 cp=$cp:$SCRIPT_PATH/ext/*
-
-#/u01/app/oracle/product/11.2.0/xe/bin/lsnrctl start
-#sudo /etc/init.d/oracle-xe start && "$ORACLE_HOME"/bin/lsnrctl reload
-
-#if [ ! -f /etc/init.d/oracle-xe ]; then
-    #sudo /etc/init.d/oracle-xe start
-#fi
 
 cd $SCRIPT_PATH
 java -Xmx6g -jar sqlworkbench.jar -Dvisualvm.display.name=SQLWorkbench -Dawt.useSystemAAFontSettings=on -configDir=. -url=jdbc:h2:mem:PWB -password="";

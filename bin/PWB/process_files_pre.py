@@ -17,7 +17,7 @@
 
 import subprocess, os, pathlib, glob, sys, shutil
 from configparser import SafeConfigParser
-from verify_make_copies import add_wim_file
+from common.gui import pwb_add_wim_file
 from appJar import gui
 import jaydebeapi
 import xml.etree.ElementTree as ET
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         app.errorBox("Error", "Only supported on Arkimint")
         sys.exit()
 
-    filepath = add_wim_file(data_dir)
+    filepath = pwb_add_wim_file(data_dir)
     if filepath:
         pwb_add_config_section(config, 'ENV')
         config.set('ENV', 'wim_path', filepath)

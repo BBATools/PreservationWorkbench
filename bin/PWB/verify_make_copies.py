@@ -17,6 +17,7 @@
 
 import shutil, os, time, sys, datetime, subprocess
 from configparser import SafeConfigParser
+from common.gui import pwb_add_wim_file
 from appJar import gui
 if os.name == "posix":
     from ttkthemes import ThemedTk
@@ -105,27 +106,9 @@ def clear(btn):
     app.clearAllTextAreas()
     app.clearAllListBoxes()
 
-def add_wim_file(data_dir):
-    path = None
-    title = "Choose File"
-    if os.name == "posix":
-        try:
-            path = subprocess.check_output(
-                "zenity --file-selection  --title='" + title + "' --file-filter='WIM archives (wim) | *.wim' --filename=" + data_dir + "/ 2> >(grep -v 'GtkDialog' >&2)", 
-                shell=True, executable='/bin/bash').decode("utf-8").strip()
-        except subprocess.CalledProcessError:
-            pass
-    else:
-        if 'app' in globals():
-            path = app.openBox(title, data_dir,[("WIM archives", "*.wim")])
-        else:
-            path = gui(showIcon=False).openBox(title, data_dir,[("WIM archives", "*.wim")])
-    return path
-
-
 def app_add_file(btn):
     data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
-    path = add_wim_file(data_dir)  
+    path = pwb_add_wim_file(data_dir)  
     if path:
         app.setEntry("wim_path", path)
 

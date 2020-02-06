@@ -27,7 +27,7 @@ from functools import reduce
 
 config = SafeConfigParser()
 pwb_dir = os.path.dirname(__file__)
-corrupt_file_pdf = pwb_dir + '/corrupt_file_nb.pdf'
+corrupt_file_pdf = pwb_dir + '/documents/corrupt_file_nb.pdf'
 tmp_dir = os.path.abspath(os.path.join(pwb_dir, '..', 'tmp'))
 conf_file = tmp_dir + "/pwb.ini"
 config.read(conf_file)
