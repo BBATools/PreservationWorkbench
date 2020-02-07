@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import subprocess, sys
+
 class Cmd:
     def __init__(self, cmdArgs, stdin=None):
         self.cmd = ' '.join(cmdArgs)
@@ -36,6 +38,7 @@ def pwb_cmd(cmdArgs, stdin=None, piped=False):
     if len(cmdArgs) == 1 and '|' in cmdArgs[0]:
         args = [i.strip().split(' ') for i in cmdArgs[0].split('|')]
         return runCmd(args, piped=True)
+
 
     if piped:
         if len(cmdArgs) > 2:

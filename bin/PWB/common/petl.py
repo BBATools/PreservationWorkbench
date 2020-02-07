@@ -15,13 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .shell import pwb_cmd
+from petl.util.base import Table
+from petl.compat import text_type
+
+def pwb_lower_case_header(table):
+    return LowerCaseHeaderView(table)
 
 
-def pwb_yes_no_prompt(message, height=100, width=500):
-    question = pwb_cmd([
-        'zenity', '--question', message, '--title=PWB',
-        '--height={}'.format(height), '--width={}'.format(width),
-        '--text={}'.format(message)
-    ])
-    return question.succeeded
+class LowerCaseHeaderView(Table):
+    def __init__(self, table):
+        self.table = table
+
+    def __iter__(self):
+        it = iter(self.table)
+        hdr = next(it)
+        outhdr = tuple((text_type(f.lower())) for f in hdr)
+        yield outhdr
+        for row in it:
+            yield row

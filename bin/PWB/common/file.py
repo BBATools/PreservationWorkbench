@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import fileinput
+
 def pwb_replace_in_file(file_path, search_text, new_text):
     with fileinput.input(file_path, inplace=True) as f:
         for line in f:

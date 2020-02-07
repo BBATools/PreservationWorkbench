@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess, os, pathlib, glob, sys, fileinput, copy, collections
+import subprocess, os, pathlib, glob, sys, copy, collections
 if os.name == "posix":
     # from lxml import etree as ET
     import xml.etree.ElementTree as ET
@@ -31,34 +31,59 @@ from tempfile import NamedTemporaryFile
 import shutil
 import csv
 import petl as etl
-from petl.compat import text_type
-from petl.util.base import Table
-import fileinput
 from process_files_pre import indent
 from common.gui import pwb_add_wim_file
 from common.dialog import pwb_yes_no_prompt
 from common.dictionary import pwb_lower_dict
 from common.file import pwb_replace_in_file
 from common.config import pwb_add_config_section
+from common.petl import pwb_lower_case_header
 
 csv.field_size_limit(sys.maxsize)
 
+# TODO: Se for mapping mellom navn og nummer for jdbc typer: http://www.docjar.com/html/api/java/sql/Types.java.html
+#                        jdbc-id  iso-name              jdbc-name
+jdbc_to_iso_data_type = {'2005' : 'text', 
+                         '2011' : 'text',
+                         '2004' : 'text',
+                         '-3'   : 'text',
+                         '-4'   : 'text',
+                         '-1'   : 'text',               # LONGVARCHAR
+                         '-16'  : 'text',
+                         '93'   : 'timestamp',                                                                                                    
+                         '92'   : 'time',  
+                         '1'    : 'varchar()',          # CHAR
+                         '-15'  : 'varchar()',                           
+                         '4'    : 'integer',            # INTEGER 
+                         '-5'   : 'integer',            # BIGINT
+                         '5'    : 'integer',            # SMALLINT
+                         '-6'   : 'integer',            # TINYINT                                                                          
+                         '8'    : 'double precision',   # DOUBLE 
+                         '7'    : 'real',               # REAL
+                         '6'    : 'float',              # FLOAT   
+                         '16'   : 'varchar(5)',    
+                         '-7'   : 'varchar(5)',         # BIT                          
+                         '2'    : 'numeric',            # NUMERIC  # TODO: Se xslt for ekstra nyanser på denne  
+                         '3'    : 'numeric',            # DECIMAL   
+                         '12'   : 'varchar()',          # VARCHAR 
+                         '-9'   : 'varchar()'                                                                                                                                                                                                                                                                                                                                                           
+}
 
-def lower_case_header(table):
-    return LowerCaseHeaderView(table)
 
+def sort_dependent_tables(table_defs, base_path):
+    deps_dict = {}
+    for table_def in table_defs:
+        table_name = table_def.find("table-name")
+        disposed = table_def.find("disposed")
+        if disposed.text != "true":
+            deps_dict.update({
+                table_name.text:
+                get_table_deps(table_name, table_def, deps_dict,
+                                empty_tables, illegal_tables)
+            })
+    deps_list = toposort_flatten(deps_dict)
 
-class LowerCaseHeaderView(Table):
-    def __init__(self, table):
-        self.table = table
-
-    def __iter__(self):
-        it = iter(self.table)
-        hdr = next(it)
-        outhdr = tuple((text_type(f.lower())) for f in hdr)
-        yield outhdr
-        for row in it:
-            yield row
+    return deps_list
 
 
 def get_table_deps(table_name, table_def, deps_dict, empty_tables,
@@ -96,7 +121,7 @@ def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case):
         quotechar='',
         escapechar='')
 
-    table = lower_case_header(table)
+    table = pwb_lower_case_header(table)
     table = etl.rename(table, illegal_columns_lower_case, strict=False)
     row_count = etl.nrows(table)
 
@@ -117,32 +142,6 @@ def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case):
     shutil.move(tempfile.name, new_file_name)
     return row_count
 
-
-empty_tables = []
-# WAIT: Endre til list bare under. evt. generer med underscore bak
-illegal_tables = {
-    'WINDOW': 'WINDOW_',
-    'TRANSACTION': 'TRANSACTION_',
-    'FUNCTION': 'FUNCTION_',
-}
-illegal_columns = {
-    'STORED': 'STORED_',
-    'FUNCTION': 'FUNCTION_',
-    'SCHEMA': 'SCHEMA_',
-    'SYSTEM': 'SYSTEM_',
-    'NOTNULL': 'NOTNULL_',
-    'TRANSACTION': 'TRANSACTION_',
-    'COLUMN': 'COLUMN_',
-    'PERCENT': 'PERCENT_',
-    'DATE': 'DATE_',
-    'PUBLIC': 'PUBLIC_',
-    'OVER': 'OVER_',
-    'SQL': 'SQL_',
-    'RANGE': 'RANGE_',
-    'MEMBER': 'MEMBER_',
-    'INTERVAL': 'INTERVAL_'
-}
-
 if __name__ == "__main__":
     config = SafeConfigParser()
     pwb_dir = os.path.abspath(os.path.dirname(__file__))
@@ -151,6 +150,7 @@ if __name__ == "__main__":
     config.read(conf_file)
     data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
     sql_file = tmp_dir + "/meta_process.sql"
+    illegal_terms_file = pwb_dir + '/config/illegal_terms.txt'
 
     # TODO: Legg også inn sjekk på at mappen ~/.arkimint/ finnes. Flere steder?
     if os.name != "posix":
@@ -175,7 +175,11 @@ if __name__ == "__main__":
     sys_name = os.path.splitext(os.path.basename(filepath))[0]
     mount_dir = data_dir + "/" + sys_name + "_mount"
 
-    exit()
+    empty_tables = []
+    illegal_terms_set = set(map(str.strip, open(illegal_terms_file)))   
+    d = {s:s + '_' for s in illegal_terms_set}
+    illegal_tables = d.copy()
+    illegal_columns = d.copy()
 
     # TODO: Feil at sletter logg i tilfelle reruns? Endre så en logg pr subsystem heller
     open(tmp_dir + "/PWB.log", 'w').close()  # Clear log file
@@ -187,6 +191,7 @@ if __name__ == "__main__":
     sub_systems_path = mount_dir + "/content/sub_systems/"
     proceed = pwb_yes_no_prompt("Remove manually any disposable data from \n'"
                                 + sub_systems_path + "'.\n\n Proceed?")
+
 
     if not proceed:
         sys.exit()
@@ -207,9 +212,6 @@ if __name__ == "__main__":
             tree = ET.parse(header_xml_file)
             tree_lookup = ET.parse(header_xml_file)
             illegal_columns_lower_case = pwb_lower_dict(illegal_columns)
-
-            # for table_def in table_defs:
-            # table_name = table_def.find("table-name")
 
             t_count = 0
             c_count = 0
@@ -268,15 +270,6 @@ if __name__ == "__main__":
                         else:
                             pk_set.add(column_name.text)
 
-                    # WAIT: Oracle workaround -> lag bedre fiks hvis støter på problem igjen
-                    # java_sql_type_name = column_def.find('java-sql-type-name')
-                    # dbms_data_size = column_def.find("dbms-data-size")
-                    # dbms_data_type = column_def.find("dbms-data-type")
-                    # if java_sql_type_name.text == 'VARCHAR':
-                    #     if int(dbms_data_size.text) > 768:
-                    #         dbms_data_type.text = dbms_data_type.text.replace(dbms_data_size.text, "768")
-                    #         dbms_data_size.text = "768"
-
                 # Add row-count/disposed-info:
                 disposed = ET.Element("disposed")
                 disposed.text = "false"
@@ -306,24 +299,13 @@ if __name__ == "__main__":
                 table_def.insert(7, disposal_comment)
 
             # Sort tables in dependent order:
-            deps_dict = {}
-            for table_def in table_defs:
-                table_name = table_def.find("table-name")
-                disposed = table_def.find("disposed")
-                if disposed.text != "true":
-                    deps_dict.update({
-                        table_name.text:
-                        get_table_deps(table_name, table_def, deps_dict,
-                                       empty_tables, illegal_tables)
-                    })
-            deps_list = toposort_flatten(deps_dict)
-
-            with open(base_path + '/documentation/import_order.txt',
-                      'w') as file:
+            deps_list = sort_dependent_tables(table_defs, base_path)
+            with open(base_path + '/documentation/import_order.txt','w') as file:
                 for val in deps_list:
                     file.write('%s\n' % val)
 
             self_dep_dict = {}
+            ddl_columns = {}
             for table_def in table_defs:
                 table_name = table_def.find("table-name")
                 dep_position = ET.Element("dep-position")
@@ -423,9 +405,11 @@ if __name__ == "__main__":
                     key=lambda elem: int(elem.findtext('dbms-position')))
                 # WAIT: Sortering virker men blir ikke lagret til xml-fil. Fiks senere når lage siard/datapackage-versjoner
 
+                ddl_columns_list = []
                 for column_def in column_defs:
                     column_name = column_def.find('column-name')
                     java_sql_type_name = column_def.find('java-sql-type-name')
+                    java_sql_type = column_def.find('java-sql-type')
                     dbms_data_size = column_def.find('dbms-data-size')
                     dbms_data_type = column_def.find('dbms-data-type')
                     old_column_name = ET.Element("original-column-name")
@@ -484,20 +468,6 @@ if __name__ == "__main__":
                             self_dep_set.add(ref_column_name.text.lower() +
                                              ':' + column_name.text.lower())
 
-                            # for col_reference in col_references:
-                            #     ref_column_name = col_reference.find('column-name')
-                            #     col_ref_table_name = col_reference.find('table-name')
-
-                            # if (col_ref_table_name.text !=
-                            #         table_name.text) and (disposed.text != "true"):
-
-                        # xpath_str = "table-def[table-name='" + col_ref_table_name.text.lower(
-                        # ) + "']/column-def[column-name='" + ref_column_name.text.lower(
-                        # ) + "']"
-                        # ref_column = tree.find(xpath_str)
-
-                        # xpath_str = "table-def[table-name='PATIENT']/column-def[column-name='PAT_ID']"
-
                         xpath_str = "table-def[table-name='" + col_ref_table_name.text + "']/column-def[column-name='" + old_ref_column_name.text + "']"
                         ref_column = tree_lookup.find(xpath_str)
 
@@ -510,47 +480,9 @@ if __name__ == "__main__":
                                 print("col:   " + ref_column_name.text)
                                 print(ref_column_data_size.text)
 
-                            # table_def.find("table-name")
-                            # xpath_str = "table-def[table-name='" + col_ref_table_name.text + "']"
-                            # print(xpath_str)
-                            # ref_column = tree.find(xpath_str)
-                            # if ref_column:
-                            #     print("test")
-
-                            # test = tree.find(
-                            #     "table-def[disposed !='true'][@name='" +
-                            #     col_ref_table_name.text + "']/column-def[@name ='"
-                            #     + ref_column_name.text + "']/dbms-data-size")
-
-                            # /schema-report/table-def[162]/column-def[12]/dbms-data-size
-                            # /schema-report/table-def[table-name='PATIENT']/column-def[column-name='PAT_ID']
-
-                            # TODO: Sjekk om linje under også ok når find heller enn findall
-                            # ref_columns = tree.findall(
-                            #     "table-def[table-name='reg_injury']/column-def[column-name='ri_id'"
-                            # )
-
-                            # for ref_column in ref_columns:
-                            # if ref_column:
-                            #     print("test")
-
-                            # if ref_column:
-                            #     if ref_column:
-                            #         test = ref_column.find('dbms-data-size')
-                            #         print(test.text)
-                            #     else:
-                            #         print("noooooooooo")
-
-                            # test = tree.find(
-                            #     'table-def[@name ="REG_INJURY"]/tablespace')
-                            # # test = tree.find(
-                            # #     '/schema-report/table-def[@name ="' +
-                            # #     col_ref_table_name.text + '"]/column-def[@name ="' +
-                            # #     ref_column_name.text + '"]/dbms-data-size')
-                            # print(str(test.text))
 
                     if disposed.text != "true":
-                        # WAIT: Skriv om under så mindre if/else rep
+                        # TODO: Juster så denne koden er koblet mot jdbc_to_iso_data_type (3-veis mapping da?)
                         ora_ctl_type = ''
                         if (java_sql_type_name.text in ('NVARCHAR', 'VARCHAR',
                                                         'CHAR')):
@@ -559,8 +491,12 @@ if __name__ == "__main__":
                             ora_ctl_type = 'DECIMAL EXTERNAL'
                         elif (java_sql_type_name.text == 'TIMESTAMP'):
                             ora_ctl_type = 'TIMESTAMP "YYYY-MM-DD HH24:MI:SS"'
+                        elif (java_sql_type_name.text == 'INTEGER'):
+                            ora_ctl_type = 'INTEGER EXTERNAL'                            
                         elif (java_sql_type_name.text == 'FLOAT'):
                             ora_ctl_type = 'FLOAT EXTERNAL'
+                        elif (java_sql_type_name.text == 'DOUBLE'):
+                            ora_ctl_type = 'DOUBLE EXTERNAL'                            
                         elif (java_sql_type_name.text in ('VARBINARY',
                                                           'LONGVARCHAR',
                                                           'CLOB')):
@@ -568,7 +504,7 @@ if __name__ == "__main__":
                         else:
                             print(
                                 "Missing oracle ctl-file datatype mapping for "
-                                + java_sql_type_name.text)
+                                + java_sql_type_name.text + '(' + java_sql_type.text + ')')
 
                         if dbms_data_type.text.find(
                                 '(') != -1 and java_sql_type_name.text not in (
@@ -579,6 +515,9 @@ if __name__ == "__main__":
                         ora_ctl_list.append(
                             column_name.text + ' ' + ora_ctl_type)
 
+                        iso_data_type = jdbc_to_iso_data_type[java_sql_type.text]
+                        ddl_columns_list.append(column_name.text + ' ' + iso_data_type + ',')                            
+
                 # Write Oracle SQL Loader control file:
                 if disposed.text != "true":
                     with open(ora_ctl_file, "w") as file:
@@ -588,30 +527,7 @@ if __name__ == "__main__":
                 if len(self_dep_set) != 0:
                     self_dep_dict.update({table_name.text: self_dep_set})
 
-                    # self_dep_set.add(ref_column_name.text + ':' + column_name.text)
-                    # self_dep_dict.update({table_name.text: ref_column_name.text.lower() + ':' + column_name.text.lower()})
-
-                    # print(table_name.text)
-                    # old_ref_table_name = ET.Element("original-table-name")
-                    # old_ref_table_name.text = col_ref_table_name.text
-                    # col_ref_table_name.text = illegal_tables[col_ref_table_name.text]
-                    # column_def.insert(3, old_ref_table_name)
-
-                    # if col_ref_table_name.text.lower() in empty_tables:
-                    #     # print(col_ref_table_name.text.lower())
-                    #     # col_constraint_name.text = "_disabled_" + col_constraint_name.text
-                    #     # column_def.remove(col_references)
-                    #     col_ref_table_name.text = "testeeeeeeeer"
-
-                    # # table-constraints (constraints of type "check")
-                    # if column_def.tag == "table-constraints":
-                    #     for constraint_def in column_def:
-                    #         if constraint_def.tag == "constraint-definition":
-                    #             for word in constraint_def.text.split():
-                    #                 word = word.replace("(", "")
-                    #                 if word in illegal_columns:
-                    #                     constraint_def.text = constraint_def.text.replace(
-                    #                         word, illegal_columns[word])
+                ddl_columns[table_name.text.lower()] =  '\n'.join(ddl_columns_list)         
 
             root = tree.getroot()
             indent(root)
@@ -669,4 +585,30 @@ if __name__ == "__main__":
 
             with open(sql_file, "a+") as file:
                 file.write("\n".join(sql))
-                file.close()
+
+
+            # TODO: Test python-kode for generering av ddl under her
+            # tree = ET.parse(mod_xml_file)
+            ddl = []
+
+
+            # table_defs = tree.findall("table-def")
+
+            for table in deps_list:
+                ddl.append('\nCREATE TABLE ' + table + '\n' + ddl_columns[table])
+
+            with open(ddl_file, "a+") as file:
+                file.write("\n".join(ddl))                
+
+
+            # sql = [
+            #     "\n",
+            #     "---- Generate DDL -----",
+            #     "WbXslt -inputfile=" + mod_xml_file,
+            #     "-stylesheet=PWB/xslt/metadata2ddl.xslt",
+            #     "-xsltOutput=" + ddl_file + ";",
+            # ]
+
+            # with open(sql_file, "a+") as file:
+            #     file.write("\n".join(sql))
+          
