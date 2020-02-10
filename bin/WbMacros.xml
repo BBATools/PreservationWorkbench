@@ -245,9 +245,7 @@ WbVarDef -file=tmp/pwb.ini;
 -- Normalize metadata and generate sql	
 WbSysExec -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_metadata_pre.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Read env variables from config-file
-WbVarDef -file=tmp/pwb.ini;
--- Generate DDL from xml																																					
-WbInclude -ifNotEmpty=wim_path -file=tmp/meta_process.sql -displayResult=false -verbose=false -continueOnError=false; 		
+WbVarDef -file=tmp/pwb.ini;		
 -- Test data import
 WbSysExec -ifNotEmpty=wim_path -program=&apos;python3&apos; -argument=&apos;&quot;$[pwb_path]/process_metadata_check.py&quot;&apos; -env=&quot;PATH=$[py_path]&quot;;
 -- Save log/unmount wim image																			

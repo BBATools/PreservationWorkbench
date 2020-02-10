@@ -41,32 +41,65 @@ from common.petl import pwb_lower_case_header
 
 csv.field_size_limit(sys.maxsize)
 
-# TODO: Se for mapping mellom navn og nummer for jdbc typer: http://www.docjar.com/html/api/java/sql/Types.java.html
-#                        jdbc-id  iso-name              jdbc-name
-jdbc_to_iso_data_type = {'2005' : 'text', 
-                         '2011' : 'text',
-                         '2004' : 'text',
-                         '-3'   : 'text',
-                         '-4'   : 'text',
-                         '-1'   : 'text',               # LONGVARCHAR
-                         '-16'  : 'text',
-                         '93'   : 'timestamp',                                                                                                    
-                         '92'   : 'time',  
-                         '1'    : 'varchar()',          # CHAR
-                         '-15'  : 'varchar()',                           
-                         '4'    : 'integer',            # INTEGER 
-                         '-5'   : 'integer',            # BIGINT
-                         '5'    : 'integer',            # SMALLINT
-                         '-6'   : 'integer',            # TINYINT                                                                          
-                         '8'    : 'double precision',   # DOUBLE 
-                         '7'    : 'real',               # REAL
-                         '6'    : 'float',              # FLOAT   
-                         '16'   : 'varchar(5)',    
+# http://www.docjar.com/html/api/java/sql/Types.java.html
+#                        jdbc-id  iso-name               jdbc-name
+jdbc_to_iso_data_type = {
+                         '-16'  : 'text',               # LONGNVARCHAR
+                         '-15'  : 'varchar()',          # NCHAR                       
+                         '-9'   : 'varchar()',          # NVARCHAR                                                                                                                                                                                                                                                                                                                                                  
                          '-7'   : 'varchar(5)',         # BIT                          
+                         '-6'   : 'integer',            # TINYINT                                                                          
+                         '-5'   : 'integer',            # BIGINT
+                         '-4'   : 'text',               # LONGVARBINARY
+                         '-3'   : 'text',               # VARBINARY
+                         '-2'   : 'text',               # BINARY                      
+                         '-1'   : 'text',               # LONGVARCHAR
+                         '1'    : 'varchar()',          # CHAR
                          '2'    : 'numeric',            # NUMERIC  # TODO: Se xslt for ekstra nyanser på denne  
-                         '3'    : 'numeric',            # DECIMAL   
+                         '3'    : 'decimal',            # DECIMAL  # TODO: Se xslt for ekstra nyanser på denne    
+                         '4'    : 'integer',            # INTEGER 
+                         '5'    : 'integer',            # SMALLINT
+                         '6'    : 'float',              # FLOAT   
+                         '7'    : 'real',               # REAL
+                         '8'    : 'double precision',   # DOUBLE 
                          '12'   : 'varchar()',          # VARCHAR 
-                         '-9'   : 'varchar()'                                                                                                                                                                                                                                                                                                                                                           
+                         '16'   : 'varchar(5)',         # BOOLEAN
+                         '91'   : 'date',               # DATE                        
+                         '92'   : 'time',               # TIME
+                         '93'   : 'timestamp',          # TIMESTAMP                                                                                                
+                         '2004' : 'text',               # BLOB 
+                         '2005' : 'text',               # CLOB
+                         '2011' : 'text',               # NCLOB
+}
+
+#                            jdbc-id  ora-ctl-name                          jdbc-name
+jdbc_to_ora_ctl_data_type = {
+                            '-16'  : 'CHAR(1000000)',                      # LONGNVARCHAR # WAIT: Finn absolutte maks som kan brukes
+                            '-15'  : 'CHAR()',                             # NCHAR                       
+                            '-9'   : 'CHAR()',                             # NVARCHAR                                                                                                                                                                                                                                                                                                                                                  
+                            '-7'   : 'CHAR(5)',                            # BIT                          
+                            '-6'   : 'INTEGER EXTERNAL',                   # TINYINT                                                                          
+                            '-5'   : 'INTEGER EXTERNAL',                   # BIGINT
+                            '-4'   : 'CHAR(1000000)',                      # LONGVARBINARY
+                            '-3'   : 'CHAR(1000000)',                      # VARBINARY
+                            '-2'   : 'CHAR(1000000)',                      # BINARY                      
+                            '-1'   : 'CHAR(1000000)',                      # LONGVARCHAR
+                            '1'    : 'CHAR()',                             # CHAR
+                            '2'    : 'DECIMAL EXTERNAL',                   # NUMERIC  # TODO: Se xslt for ekstra nyanser på denne  
+                            '3'    : 'DECIMAL EXTERNAL',                   # DECIMAL  # TODO: Se xslt for ekstra nyanser på denne    
+                            '4'    : 'INTEGER EXTERNAL',                   # INTEGER 
+                            '5'    : 'INTEGER EXTERNAL',                   # SMALLINT
+                            '6'    : 'FLOAT EXTERNAL',                     # FLOAT   
+                            '7'    : 'DECIMAL EXTERNAL',                   # REAL
+                            '8'    : 'DOUBLE EXTERNAL',                    # DOUBLE 
+                            '12'   : 'CHAR()',                             # VARCHAR 
+                            '16'   : 'CHAR(5)',                            # BOOLEAN
+                            '91'   : 'DATE "YYYY-MM-DD"',                  # DATE                        
+                            '92'   : 'TIMESTAMP',                          # TIME
+                            '93'   : 'TIMESTAMP "YYYY-MM-DD HH24:MI:SS"',  # TIMESTAMP                                                                                                
+                            '2004' : 'CHAR(1000000)',                      # BLOB 
+                            '2005' : 'CHAR(1000000)',                      # CLOB
+                            '2011' : 'CHAR(1000000)',                      # NCLOB
 }
 
 
@@ -108,11 +141,10 @@ def get_table_deps(table_name, table_def, deps_dict, empty_tables,
     return table_deps
 
 
-def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case):
-    tempfile = NamedTemporaryFile(
-        mode='w', dir=base_path + "/content/data/", delete=False)
+def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case, tsv_process):
+    if tsv_process:
+        pwb_replace_in_file(new_file_name, '\0', '')  # Remove null bytes
 
-    pwb_replace_in_file(new_file_name, '\0', '')  # Remove null bytes
     table = etl.fromcsv(
         new_file_name,
         delimiter='\t',
@@ -121,25 +153,29 @@ def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case):
         quotechar='',
         escapechar='')
 
-    table = pwb_lower_case_header(table)
-    table = etl.rename(table, illegal_columns_lower_case, strict=False)
     row_count = etl.nrows(table)
 
-    print(new_file_name)
-    for pk in pk_set:
-        table = etl.convert(table, pk.lower(),
-                            lambda a: a if len(str(a)) > 0 else '-')
+    if tsv_process:
+        tempfile = NamedTemporaryFile(mode='w', dir=base_path + "/content/data/", delete=False)        
 
-    writer = csv.writer(
-        tempfile,
-        delimiter='\t',
-        quoting=csv.QUOTE_NONE,
-        quotechar='',
-        escapechar='',
-        lineterminator='\n')
-    writer.writerows(table)
+        table = pwb_lower_case_header(table)
+        table = etl.rename(table, illegal_columns_lower_case, strict=False)
 
-    shutil.move(tempfile.name, new_file_name)
+        print(new_file_name)
+        for pk in pk_set:
+            table = etl.convert(table, pk.lower(),
+                                lambda a: a if len(str(a)) > 0 else '-')
+
+        writer = csv.writer(
+            tempfile,
+            delimiter='\t',
+            quoting=csv.QUOTE_NONE,
+            quotechar='',
+            escapechar='',
+            lineterminator='\n')
+        writer.writerows(table)
+
+        shutil.move(tempfile.name, new_file_name)
     return row_count
 
 if __name__ == "__main__":
@@ -200,6 +236,7 @@ if __name__ == "__main__":
     for folder in subfolders:
         base_path = sub_systems_path + folder
         ddl_file = base_path + "/documentation/metadata.sql"
+        tsv_done_file = base_path + "/documentation/tsv_done"
         oracle_dir = base_path + "/documentation/oracle_import/"
         header_xml_file = base_path + "/header/metadata.xml"
         mod_xml_file = base_path + "/documentation/metadata_mod.xml"
@@ -215,11 +252,13 @@ if __name__ == "__main__":
 
             t_count = 0
             c_count = 0
-            deps_dict = {}
+            pk_dict = {}
+            constraint_dict = {}
+            fk_columns_dict = {}
+            fk_ref_dict = {}
             table_defs = tree.findall("table-def")
             for table_def in table_defs:
                 table_name = table_def.find("table-name")
-                # table_name_attrib = table_def.attrib['name']
                 old_table_name = ET.Element("original-table-name")
                 old_table_name.text = table_name.text
 
@@ -236,12 +275,18 @@ if __name__ == "__main__":
                 file_name = base_path + "/content/data/" + table_name.text.lower(
                 ) + ".txt"
                 new_file_name = os.path.splitext(file_name)[0] + '.tsv'
+
+                tsv_process = False
+                if not os.path.isfile(tsv_done_file):
+                    tsv_process = True
+
                 if os.path.isfile(file_name):
                     os.rename(file_name, new_file_name)
 
                 if table_name.text in illegal_tables:
                     table_name.text = illegal_tables[table_name.text]
 
+                    # TODO: Bare slette fil direkte her heller?
                     ill_new_file_name = os.path.splitext(file_name)[0] + '_.tsv'
                     if os.path.isfile(new_file_name):
                         os.rename(new_file_name, ill_new_file_name)
@@ -270,6 +315,9 @@ if __name__ == "__main__":
                         else:
                             pk_set.add(column_name.text)
 
+                # print(', '.join(pk_set).lower())    
+                pk_dict[table_name.text] = ', '.join(pk_set).lower()               
+
                 # Add row-count/disposed-info:
                 disposed = ET.Element("disposed")
                 disposed.text = "false"
@@ -280,7 +328,7 @@ if __name__ == "__main__":
                 # TODO: Legg inn sjekk så ikke leser rader på nytt hvis gjort før -> tull med row_count da?
                 if os.path.exists(new_file_name):
                     row_count = tsv_fix(base_path, new_file_name, pk_set,
-                                        illegal_columns_lower_case)
+                                        illegal_columns_lower_case, tsv_process)
 
                     if row_count == 0:
                         os.remove(new_file_name)
@@ -331,6 +379,7 @@ if __name__ == "__main__":
                 table_def.insert(6, dep_position)
                 i = 0
 
+                constraint_set = set()
                 foreign_keys = table_def.findall("foreign-keys/foreign-key")
                 for foreign_key in foreign_keys:
                     tab_constraint_name = foreign_key.find("constraint-name")
@@ -343,12 +392,11 @@ if __name__ == "__main__":
 
                     tab_constraint_name.text = tab_constraint_name.text.lower()
                     foreign_key.insert(1, old_tab_constraint_name)
-
+                    
                     fk_references = foreign_key.findall('references')
                     for fk_reference in fk_references:
                         tab_ref_table_name = fk_reference.find("table-name")
-                        old_tab_ref_table_name = ET.Element(
-                            "original-table-name")
+                        old_tab_ref_table_name = ET.Element("original-table-name")
                         old_tab_ref_table_name.text = tab_ref_table_name.text
 
                         if tab_ref_table_name.text.lower() in empty_tables:
@@ -360,11 +408,18 @@ if __name__ == "__main__":
                         )
                         fk_reference.insert(3, old_tab_ref_table_name)
 
+                        if not tab_constraint_name.text.startswith('_disabled_'):
+                            constraint_set.add(tab_constraint_name.text + ':' + tab_ref_table_name.text)
+
+
                     # WAIT: Slå sammen de to under til en def
+
+                    source_column_set = set()
                     source_columns = foreign_key.findall('source-columns')
                     for source_column in source_columns:
                         source_column_names = source_column.findall('column')
 
+                        source_columns_string = ''
                         for source_column_name in source_column_names:
                             old_source_column_name = ET.Element(
                                 "original-column")
@@ -374,9 +429,11 @@ if __name__ == "__main__":
                                 source_column_name.text = illegal_columns[
                                     source_column_name.text]
 
-                            source_column_name.text = source_column_name.text.lower(
-                            )
+                            source_column_name.text = source_column_name.text.lower()
                             source_column.insert(10, old_source_column_name)
+                            source_column_set.add(source_column_name.text)
+
+                    fk_columns_dict.update({tab_constraint_name.text: source_column_set}) # TODO: Endre andre til å være på denne formen heller enn split på : mm?                           
 
                     referenced_columns = foreign_key.findall(
                         'referenced-columns')
@@ -398,8 +455,10 @@ if __name__ == "__main__":
                             referenced_column.insert(
                                 10, old_referenced_column_name)
 
-                column_defs = table_def.findall("column-def")
 
+                constraint_dict[table_name.text] =  ','.join(constraint_set).lower()     
+
+                column_defs = table_def.findall("column-def")
                 column_defs[:] = sorted(
                     column_defs,
                     key=lambda elem: int(elem.findtext('dbms-position')))
@@ -476,46 +535,22 @@ if __name__ == "__main__":
                                 'dbms-data-size')
                             if ref_column_data_size.text != dbms_data_size.text:
                                 dbms_data_size.text = ref_column_data_size.text
-                                print("table: " + col_ref_table_name.text)
-                                print("col:   " + ref_column_name.text)
-                                print(ref_column_data_size.text)
-
+  
+                    fk_ref_dict[table_name.text + ':' + column_name.text] = ref_column_name.text.lower()  
+                 
 
                     if disposed.text != "true":
-                        # TODO: Juster så denne koden er koblet mot jdbc_to_iso_data_type (3-veis mapping da?)
-                        ora_ctl_type = ''
-                        if (java_sql_type_name.text in ('NVARCHAR', 'VARCHAR',
-                                                        'CHAR')):
-                            ora_ctl_type = 'CHAR'
-                        elif (java_sql_type_name.text == 'DECIMAL'):
-                            ora_ctl_type = 'DECIMAL EXTERNAL'
-                        elif (java_sql_type_name.text == 'TIMESTAMP'):
-                            ora_ctl_type = 'TIMESTAMP "YYYY-MM-DD HH24:MI:SS"'
-                        elif (java_sql_type_name.text == 'INTEGER'):
-                            ora_ctl_type = 'INTEGER EXTERNAL'                            
-                        elif (java_sql_type_name.text == 'FLOAT'):
-                            ora_ctl_type = 'FLOAT EXTERNAL'
-                        elif (java_sql_type_name.text == 'DOUBLE'):
-                            ora_ctl_type = 'DOUBLE EXTERNAL'                            
-                        elif (java_sql_type_name.text in ('VARBINARY',
-                                                          'LONGVARCHAR',
-                                                          'CLOB')):
-                            ora_ctl_type = 'CHAR(1000000)'  # WAIT: Finn absolutte maks som kan brukes
-                        else:
-                            print(
-                                "Missing oracle ctl-file datatype mapping for "
-                                + java_sql_type_name.text + '(' + java_sql_type.text + ')')
-
-                        if dbms_data_type.text.find(
-                                '(') != -1 and java_sql_type_name.text not in (
-                                    'FLOAT', 'VARBINARY', 'LONGVARCHAR',
-                                    'CLOB'):
-                            ora_ctl_type = ora_ctl_type + '(' + dbms_data_size.text + ')'
+                        ora_ctl_type = jdbc_to_ora_ctl_data_type[java_sql_type.text]
+                        if '()' in ora_ctl_type:
+                            ora_ctl_type = ora_ctl_type.replace('()', '(' + dbms_data_size.text + ')')
 
                         ora_ctl_list.append(
                             column_name.text + ' ' + ora_ctl_type)
 
                         iso_data_type = jdbc_to_iso_data_type[java_sql_type.text]
+                        if '()' in iso_data_type:
+                            iso_data_type = iso_data_type.replace('()', '(' + dbms_data_size.text + ')')
+                     
                         ddl_columns_list.append(column_name.text + ' ' + iso_data_type + ',')                            
 
                 # Write Oracle SQL Loader control file:
@@ -535,72 +570,50 @@ if __name__ == "__main__":
 
             # Sort lines in files with self constraints correctly:
             # TODO: Gjør om til funksjon
-            for key, value in self_dep_dict.items():
-                file_name = base_path + "/content/data/" + key + ".tsv"
-                tempfile = NamedTemporaryFile(
-                    mode='w', dir=base_path + "/content/data/", delete=False)
-                table = etl.fromcsv(
-                    file_name,
-                    delimiter='\t',
-                    skipinitialspace=True,
-                    quoting=csv.QUOTE_NONE,
-                    quotechar='',
-                    escapechar='')
-                key_dep_dict = {}
+            if not os.path.isfile(tsv_done_file):
+                for key, value in self_dep_dict.items():
+                    file_name = base_path + "/content/data/" + key + ".tsv"
+                    tempfile = NamedTemporaryFile(
+                        mode='w', dir=base_path + "/content/data/", delete=False)
+                    table = etl.fromcsv(
+                        file_name,
+                        delimiter='\t',
+                        skipinitialspace=True,
+                        quoting=csv.QUOTE_NONE,
+                        quotechar='',
+                        escapechar='')
+                    key_dep_dict = {}
 
-                print(file_name)
-                for constraint in value:
-                    child_dep, parent_dep = constraint.split(':')
-                    data = etl.values(table, child_dep, parent_dep)
-                    for d in data:
-                        key_dep_set = {d[1]}
-                        key_dep_dict.update({d[0]: key_dep_set})
+                    print(file_name)
+                    for constraint in value:
+                        child_dep, parent_dep = constraint.split(':')
+                        data = etl.values(table, child_dep, parent_dep)
+                        for d in data:
+                            key_dep_set = {d[1]}
+                            key_dep_dict.update({d[0]: key_dep_set})
 
-                key_dep_list = toposort_flatten(key_dep_dict)
-                table = etl.addfield(
-                    table, 'pwb_index',
-                    lambda rec: int(key_dep_list.index(rec[child_dep])))
-                table = etl.sort(table, 'pwb_index')
-                table = etl.cutout(table, 'pwb_index')
+                    key_dep_list = toposort_flatten(key_dep_dict)
+                    table = etl.addfield(
+                        table, 'pwb_index',
+                        lambda rec: int(key_dep_list.index(rec[child_dep])))
+                    table = etl.sort(table, 'pwb_index')
+                    table = etl.cutout(table, 'pwb_index')
 
-                writer = csv.writer(
-                    tempfile,
-                    delimiter='\t',
-                    quoting=csv.QUOTE_NONE,
-                    quotechar='',
-                    lineterminator='\n',
-                    escapechar='')
+                    writer = csv.writer(
+                        tempfile,
+                        delimiter='\t',
+                        quoting=csv.QUOTE_NONE,
+                        quotechar='',
+                        lineterminator='\n',
+                        escapechar='')
 
-                writer.writerows(table)
-                shutil.move(tempfile.name, file_name)
-
-            # Generate ddl:
-            sql = [
-                "\n",
-                "---- Generate DDL -----",
-                "WbXslt -inputfile=" + mod_xml_file,
-                "-stylesheet=PWB/xslt/metadata2ddl.xslt",
-                "-xsltOutput=" + ddl_file + ";",
-            ]
-
-            with open(sql_file, "a+") as file:
-                file.write("\n".join(sql))
+                    writer.writerows(table)
+                    shutil.move(tempfile.name, file_name)
 
 
-            # TODO: Test python-kode for generering av ddl under her
-            # tree = ET.parse(mod_xml_file)
-            ddl = []
+            open(tsv_done_file, 'a').close()                
 
-
-            # table_defs = tree.findall("table-def")
-
-            for table in deps_list:
-                ddl.append('\nCREATE TABLE ' + table + '\n' + ddl_columns[table])
-
-            with open(ddl_file, "a+") as file:
-                file.write("\n".join(ddl))                
-
-
+            # Generate ddl: -> TODO: Fjern når python-versjon ferdig
             # sql = [
             #     "\n",
             #     "---- Generate DDL -----",
@@ -611,4 +624,28 @@ if __name__ == "__main__":
 
             # with open(sql_file, "a+") as file:
             #     file.write("\n".join(sql))
+
+
+            ddl = []
+            for table in deps_list:
+                pk_str  = ''
+                if pk_dict[table]:
+                    pk_str = ',\nPRIMARY KEY (' + pk_dict[table] + ')'
+
+                fk_str = ''
+                if constraint_dict[table]:  
+                    for s in [x for x in constraint_dict[table].split(',')]:
+                        constr, ref_table = s.split(':')
+                        source_columns_str = ', '.join(fk_columns_dict[constr])
+                        ref_columns_str = ''
+                        for col in fk_columns_dict[constr]:
+                            ref_columns_str = ref_columns_str + fk_ref_dict[table + ':' + col] + ', '
+
+                        fk_str = fk_str + ',\nCONSTRAINT ' + constr + '\nFOREIGN KEY (' + source_columns_str + ')\nREFERENCES ' + ref_table + ' (' + ref_columns_str[:-2] + ')' 
+            
+                ddl.append('\nCREATE TABLE ' + table + '\n(\n' + ddl_columns[table][:-1] + pk_str + fk_str + '\n);')
+
+            with open(ddl_file, "w") as file:
+                file.write("\n".join(ddl))                
+
           
