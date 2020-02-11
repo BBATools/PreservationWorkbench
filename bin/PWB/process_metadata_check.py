@@ -94,7 +94,6 @@ if __name__ == "__main__":
             ddl_files = {}
             reset_files = {}
             import_statements = {}
-            db_done_files = {}
 
             for db in db_list:
                 pathlib.Path(documentation_folder + db + '_import').mkdir(
@@ -102,7 +101,6 @@ if __name__ == "__main__":
                 done_files[db] = documentation_folder + db + '_done'
                 import_sql_files[
                     db] = documentation_folder + db + '_import/import.sh'
-                db_done_files[db] = documentation_folder + db + '_done'
 
                 if db in ('postgresql', 'sqlite', 'mssql'):
                     reset_files[db] = ' #Not needed for ' + db
@@ -253,7 +251,7 @@ if __name__ == "__main__":
                         pass
                     else:
                         subprocess.call(
-                            'touch ' + db_done_files[db],
+                            'touch ' + done_files[db],
                             shell=True,
                             cwd=documentation_folder + db + '_import')
                         subprocess.call(

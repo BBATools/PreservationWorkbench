@@ -141,7 +141,7 @@ def get_table_deps(table_name, table_def, deps_dict, empty_tables,
     return table_deps
 
 
-def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case, tsv_process):
+def tsv_fix(base_path, new_file_name, pk_list, illegal_columns_lower_case, tsv_process):
     if tsv_process:
         pwb_replace_in_file(new_file_name, '\0', '')  # Remove null bytes
 
@@ -162,7 +162,7 @@ def tsv_fix(base_path, new_file_name, pk_set, illegal_columns_lower_case, tsv_pr
         table = etl.rename(table, illegal_columns_lower_case, strict=False)
 
         print(new_file_name)
-        for pk in pk_set:
+        for pk in pk_list:
             table = etl.convert(table, pk.lower(),
                                 lambda a: a if len(str(a)) > 0 else '-')
 
@@ -296,7 +296,7 @@ if __name__ == "__main__":
                 table_def.insert(3, old_table_name)
                 table_def.set('name', table_name.text)
 
-                pk_set = set()
+                pk_list = []
                 column_defs = table_def.findall("column-def")
                 for column_def in column_defs:
                     column_name = column_def.find('column-name')
@@ -311,12 +311,11 @@ if __name__ == "__main__":
 
                     if primary_key.text == 'true':
                         if column_name.text in illegal_columns:
-                            pk_set.add(illegal_columns[column_name.text])
+                            pk_list.append(illegal_columns[column_name.text].lower())
                         else:
-                            pk_set.add(column_name.text)
+                            pk_list.append(column_name.text.lower())
 
-                # print(', '.join(pk_set).lower())    
-                pk_dict[table_name.text] = ', '.join(pk_set).lower()               
+                pk_dict[table_name.text] = ', '.join(sorted(pk_list) )          
 
                 # Add row-count/disposed-info:
                 disposed = ET.Element("disposed")
@@ -327,7 +326,7 @@ if __name__ == "__main__":
 
                 # TODO: Legg inn sjekk så ikke leser rader på nytt hvis gjort før -> tull med row_count da?
                 if os.path.exists(new_file_name):
-                    row_count = tsv_fix(base_path, new_file_name, pk_set,
+                    row_count = tsv_fix(base_path, new_file_name, pk_list,
                                         illegal_columns_lower_case, tsv_process)
 
                     if row_count == 0:
@@ -625,7 +624,6 @@ if __name__ == "__main__":
             # with open(sql_file, "a+") as file:
             #     file.write("\n".join(sql))
 
-
             ddl = []
             for table in deps_list:
                 pk_str  = ''
@@ -636,16 +634,28 @@ if __name__ == "__main__":
                 if constraint_dict[table]:  
                     for s in [x for x in constraint_dict[table].split(',')]:
                         constr, ref_table = s.split(':')
-                        source_columns_str = ', '.join(fk_columns_dict[constr])
-                        ref_columns_str = ''
-                        for col in fk_columns_dict[constr]:
-                            ref_columns_str = ref_columns_str + fk_ref_dict[table + ':' + col] + ', '
+                        
+                        ref_column_list = []
+                        source_column_list = fk_columns_dict[constr]
+                        for col in source_column_list:
+                            ref_column_list.append(fk_ref_dict[table + ':' + col] + ':' + col)
 
-                        fk_str = fk_str + ',\nCONSTRAINT ' + constr + '\nFOREIGN KEY (' + source_columns_str + ')\nREFERENCES ' + ref_table + ' (' + ref_columns_str[:-2] + ')' 
-            
+                        ref_column_list = sorted(ref_column_list)
+                        ref_s = '' 
+                        source_s = ''
+                        for s in ref_column_list:
+                            ref, source = s.split(':')
+                            ref_s = ref_s + ', ' + ref 
+                            source_s = source_s + ', ' + source
+                        ref_s = ref_s[2:] 
+                        source_s = source_s[2:]    
+
+                        fk_str = fk_str + ',\nCONSTRAINT ' + constr + '\nFOREIGN KEY (' + source_s + ')\nREFERENCES ' + ref_table + ' (' + ref_s + ')'       
+
                 ddl.append('\nCREATE TABLE ' + table + '\n(\n' + ddl_columns[table][:-1] + pk_str + fk_str + '\n);')
 
             with open(ddl_file, "w") as file:
-                file.write("\n".join(ddl))                
+                file.write("\n".join(ddl))                                                                                                 
+             
 
           
