@@ -27,6 +27,8 @@ if __name__ == "__main__":
         os.path.join(os.path.dirname(__file__), 'sql/oracle_reset.sql'))
     tsv2sqlite_script = os.path.abspath(
         os.path.join(os.path.dirname(__file__), 'tsv2sqlite.py'))
+    tsv2mssql_script = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), 'tsv2mssql.py'))        
     conf_file = tmp_dir + "/pwb.ini"
     config.read(conf_file)
     data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
@@ -176,7 +178,8 @@ if __name__ == "__main__":
                     db_names[
                         db] = 'pwb #Any existing tables in database will be deleted by first line in code'
                     sql_bin[db] = '/opt/mssql-tools/bin/sqlcmd'
-                    import_bins[db] = '/opt/mssql-tools/bin/bcp'
+                    # import_bins[db] = '/opt/mssql-tools/bin/bcp'
+                    import_bins[db] = 'freebcp'
                     ddl_files[
                         db] = documentation_folder + db + '_import/metadata_' + db + '.sql'
                     reset_before_statements[
@@ -186,15 +189,15 @@ if __name__ == "__main__":
                     create_schema_statements[
                         db] = '$sql_bin -b -U $user -P $password -H $host -d $db_name -i $ddl_file'
                     import_statements[
-                        db] = 'echo "importing" $table "...."; $import_bin $table in "$data_path""$table".tsv -U $user -P $password -d $db_name -S $host -r 0x0a -F 2 -c'
-                    # db] = '$import_bin $table in "$data_path""$table".tsv -U $user -P $password -d $db_name -S $host -F 2 -f "$table".fmt'
+                        db] = 'echo "importing $table...."; $import_bin $table in "$data_path""$table".tsv -U $user -P $password -D $db_name -S $host -F 2 -c'   
+                        # TODO: Test linjen under på windows (må legge til encodingvalg som ikke støttes på linux da)                    
+                        # db] = 'echo "importing" $table "...."; $import_bin $table in "$data_path""$table".tsv -U $user -P $password -d $db_name -S $host -r 0x0a -F 2 -c'
 
-                    # db] = '''echo "importing" $table "...."; $import_bin -b -U $user -P $password -H $host -d $db_name -Q "BULK INSERT $table FROM '$data_path$table.tsv' WITH (FIRSTROW = 2);" < /dev/null;'''
-                    # db] = '''echo "importing" $table "...."; $import_bin -b -U $user -P $password -H $host -d $db_name -Q "BULK INSERT $table FROM '$data_path$table.tsv' WITH (FIRSTROW = 2, CODEPAGE='RAW', DATAFILETYPE='widenative');" < /dev/null;'''
 
                     repls = (
-                        (" timestamp", " datetime"),
-                        (" varchar(", " nvarchar("),
+                        (" timestamp", " datetime2"),
+                        # (" varchar(", " nvarchar("),
+                        # (" decimal", " numeric"),                        
                         # (" text,", " varchar(max),"),
                         # (" text)", " varchar(max))"),
                         #    (" boolean", " varchar(5)"),
@@ -205,7 +208,8 @@ if __name__ == "__main__":
                         with open(ddl_files['postgresql'], 'r') as file_r:
                             file.write(
                                 # "ALTER DATABASE CURRENT COLLATE Norwegian_100_CS_AS;\n\n"
-                                "ALTER DATABASE CURRENT COLLATE Norwegian_100_CS_AS_WS;\n\n"
+                                # "ALTER DATABASE CURRENT COLLATE Norwegian_100_CS_AS_WS;\n\n"
+                                "ALTER DATABASE CURRENT COLLATE Latin1_General_100_CS_AS_WS_SC_UTF8;\n\n"
                                 # "ALTER DATABASE CURRENT COLLATE Norwegian_100_CS_AS_SC;\n\n"
                                 # "ALTER DATABASE CURRENT COLLATE Norwegian_100_CS_AS_WS_SC_UTF8;\n\n"
                             )
@@ -231,8 +235,7 @@ if __name__ == "__main__":
                         db] = 'echo "*********************************** \n All databases imported successfully"'
                     create_schema_statements[
                         db] = '$sql_bin "$db_name" < $ddl_file'
-                    import_statements[
-                        db] = '$import_bin $table $data_path$table.tsv $db_name'
+                    import_statements[db] = '$import_bin $table $data_path$table.tsv $db_name'
 
                 gen_import_file(db)
 

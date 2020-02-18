@@ -91,7 +91,7 @@ jdbc_to_ora_ctl_data_type = {
                             '5'    : 'INTEGER EXTERNAL',                   # SMALLINT
                             '6'    : 'FLOAT EXTERNAL',                     # FLOAT   
                             '7'    : 'DECIMAL EXTERNAL',                   # REAL
-                            '8'    : 'DOUBLE EXTERNAL',                    # DOUBLE 
+                            '8'    : 'DECIMAL EXTERNAL',                   # DOUBLE 
                             '12'   : 'CHAR()',                             # VARCHAR 
                             '16'   : 'CHAR(5)',                            # BOOLEAN
                             '91'   : 'DATE "YYYY-MM-DD"',                  # DATE                        
@@ -119,6 +119,13 @@ def sort_dependent_tables(table_defs, base_path):
     return deps_list
 
 
+def normalize_name(name, illegal_dict):
+    norm_name = name
+    if name in illegal_dict:
+        norm_name = illegal_dict[name]
+    return norm_name  
+
+
 def get_table_deps(table_name, table_def, deps_dict, empty_tables,
                    illegal_tables):
     table_deps = set()
@@ -132,8 +139,7 @@ def get_table_deps(table_name, table_def, deps_dict, empty_tables,
                 if table_name.text in deps_dict[ref_table_value]:
                     constraint_name.text = "_disabled_" + constraint_name.text
                     continue
-            if ref_table.text in illegal_tables:
-                ref_table_value = illegal_tables[ref_table.text].lower()
+            ref_table_value = normalize_name(ref_table.text, illegal_tables).lower()
             table_deps.add(ref_table_value)
 
     if len(table_deps) == 0:
@@ -248,7 +254,7 @@ if __name__ == "__main__":
                              folder)) and os.path.isfile(header_xml_file):
             tree = ET.parse(header_xml_file)
             tree_lookup = ET.parse(header_xml_file)
-            illegal_columns_lower_case = pwb_lower_dict(illegal_columns)
+            illegal_columns_lower_case = pwb_lower_dict(illegal_columns) # TODO: Feil for kolonner som legges til illegal i etterkant?
 
             t_count = 0
             c_count = 0
@@ -256,6 +262,7 @@ if __name__ == "__main__":
             constraint_dict = {}
             fk_columns_dict = {}
             fk_ref_dict = {}
+            unique_dict = {}
             table_defs = tree.findall("table-def")
             for table_def in table_defs:
                 table_name = table_def.find("table-name")
@@ -265,12 +272,9 @@ if __name__ == "__main__":
                 # TODO: Menyvalg for dispose trenger bare fjerne tsv-fil
 
                 # Add tables names too long for oracle to 'illegal_tables'
-                if len(table_name.text
-                       ) > 30 and table_name.text not in illegal_tables:
+                if len(table_name.text) > 30:
                     t_count += 1
-                    illegal_tables[
-                        table_name.
-                        text] = table_name.text[:26] + "_" + str(t_count) + "_"
+                    illegal_tables[table_name.text] = table_name.text[:26] + "_" + str(t_count) + "_"
 
                 file_name = base_path + "/content/data/" + table_name.text.lower(
                 ) + ".txt"
@@ -296,26 +300,35 @@ if __name__ == "__main__":
                 table_def.insert(3, old_table_name)
                 table_def.set('name', table_name.text)
 
+                # unique_list = []
+                index_defs = table_def.findall("index-def")
+                for index_def in index_defs:
+                    unique = index_def.find('unique')
+                    primary_key = index_def.find('primary-key')
+                    index_name = index_def.find('name')
+
+                    unique_col_list = []
+                    if unique.text == 'true' and primary_key.text == 'false':
+                        index_column_names = index_def.findall("column-list/column")
+                        for index_column_name in index_column_names:
+                            unique_constraint_name = index_column_name.attrib['name'].lower()    
+                            unique_col_list.append(unique_constraint_name)   
+                        unique_dict[(table_name.text, index_name.text.lower())] = sorted(unique_col_list)                                                                 
+
                 pk_list = []
                 column_defs = table_def.findall("column-def")
                 for column_def in column_defs:
                     column_name = column_def.find('column-name')
                     primary_key = column_def.find('primary-key')
-                    column_name_length = len(column_name.text)
 
-                    if column_name_length > 30 and column_name.text not in illegal_columns:
+                    if len(column_name.text) > 30:
                         c_count += 1
-                        illegal_columns[
-                            column_name.
-                            text] = column_name.text[:26] + "_" + str(c_count)
+                        illegal_columns[column_name.text] = column_name.text[:26] + "_" + str(c_count)
 
                     if primary_key.text == 'true':
-                        if column_name.text in illegal_columns:
-                            pk_list.append(illegal_columns[column_name.text].lower())
-                        else:
-                            pk_list.append(column_name.text.lower())
+                        pk_list.append(normalize_name(column_name.text, illegal_columns).lower())
 
-                pk_dict[table_name.text] = ', '.join(sorted(pk_list) )          
+                pk_dict[table_name.text] = ', '.join(sorted(pk_list))          
 
                 # Add row-count/disposed-info:
                 disposed = ET.Element("disposed")
@@ -400,11 +413,8 @@ if __name__ == "__main__":
 
                         if tab_ref_table_name.text.lower() in empty_tables:
                             tab_constraint_name.text = "_disabled_" + tab_constraint_name.text
-                        elif tab_ref_table_name.text in illegal_tables:
-                            tab_ref_table_name.text = tab_ref_table_name.text + '_'
 
-                        tab_ref_table_name.text = tab_ref_table_name.text.lower(
-                        )
+                        tab_ref_table_name.text = normalize_name(tab_ref_table_name.text, illegal_tables).lower()                           
                         fk_reference.insert(3, old_tab_ref_table_name)
 
                         if not tab_constraint_name.text.startswith('_disabled_'):
@@ -420,39 +430,24 @@ if __name__ == "__main__":
 
                         source_columns_string = ''
                         for source_column_name in source_column_names:
-                            old_source_column_name = ET.Element(
-                                "original-column")
+                            old_source_column_name = ET.Element("original-column")
                             old_source_column_name.text = source_column_name.text
-
-                            if source_column_name.text in illegal_columns:
-                                source_column_name.text = illegal_columns[
-                                    source_column_name.text]
-
-                            source_column_name.text = source_column_name.text.lower()
+                            source_column_name.text = normalize_name(source_column_name.text, illegal_columns).lower()   
                             source_column.insert(10, old_source_column_name)
                             source_column_set.add(source_column_name.text)
 
-                    fk_columns_dict.update({tab_constraint_name.text: source_column_set}) # TODO: Endre andre til å være på denne formen heller enn split på : mm?                           
+                    if not len(source_column_set) == 0:
+                        fk_columns_dict.update({tab_constraint_name.text: source_column_set}) # TODO: Endre andre til å være på denne formen heller enn split på : mm?                           
 
-                    referenced_columns = foreign_key.findall(
-                        'referenced-columns')
+                    referenced_columns = foreign_key.findall('referenced-columns')
                     for referenced_column in referenced_columns:
-                        referenced_column_names = referenced_column.findall(
-                            'column')
+                        referenced_column_names = referenced_column.findall('column')
 
                         for referenced_column_name in referenced_column_names:
-                            old_referenced_column_name = ET.Element(
-                                "original-column")
+                            old_referenced_column_name = ET.Element("original-column")
                             old_referenced_column_name.text = referenced_column_name.text
-
-                            if referenced_column_name.text in illegal_columns:
-                                referenced_column_name.text = illegal_columns[
-                                    referenced_column_name.text]
-
-                            referenced_column_name.text = referenced_column_name.text.lower(
-                            )
-                            referenced_column.insert(
-                                10, old_referenced_column_name)
+                            referenced_column_name.text = normalize_name(referenced_column_name.text, illegal_columns).lower()    
+                            referenced_column.insert(10, old_referenced_column_name)
 
 
                 constraint_dict[table_name.text] =  ','.join(constraint_set).lower()     
@@ -472,41 +467,29 @@ if __name__ == "__main__":
                     dbms_data_type = column_def.find('dbms-data-type')
                     old_column_name = ET.Element("original-column-name")
                     old_column_name.text = column_name.text
-
-                    if column_name.text in illegal_columns:
-                        column_name.text = illegal_columns[
-                            column_name.text].lower()
-                    else:
-                        column_name.text = column_name.text.lower()
-
+                    column_name.text = normalize_name(column_name.text, illegal_columns).lower()   
                     column_def.insert(2, old_column_name)
                     column_def.set('name', column_name.text)
 
                     col_references = column_def.findall('references')
+                    ref_col_ok  = False
                     for col_reference in col_references:
+                        ref_col_ok  = True
                         ref_column_name = col_reference.find('column-name')
                         col_ref_table_name = col_reference.find('table-name')
-                        col_constraint_name = col_reference.find(
-                            'constraint-name')
-                        old_col_constraint_name = ET.Element(
-                            "original-constraint-name")
+                        col_constraint_name = col_reference.find('constraint-name')
+                        old_col_constraint_name = ET.Element("original-constraint-name")
                         old_col_constraint_name.text = col_constraint_name.text
-                        old_ref_column_name = ET.Element(
-                            "original-column-name")
+                        old_ref_column_name = ET.Element("original-column-name")
                         old_ref_column_name.text = ref_column_name.text
                         old_ref_table_name = ET.Element("original-table-name")
                         old_ref_table_name.text = col_ref_table_name.text
 
-                        if ref_column_name.text in illegal_columns:
-                            ref_column_name.text = illegal_columns[
-                                ref_column_name.text]
-                            column_def.insert(3, old_ref_column_name)
+                        ref_column_name.text = normalize_name(ref_column_name.text, illegal_columns)    
+                        column_def.insert(3, old_ref_column_name)
 
-                        if col_ref_table_name.text in illegal_tables:
-
-                            col_ref_table_name.text = illegal_tables[
-                                col_ref_table_name.text]
-                            col_reference.insert(3, old_ref_table_name)
+                        col_ref_table_name.text = normalize_name(col_ref_table_name.text, illegal_tables)    
+                        col_reference.insert(3, old_ref_table_name)
 
                         old_col_constraint_fix = False
                         if str(col_constraint_name.text).startswith('SYS_C'):
@@ -535,7 +518,8 @@ if __name__ == "__main__":
                             if ref_column_data_size.text != dbms_data_size.text:
                                 dbms_data_size.text = ref_column_data_size.text
   
-                    fk_ref_dict[table_name.text + ':' + column_name.text] = ref_column_name.text.lower()  
+                    if ref_col_ok:
+                        fk_ref_dict[table_name.text + ':' + column_name.text] = ref_column_name.text.lower()                        
                  
 
                     if disposed.text != "true":
@@ -609,26 +593,19 @@ if __name__ == "__main__":
                     writer.writerows(table)
                     shutil.move(tempfile.name, file_name)
 
-
-            open(tsv_done_file, 'a').close()                
-
-            # Generate ddl: -> TODO: Fjern når python-versjon ferdig
-            # sql = [
-            #     "\n",
-            #     "---- Generate DDL -----",
-            #     "WbXslt -inputfile=" + mod_xml_file,
-            #     "-stylesheet=PWB/xslt/metadata2ddl.xslt",
-            #     "-xsltOutput=" + ddl_file + ";",
-            # ]
-
-            # with open(sql_file, "a+") as file:
-            #     file.write("\n".join(sql))
+            open(tsv_done_file, 'a').close()         
 
             ddl = []
             for table in deps_list:
                 pk_str  = ''
                 if pk_dict[table]:
                     pk_str = ',\nPRIMARY KEY (' + pk_dict[table] + ')'
+
+                unique_str = ''
+                unique_constraints = {key: val for key, val in unique_dict.items() if key[0] == table} 
+                if unique_constraints:
+                    for key, value in unique_constraints.items():
+                        unique_str = unique_str + ',\nCONSTRAINT ' + key[1] + ' UNIQUE (' + ', '.join(value) + ')'
 
                 fk_str = ''
                 if constraint_dict[table]:  
@@ -652,10 +629,22 @@ if __name__ == "__main__":
 
                         fk_str = fk_str + ',\nCONSTRAINT ' + constr + '\nFOREIGN KEY (' + source_s + ')\nREFERENCES ' + ref_table + ' (' + ref_s + ')'       
 
-                ddl.append('\nCREATE TABLE ' + table + '\n(\n' + ddl_columns[table][:-1] + pk_str + fk_str + '\n);')
+                ddl.append('\nCREATE TABLE ' + table + '\n(\n' + ddl_columns[table][:-1] + pk_str + unique_str + fk_str + '\n);')
 
             with open(ddl_file, "w") as file:
                 file.write("\n".join(ddl))                                                                                                 
-             
+
+            # TODO: Denne syntaksen er støttet av alle             
+            # create table newish_table (
+            #     id   int not null,
+            #     id_A int not null,
+            #     id_B int not null,
+            #     id_C int null,
+            #     id_t int,
+            #     constraint pk_newish_table primary key (id),
+            #     constraint u_constrainte4 unique (id_t),
+            #     constraint u_constrainte5 unique (id_A, id_B, id_C)
+            # );
 
           
+
