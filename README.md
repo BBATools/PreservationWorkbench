@@ -45,7 +45,6 @@ WIP
 Normalize documents (convert to archival formats) and data (convert to ISO/SQL and TSV). Generate AIP.  
 Generated SQL and tsv-data are automatically tested for compatibility with the following databases:
 - PostgreSQL 12  
-- MySQL 8.0  
 - Oracle 11.2  
 - SQL Server 2019  
 - SQLite 3.27
