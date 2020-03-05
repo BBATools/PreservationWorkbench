@@ -59,12 +59,18 @@ WbSysExec -ifNotEmpty=subsys_name -program=&apos;python3&apos; -argument=&apos;&
        <void property="tooltip">
         <string>XML/TSV-export</string>
        </void>
+       <void property="visibleInMenu">
+        <boolean>false</boolean>
+       </void>
+       <void property="visibleInPopup">
+        <boolean>false</boolean>
+       </void>
       </object>
      </void>
      <void method="add">
       <object class="workbench.sql.macros.MacroDefinition">
        <void property="name">
-        <string>Export to local database (alt. 2)</string>
+        <string>Export data</string>
        </void>
        <void property="sortOrder">
         <int>1</int>
@@ -227,7 +233,7 @@ WbSysExec -ifEmpty=wim_path -program=&apos;echo &quot;*** Some files not convert
         <string>Normalize documents</string>
        </void>
        <void id="Boolean0" method="isVisibleInMenu"/>
-       <void id="Boolean1" property="expandWhileTyping"/>
+       <void id="Boolean1" method="isAppendResult"/>
       </object>
      </void>
      <void method="add">
@@ -356,7 +362,7 @@ WbSysExec ..\md5\md5.exe $[Filepath];
      <int>5</int>
     </void>
     <void property="visibleInMenu">
-     <boolean>false</boolean>
+     <object idref="Boolean1"/>
     </void>
    </object>
   </void>

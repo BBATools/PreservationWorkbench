@@ -25,7 +25,7 @@ objFile.Close
 set args = WScript.Arguments
 jarpath = wbpath & "sqlworkbench.jar" 
 
-javaCmd = chr(34) & javaPath & chr(34) & " -Xmx6g -jar " & chr(34) & jarpath & chr(34) & " -url=jdbc:h2:mem:PWB -password=""" & chr(34) & " -configDir=" & chr(34) & wbpath
+javaCmd = chr(34) & javaPath & chr(34) & " -Xmx12g -jar " & chr(34) & jarpath & chr(34) & " -url=jdbc:h2:mem:PWB -password=""" & chr(34) & " -configDir=" & chr(34) & wbpath
 if (args.length > 0) then
 	for each arg in args
     	javaCmd = javaCmd & " " & arg
