@@ -41,5 +41,5 @@ cp=$cp:$SCRIPT_PATH/simple-odf.jar
 cp=$cp:$SCRIPT_PATH/ext/*
 
 cd $SCRIPT_PATH
-java -Xmx12g -jar sqlworkbench.jar -Dvisualvm.display.name=SQLWorkbench -Dawt.useSystemAAFontSettings=on -configDir=. -url=jdbc:h2:mem:PWB -password="";
+java -Xmx6g -jar sqlworkbench.jar -Dvisualvm.display.name=SQLWorkbench -Dawt.useSystemAAFontSettings=on -configDir=. -url=jdbc:h2:mem:PWB -password="";
 

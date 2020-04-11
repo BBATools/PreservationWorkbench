@@ -61,20 +61,12 @@ if sys_name:
                                         sys_name))
                                         
     if db_args or doc_args:
-        pathlib.Path(basepath + sys_name +
-                 '/administrative_metadata/').mkdir(parents=True, exist_ok=True)
-        pathlib.Path(basepath + sys_name +
-                 '/descriptive_metadata/').mkdir(parents=True, exist_ok=True)
-        pathlib.Path(basepath + sys_name +
-                 '/content/documentation/').mkdir(parents=True, exist_ok=True)
-        pathlib.Path(subsystem_path +
-                    '/header/').mkdir(parents=True, exist_ok=True)
-        pathlib.Path(subsystem_path +
-                    '/content/documents/').mkdir(parents=True, exist_ok=True)
-        pathlib.Path(subsystem_path +
-                    '/content/documents/').mkdir(parents=True, exist_ok=True)
-        pathlib.Path(subsystem_path +
-                    '/documentation/dip/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(basepath + sys_name + '/administrative_metadata/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(basepath + sys_name + '/descriptive_metadata/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(basepath + sys_name + '/content/documentation/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(subsystem_path + '/header/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(subsystem_path + '/content/documents/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path(subsystem_path + '/documentation/dip/').mkdir(parents=True, exist_ok=True)
 
         subsys_name = subsystem_path.split('/')[-1]
         config.set('SYSTEM', 'subsys_name', subsys_name)

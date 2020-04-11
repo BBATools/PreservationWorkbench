@@ -17,6 +17,34 @@
 
 import subprocess, sys
 
+def run_shell_command(command, cwd=None):
+    ok = False
+    os.environ['PYTHONUNBUFFERED'] = "1"
+    stdout = []
+    stderr = []
+    mix = []
+
+    print(command)
+    sys.stdout.flush()
+
+    proc = subprocess.Popen(
+        command,
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+        shell=True,
+    )
+
+    for line in proc.stdout:
+        stdout.append(line.rstrip())
+
+    for line in proc.stderr:
+        stderr.append(line.rstrip())
+
+    return proc.returncode, stdout, stderr
+    
+
 class Cmd:
     def __init__(self, cmdArgs, stdin=None):
         self.cmd = ' '.join(cmdArgs)
