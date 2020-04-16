@@ -42,6 +42,7 @@ from common.petl import pwb_lower_case_header
 csv.field_size_limit(sys.maxsize)
 
 # http://www.docjar.com/html/api/java/sql/Types.java.html
+# Mangler disse for alle i JDBC 4.0: ROWID=-8 og SQLXML=2009
 #                        jdbc-id  iso-name               jdbc-name
 jdbc_to_iso_data_type = {
                          '-16'  : 'text',               # LONGNVARCHAR
