@@ -15,7 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess, os, pathlib, glob, shutil, json, csv, sys
+import subprocess
+import os
+import pathlib
+import glob
+import shutil
+import json
+import csv
+import sys
 from configparser import SafeConfigParser
 import pandas as pd
 
@@ -157,9 +164,7 @@ if not os.path.isfile(meta_done_file):
                     json.dump(glob_data, f, indent=4)
 
             # Convert merged file to tsv:
-            if os.path.isfile(
-                    tmp_folder + "/merged.json"
-            ) and not os.path.isfile(tmp_folder + "/merged.tsv"):
+            if os.path.isfile(tmp_folder + "/merged.json") and not os.path.isfile(tmp_folder + "/merged.tsv"):
                 node = ""
                 fp = open(tmp_folder + "/merged.json", "r")
                 json_value = fp.read()

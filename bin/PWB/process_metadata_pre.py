@@ -185,6 +185,7 @@ def tsv_fix(base_path, new_file_name, pk_list, illegal_columns_lower_case, tsv_p
         shutil.move(tempfile.name, new_file_name)
     return row_count
 
+
 if __name__ == "__main__":
     config = SafeConfigParser()
     pwb_dir = os.path.abspath(os.path.dirname(__file__))

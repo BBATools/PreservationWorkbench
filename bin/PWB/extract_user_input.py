@@ -18,7 +18,8 @@
 from configparser import SafeConfigParser
 from common.config import pwb_add_config_section
 from appJar import gui
-import os, subprocess
+import os
+import subprocess
 if os.name == "posix":
     from ttkthemes import ThemedTk
 
@@ -113,8 +114,7 @@ if __name__ == "__main__":
     with open(conf_file, "w+") as configfile:
         config.write(configfile, space_around_delimiters=False)
 
-    app = gui(
-        '         System Details', useTtk=True, colspan=5, showIcon=False)
+    app = gui(System Details', useTtk=True, colspan=5, showIcon=False)
     # TODO: Hvordan midtstille tittel uten space først?
     app.setLocation("CENTER")
     app.setStretch("column")

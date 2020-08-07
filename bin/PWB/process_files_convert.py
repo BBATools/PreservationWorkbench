@@ -15,7 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess, os, shutil, argparse, sys, signal, zipfile, re, glob
+import subprocess
+import os
+import shutil
+import sys
+import signal
+import zipfile
+import re
+import glob
 import pathlib
 import pandas as pd
 from pathlib import Path
@@ -555,9 +562,7 @@ if not os.path.isfile(convert_done_file):
                     else:
                         file_full_path = folder + '/' + file_rel_path
 
-                    normalized = (
-                        0,
-                        "")  # WAIT: Endre slik at 0 og ikke 3 er default verdi
+                    normalized = (0, "")  # WAIT: Endre slik at 0 og ikke 3 er default verdi
                     norm_ext = None
                     keep_original = False
 
@@ -695,14 +700,11 @@ if not os.path.isfile(convert_done_file):
 
                         if (not norm_ok or keep_original):
                             originals = folder + '_normalized/original_documents/'
-                            pathlib.Path(originals).mkdir(
-                                parents=True, exist_ok=True)
+                            pathlib.Path(originals).mkdir(parents=True, exist_ok=True)
 
                             # TODO: Håndtere navnekonflikt ved utflating best hvordan?
 
-                            file_copy(
-                                file_full_path,
-                                originals + os.path.basename(file_full_path))
+                            file_copy(file_full_path, originals + os.path.basename(file_full_path))
 
                         df.loc[index,
                                'normalized_relative_path'] = norm_rel_path

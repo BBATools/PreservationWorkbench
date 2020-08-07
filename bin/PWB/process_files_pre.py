@@ -15,7 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess, os, pathlib, glob, sys, shutil
+import subprocess
+import os
+import pathlib
+import glob
+import sys
+import shutil
 from configparser import SafeConfigParser
 from common.gui import pwb_add_wim_file
 from appJar import gui

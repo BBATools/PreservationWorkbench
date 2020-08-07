@@ -15,7 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import shutil, os, time, sys, datetime, subprocess
+import shutil
+import os
+import time
+import sys
+import datetime
+import subprocess
 from configparser import SafeConfigParser
 from common.gui import pwb_add_wim_file
 from appJar import gui
@@ -24,13 +29,15 @@ if os.name == "posix":
     # TODO: Bruk zenity direkte med subprocess heller -> fjerner gtk fm samt færre begrensninger
     #from zenipy import file_selection
 
-# WAIT: Splitt ut zenity kode som egen def 
+# WAIT: Splitt ut zenity kode som egen def
+
 
 def percentage(part, whole):
-  return 100 * float(part)/float(whole)
+    return 100 * float(part)/float(whole)
+
 
 def copy(src, dst, callback=None):
-    blksize = 1048576 # 1MiB
+    blksize = 1048576  # 1MiB
     try:
         s = open(src, 'rb')
         d = open(dst, 'wb')
@@ -65,22 +72,24 @@ def copy(src, dst, callback=None):
         s.close()
         d.close()
 
+
 def progress(pos, total, elapsed):
     if pos == total:
         app.setMeter("progressBar", 100, "Done!")
     else:
         app.setMeter("progressBar", percentage(pos, total))
 
+
 def dummy(success):
     pass
 
 
-def submit(btn):   
-    wim_source_path = app.getEntry("wim_path")                                                
-    wim_filename = os.path.basename(wim_source_path) 
+def submit(btn):
+    wim_source_path = app.getEntry("wim_path")
+    wim_filename = os.path.basename(wim_source_path)
     md5sum_source_path = os.path.splitext(wim_source_path)[0] + "_md5sum.txt"
-    md5sum_filename = os.path.basename(md5sum_source_path) 
- 
+    md5sum_filename = os.path.basename(md5sum_source_path)
+
     dir_paths = app.getAllListItems("Directories")
     for path in dir_paths:
         md5sum_dest_path = path + "/" + md5sum_filename
@@ -94,11 +103,11 @@ def submit(btn):
                 except subprocess.CalledProcessError:
                     pass
             else:
-                app.errorBox("title","File already exists.")
+                app.errorBox("title", "File already exists.")
         else:
             shutil.copyfile(md5sum_source_path, md5sum_dest_path)
             app.setMeter("progressBar", 0)
-            app.threadCallback(copy,dummy,wim_source_path,wim_dest_path,progress)
+            app.threadCallback(copy, dummy, wim_source_path, wim_dest_path, progress)
 
 
 def clear(btn):
@@ -106,9 +115,10 @@ def clear(btn):
     app.clearAllTextAreas()
     app.clearAllListBoxes()
 
+
 def app_add_file(btn):
     data_dir = os.path.abspath(os.path.join(tmp_dir, '../../', '_DATA'))
-    path = pwb_add_wim_file(data_dir)  
+    path = pwb_add_wim_file(data_dir)
     if path:
         app.setEntry("wim_path", path)
 
@@ -118,8 +128,8 @@ def app_add_dir(btn):
     path = None
     if os.name == "posix":
         try:
-            path = subprocess.check_output("zenity --file-selection --directory --title='" + title + "' 2> >(grep -v 'GtkDialog' >&2)", 
-            shell=True, executable='/bin/bash').decode("utf-8").strip()
+            path = subprocess.check_output("zenity --file-selection --directory --title='" + title + "' 2> >(grep -v 'GtkDialog' >&2)",
+                                           shell=True, executable='/bin/bash').decode("utf-8").strip()
         except subprocess.CalledProcessError:
             pass
     else:
@@ -138,12 +148,14 @@ def app_add_dir(btn):
         if not duplicate:
             app.addListItem("Directories", dir_path)
 
+
 def quit(btn):
     app.stop()
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     config = SafeConfigParser()
-    tmp_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tmp'))
+    tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tmp'))
     conf_file = tmp_dir + "/pwb.ini"
     config.read(conf_file)
 
@@ -173,7 +185,7 @@ if __name__== "__main__":
 
     app.setSticky("new")
     app.addLabel("l5", "Directories:", 4, 0)
-    app.addListBox("Directories", row=5,rowspan=6)
+    app.addListBox("Directories", row=5, rowspan=6)
 
     app.setEntryDefault("wim_path", "-- enter a filename --")
     app.setEntryDefault("dir_path", "-- enter a directory --")
@@ -184,9 +196,4 @@ if __name__== "__main__":
 
     app.addButtons(["Submit", "Clear ", " Quit "], [submit, clear, quit], row=14)
     app.go()
-
-
-                                       
-                                                                                                   
-
 
